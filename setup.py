@@ -1,10 +1,16 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
-    name="market_data", 
+    name="market_data",
+    packages=find_packages(), 
     install_requires=[
         "SQLAlchemy",
-        "websockets"
-    ])
+        "websockets",
+    ],
+    scripts=["./bin/antalla"],
+    package_data={
+        "market_data": ["fixtures/coins.json"]
+    }
+)
 
     
