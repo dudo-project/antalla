@@ -1,3 +1,4 @@
-[{"name":"Ether", "symbol":"ETH"},
-{"name": "Fatom", "symbol":"FTM"}
+[
+  {"name":"Ether", "symbol":"ETH"},
+  {"name": "Fatom", "symbol":"FTM"}
 ]
