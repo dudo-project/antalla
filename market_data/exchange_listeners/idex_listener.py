@@ -19,6 +19,13 @@ class IdexListener(ExchangeListener):
 
     async def listen(self):
         self.running = True
+        while self.running:
+            try:
+                await self._listen()
+            except websockets.exceptions.ConnectionClosed as e:
+                logging.error("idex websocket disconnected: %s", e)
+
+    async def _listen(self):
         async with websockets.connect(settings.IDEX_WS_URL) as websocket: 
             await self._setup_connection(websocket)
             while self.running:
