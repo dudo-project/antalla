@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="market_data",
+    name="antalla",
     packages=find_packages(), 
     install_requires=[
         "SQLAlchemy",
@@ -10,7 +10,7 @@ setup(
     ],
     scripts=["./bin/antalla"],
     package_data={
-        "market_data": ["fixtures/coins.json"]
+        "antalla": ["fixtures/coins.json"]
     }
 )
 
