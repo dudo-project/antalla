@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from market_data import cli
+from antalla import cli
 
 cli.run()
 
