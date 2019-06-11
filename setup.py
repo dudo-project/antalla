@@ -7,6 +7,7 @@ setup(
         "SQLAlchemy",
         "websockets",
         "python-dateutil",
+        "psycopg2",
     ],
     scripts=["./bin/antalla"],
     package_data={
@@ -14,4 +15,3 @@ setup(
     }
 )
 
-    

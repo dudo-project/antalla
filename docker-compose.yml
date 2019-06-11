@@ -1,0 +1,12 @@
+version: '3'
+services:
+  antalla:
+    build: .
+    container_name: antalla-dev
+    env_file:
+      - config/antalla.env
+
+networks:
+  default:
+    external:
+      name: postgres_default
