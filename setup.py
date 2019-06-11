@@ -6,6 +6,7 @@ setup(
     install_requires=[
         "SQLAlchemy",
         "websockets",
+        "python-dateutil",
     ],
     scripts=["./bin/antalla"],
     package_data={
