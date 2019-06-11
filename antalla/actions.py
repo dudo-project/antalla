@@ -23,7 +23,7 @@ class UpdateAction(Action):
 
     def execute(self, session):
         for instance in session.query(self.model).filter_by(**self.query):
-            for key, value in self.update:
+            for key, value in self.update.items():
                 setattr(instance, key, value)
         return 1
 

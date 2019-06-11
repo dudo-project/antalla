@@ -80,3 +80,15 @@ class IdexListener(ExchangeListener):
             exchange_order_id=raw_order["hash"],
         )
 
+    def _parse_market_cancels(self, payload):
+        update_actions = []
+        for cancel in payload["cancels"]:
+                update_actions.append(actions.UpdateAction(
+                    models.Order,
+                    {"exchange_order_id": cancel["orderHash"]},
+                    ("cancelled_at", parse_date(cancel["createdAt"]))
+                ))
+        return update_actions
+
+
+        
