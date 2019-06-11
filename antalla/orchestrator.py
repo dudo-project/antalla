@@ -1,8 +1,10 @@
 import asyncio
+from typing import List
 
 from .exchange_listener import ExchangeListener
 from . import db
 from . import models
+from .actions import Action
 
 
 DEFAULT_COMMIT_INTERVAL = 100
@@ -30,10 +32,7 @@ class Orchestrator:
             exchange_listener.stop()
         self.session.commit()
 
-    def _on_event(self, actions):
-        if not actions:
-            return
-
+    def _on_event(self, actions: List[Action]):
         for action in actions:
             self._rows_modified += action.execute(self.session)
 

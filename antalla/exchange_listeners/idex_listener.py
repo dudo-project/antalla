@@ -60,7 +60,7 @@ class IdexListener(ExchangeListener):
         func = getattr(self, f"_parse_{event}", None)
         if func:
             return func(payload)
-        return False
+        return []
 
     def _parse_market_orders(self, payload):
         buy_sym, sell_sym = payload["market"].split("_")
