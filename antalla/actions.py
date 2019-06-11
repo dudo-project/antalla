@@ -22,8 +22,10 @@ class UpdateAction(Action):
         self.update = update
 
     def execute(self, session):
+        n = 0
         for instance in session.query(self.model).filter_by(**self.query):
-            for key, value in self.update:
+            n += 1
+            for key, value in self.update.items():
                 setattr(instance, key, value)
-        return 1
+        return n
 

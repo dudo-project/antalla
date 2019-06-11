@@ -51,7 +51,7 @@ class IdexListener(ExchangeListener):
         handshake_data = dict(version="1.0.0", key=settings.IDEX_API_KEY)
         handshake_res = await self._send_message(websocket, "handshake", handshake_data)
 
-        subscription_data = dict(topics=settings.IDEX_MARKETS, events=settings.IDEX_EVENTS)
+        subscription_data = dict(topics=settings.MARKETS, events=settings.IDEX_EVENTS)
         await self._send_message(websocket, "subscribeToMarkets",
                                  subscription_data, sid=handshake_res["sid"])
 
@@ -60,7 +60,7 @@ class IdexListener(ExchangeListener):
         func = getattr(self, f"_parse_{event}", None)
         if func:
             return func(payload)
-        return False
+        return []
 
     def _parse_market_orders(self, payload):
         buy_sym, sell_sym = payload["market"].split("_")
@@ -74,9 +74,21 @@ class IdexListener(ExchangeListener):
             exchange=self.exchange,
             buy_sym_id=buy_sym,
             sell_sym_id=sell_sym,
-            amount_buy=raw_order["amountBuy"],
-            amount_sell=raw_order["amountSell"],
+            amount_buy=float(raw_order["amountBuy"]),
+            amount_sell=float(raw_order["amountSell"]),
             user=raw_order["user"],
             exchange_order_id=raw_order["hash"],
         )
 
+    def _parse_market_cancels(self, payload):
+        update_actions = []
+        for cancel in payload["cancels"]:
+                update_actions.append(actions.UpdateAction(
+                    models.Order,
+                    {"exchange_order_id": cancel["orderHash"]},
+                    ("cancelled_at", parse_date(cancel["createdAt"]))
+                ))
+        return update_actions
+
+
+        
