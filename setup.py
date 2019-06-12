@@ -11,7 +11,10 @@ setup(
     ],
     scripts=["./bin/antalla"],
     package_data={
-        "antalla": ["fixtures/coins.json"]
+        "antalla": [
+            "fixtures/coins.json",
+            "fixtures/exchanges.json",
+        ]
     }
 )
 
