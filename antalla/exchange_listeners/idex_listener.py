@@ -22,7 +22,7 @@ class IdexListener(ExchangeListener):
         while self.running:
             try:
                 await self._listen()
-            except websockets.exceptions.ConnectionClosed as e:
+            except (websockets.exceptions.ConnectionClosed | ConnectionResetError) as e:
                 logging.error("idex websocket disconnected: %s", e)
 
     async def _listen(self):
