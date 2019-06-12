@@ -1,6 +1,6 @@
 #
 
-![logo](./images/logo.svg)
+<img src="images/logo.svg" width="300">
 
 Fetches data from various exchanges and stores the orders and trades in an SQL database.
 
