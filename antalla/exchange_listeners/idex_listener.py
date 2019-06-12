@@ -95,7 +95,7 @@ class IdexListener(ExchangeListener):
         buy_sym, sell_sym = payload["market"].split("_")
         trades = []
         for trade in payload["trades"]:
-            trades.append(self._convert_raw_order(trade, buy_sym, sell_sym))
+            trades.append(self._convert_raw_trade(trade, buy_sym, sell_sym))
             update_actions.append(actions.UpdateAction(
                     models.Order,
                     {"exchange_order_id": trade["orderHash"]},
