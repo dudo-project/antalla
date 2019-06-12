@@ -1,4 +1,6 @@
-# antalla 
+#
+
+![logo](./images/logo.svg)
 
 Fetches data from various exchanges and stores the orders and trades in an SQL database.
 
