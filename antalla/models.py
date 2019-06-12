@@ -50,5 +50,7 @@ class Trade(Base):
     price = Column(Float, nullable=False)
     amount = Column(Float, nullable=False)
     total = Column(Float)
+    buyer_fee = Column(Float)
+    seller_fee = Column(Float)
     gas_fee = Column(Float)
     order_hash = Column(String)

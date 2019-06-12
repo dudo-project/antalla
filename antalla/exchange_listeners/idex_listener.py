@@ -86,9 +86,38 @@ class IdexListener(ExchangeListener):
                 update_actions.append(actions.UpdateAction(
                     models.Order,
                     {"exchange_order_id": cancel["orderHash"]},
-                    ("cancelled_at", parse_date(cancel["createdAt"]))
+                    {"cancelled_at": parse_date(cancel["createdAt"])}
                 ))
         return update_actions
 
+    def _parse_market_trades(self, payload):  
+        update_actions = []
+        buy_sym, sell_sym = payload["market"].split("_")
+        trades = []
+        for trade in payload["trades"]:
+            trades.append(self._convert_raw_order(trade, buy_sym, sell_sym))
+            update_actions.append(actions.UpdateAction(
+                    models.Order,
+                    {"exchange_order_id": trade["orderHash"]},
+                    {"filled_at": parse_date(trade["timestamp"])}
+                ))
+        insert_actions = [actions.InsertAction(trades)]
+        return [insert_actions, update_actions]
 
-        
+    def _convert_raw_trade(self, raw_trade, buy_sym, sell_sym):
+        return models.Trade(
+            timestamp=parse_date(raw_trade["timestamp"]),
+            type=raw_trade["type"],
+            exchange=self.exchange,
+            buy_sym_id=buy_sym,
+            sell_sym_id=sell_sym,
+            maker=raw_trade["maker"],
+            taker=raw_trade["taker"],
+            order_hash=raw_trade["orderHash"],
+            gas_fee=float(raw_trade["gasFee"]),
+            price=float(raw_trade["price"]),
+            amount=float(raw_trade["amount"]),
+            total=float(raw_trade["total"]),
+            buyer_fee=raw_trade["buyerFee"],
+            seller_fee=raw_trade["sellerFee"]
+        )
