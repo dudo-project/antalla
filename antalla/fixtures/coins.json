@@ -1,4 +1,7 @@
 [
   {"name":"Ether", "symbol":"ETH"},
-  {"name": "Fatom", "symbol":"FTM"}
+  {"name": "Fatom", "symbol":"FTM"},
+  {"name": "LTO", "symbol":"LTO"},
+  {"name": "Aurora", "symbol":"AURA"},
+  {"name": "Idex", "symbol":"IDXM"}
 ]
