@@ -99,15 +99,15 @@ class IdexListener(ExchangeListener):
             update_actions.append(actions.UpdateAction(
                     models.Order,
                     {"exchange_order_id": trade["orderHash"]},
-                    {"filled_at": parse_date(trade["timestamp"])}
+                    {"filled_at": datetime.fromtimestamp(trade["timestamp"])}
                 ))
         insert_actions = [actions.InsertAction(trades)]
-        return [insert_actions, update_actions]
+        return insert_actions + update_actions
 
     def _convert_raw_trade(self, raw_trade, buy_sym, sell_sym):
         return models.Trade(
-            timestamp=parse_date(raw_trade["timestamp"]),
-            type=raw_trade["type"],
+            timestamp=datetime.fromtimestamp(raw_trade["timestamp"]),
+            trade_type=raw_trade["type"],
             exchange=self.exchange,
             buy_sym_id=buy_sym,
             sell_sym_id=sell_sym,
@@ -118,6 +118,6 @@ class IdexListener(ExchangeListener):
             price=float(raw_trade["price"]),
             amount=float(raw_trade["amount"]),
             total=float(raw_trade["total"]),
-            buyer_fee=raw_trade["buyerFee"],
-            seller_fee=raw_trade["sellerFee"]
+            buyer_fee=float(raw_trade["buyerFee"]),
+            seller_fee=float(raw_trade["sellerFee"])
         )
