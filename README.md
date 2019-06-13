@@ -2,6 +2,8 @@
 
 <img src="images/logo.svg" width="300">
 
+[![CircleCI](https://circleci.com/gh/samwerner/antalla.svg?style=svg)](https://circleci.com/gh/samwerner/antalla)
+
 Fetches data from various exchanges and stores the orders and trades in an SQL database.
 
 The name comes from the Greek ανταλλαγή (antallagí) which meaning "exchange".
