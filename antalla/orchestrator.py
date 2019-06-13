@@ -6,7 +6,6 @@ from .exchange_listener import ExchangeListener
 from . import db
 from . import models
 from .actions import Action, InsertAction, UpdateAction
-from .settings import DB_NAME
 
 DEFAULT_COMMIT_INTERVAL = 100
 
@@ -18,9 +17,7 @@ class Orchestrator:
         self.session = session
         self.commit_interval = commit_interval
         self._rows_modified = 0
-        self._commits = 0
-        self._inserts = 0
-        self._updates = 0
+        self._stats = dict(commits=0, inserts=0, updates=0)
         self.exchange_listeners = [self._create_exchange_listener(name)
                                    for name in exchange_names]
 
@@ -44,17 +41,17 @@ class Orchestrator:
             self._rows_modified += action.execute(self.session)
 
         if self._rows_modified >= self.commit_interval:
-            logging.info(("commit number [%s]: committing changes to %s. "
+            logging.info(("commit number [%s]: committing changes to antalla.db. "
                 "Insert Actions: %s, Update Actions: %s"), 
-                self._commits, DB_NAME, self._inserts, self._updates)
+                self._stats["commits"], self._stats["inserts"], self._stats["updates"])
             self.session.commit()
             self._rows_modified = 0
-            self._commits += 1
-            self._inserts = 0
-            self._updates = 0
+            self._stats["commits"] += 1
+            self._stats["inserts"] = 0
+            self._stats["updates"] = 0
             
     def _track_actions(self, action):
         if isinstance(action, InsertAction):
-            self._inserts += 1
+            self._stats["inserts"] += 1
         elif isinstance(action, UpdateAction):
-            self._updates += 1
+            self._stats["updates"] += 1
