@@ -85,7 +85,7 @@ class IdexListener(ExchangeListener):
         for cancel in payload["cancels"]:
                 update_actions.append(actions.UpdateAction(
                     models.Order,
-                    {"exchange_order_id": cancel["orderHash"]},
+                    {"exchange_order_id": cancel["orderHash"], "exchange_id": self.exchange.id},
                     {"cancelled_at": parse_date(cancel["createdAt"])}
                 ))
         return update_actions
@@ -98,7 +98,7 @@ class IdexListener(ExchangeListener):
             trades.append(self._convert_raw_trade(trade, buy_sym, sell_sym))
             update_actions.append(actions.UpdateAction(
                     models.Order,
-                    {"exchange_order_id": trade["orderHash"]},
+                    {"exchange_order_id": trade["orderHash"], "exchange_id": self.exchange.id},
                     {"filled_at": datetime.fromtimestamp(trade["timestamp"])}
                 ))
         insert_actions = [actions.InsertAction(trades)]
