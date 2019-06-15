@@ -8,6 +8,7 @@ setup(
         "websockets",
         "python-dateutil",
         "psycopg2",
+        "aiohttp"
     ],
     scripts=["./bin/antalla"],
     package_data={

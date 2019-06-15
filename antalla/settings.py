@@ -15,7 +15,7 @@ BINANCE_SINGLE_STREAM = "wss://stream.binance.com:9443/ws/"
 BINANCE_COMBINED_STREAM = "wss://stream.binance.com:9443/stream?streams="
 BINANCE_API_KEY = "IddI1NMcPNMMm7vNeavClaP86k3zpGbOuEGLoUoL1euLohzRxFjK5y0nI7jQ1swZ"
 BINANCE_SECRET_KEY = "G4XdKRYm9A7Wtq2zoNTV6WJbRf3NN3s4156zRQKvCVGyyQFsPkZMlIbXljkCS2h6"
-BINANCE_API = "https://www.binance.com/api/v1/depth"
+BINANCE_API = "https://www.binance.com/api/v1/depth?symbol="
 
 DB_URL = os.environ.get("DB_URL", "sqlite:///antalla.db")
 PACKAGE = "antalla"

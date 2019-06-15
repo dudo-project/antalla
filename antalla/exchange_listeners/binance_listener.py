@@ -5,8 +5,7 @@ from datetime import datetime
 
 from dateutil.parser import parse as parse_date
 import websockets
-import requests
-import asyncio
+import aiohttp 
 
 from .. import settings
 from .. import models
@@ -21,7 +20,7 @@ class BinanceListener(ExchangeListener):
     def __init__(self, exchange, on_event):
         super().__init__(exchange, on_event)
         self.running = False
-        self._socket_managers
+        self._get_ws_url()
 
     async def listen(self):
         self.running = True
@@ -32,53 +31,93 @@ class BinanceListener(ExchangeListener):
                 logging.error("binance websocket disconnected: %s", e)
 
     async def _listen(self):
-        for pair in settings.BINANCE_MARKETS:
-            for stream in settings.BINANCE_STREAMS:
-                bsm = BinanceSocketManager(pair, stream, self.exchange)
-                self._socket_managers.append(bsm)
-        await asyncio.gather(*[bsm.setup_connection()] for bsm in self._socket_managers])
-        #actions = self._parse_message(json.loads(data))
-        #self.on_event(actions)
-
-
-    def stop(self):
-        self.running = False
-        for socket_manager in self._socket_managers:
-            socket_manager.stop()
-
-
-class BinanceSocketManager():
-    def __init__(self, pair, stream, exchange, on_event):
-        self._ws_url = settings.BINANCE_SINGLE_STREAM
-        self._pair = pair.lower()
-        self._stream = stream.lower()
-        self._exchange = exchange
-
-    def _get_depth_snapshot(self):
-        PARAMS = {"symbol": self._pair.upper(), "limit": DEPTH_SNAPSHOT_LIMIT}
-        snapshot = requests.get(url=settings.BINANCE_API, params=PARAMS)
-        logging.debug("depth snapshot for '%s': %s", self._pair, snapshot.json())
-        return snapshot.json()
-
-    def stop(self):
-        self.running = False
-
-    async def setup_connection(self):
-        self.running = True
-        ws_url = self._ws_url+self._pair+"@"+self._stream
-        logging.debug("connecting to websocket url: %s", ws_url)
-        async with websockets.connect(ws_url) as websocket:
-            self._set_up_orderbook()
+        async with websockets.connect(self._ws_url) as websocket: 
+            # FixMe: setup snapshot data in db
+            # initial_actions = await self._setup_snapshots()
+            # self.on_event(initial_actions)
             while self.running:
                 data = await websocket.recv()
                 logging.debug("received %s from binance", data)
-                actions = self._parse_message(json.loads(data))
-                self.on_event(actions)
+                # FixMe: actions need to be returned 
+                # actions = self._parse_message(json.loads(data))
+                # self.on_event(actions)
 
-    def _set_up_orderbook(self):
-        snapshot = self._get_depth_snapshot()
-        logging.debug("retrieve order book depth snapshot: %s", snapshot)
-    
+    def _get_ws_url(self):
+        self._ws_url = settings.BINANCE_COMBINED_STREAM
+        for stream in settings.BINANCE_STREAMS:
+            for pair in settings.BINANCE_MARKETS:
+                self._ws_url = self._ws_url + pair.lower() + "@" + stream + "/"
+        logging.debug("websocket connecting to: %s", self._ws_url)
+
+    async def _setup_snapshots(self):
+        actions = []
+        for pair in settings.BINANCE_MARKETS:
+            async with aiohttp.ClientSession() as session:
+                url = settings.BINANCE_API + pair.upper() + "&limit=" + DEPTH_SNAPSHOT_LIMIT
+                logging.debug("GET request: %s", url)
+                snapshot = await self._fetch(session, url)
+                logging.debug("GET orderbook snapshot for '%s': %s", pair, snapshot)
+                actions.append(self._parse_snapshot(snapshot, pair))
+        return actions
+
+    def _parse_snapshot(self, snapshot, pair):
+        order_info = models.AggOrder(
+            timestamp=datetime.fromtimestamp(snapshot["lastUpdateId"]),
+            buy_sym_id=pair[0:3],
+            sell_sym_id=pair[3:6],
+            exchange=self.exchange,
+        )
+        orders = self._convert_raw_orders(snapshot, order_info, "bids", "asks")
+        logging.debug("parsed %d orders in depth snapshot for pair '%s'", len(orders), pair.lower())
+        # FixMe: add action logic
+
+    def _parse_depthUpdate(self, update):
+        # FixMe: check for last "U" = "u+1" from previous update
+        # check if bid/ask update exists in DB
+        # if quantity == 0 then remove
+        order_info = models.AggOrder(
+            timestamp=datetime.fromtimestamp(update["e"]),
+            last_update_id=update["u"],
+            buy_sym_id=update["s"][0:3],
+            sell_sym_id=update["s"][3:6],
+            exchange=self.exchange,
+        )
+        orders = self._convert_raw_orders(update, order_info, "b", "a")
+        # FixMe: add action logic
+
+    def _convert_raw_orders(self, orders, order_info, bid_key, ask_key):
+        all_orders = []
+        for bid in orders[bid_key]:
+            new_bid_order = models.AggOrder()
+            new_bid_order = order_info
+            new_bid_order.order_type = "bid"
+            new_bid_order.price = bid[0]
+            new_bid_order.quantity = bid[1]
+            all_orders.append(new_bid_order)
+
+        for ask in orders[ask_key]:
+            new_ask_order = models.AggOrder()
+            new_ask_order = order_info
+            new_ask_order.order_type = "ask"
+            new_ask_order.price = ask[0]
+            new_ask_order.quantity = ask[1]
+            all_orders.append(new_ask_order)
+        
+        return all_orders
+
+    def _parse_agg_orders(self, orders):
+        actions = []
+        # FixMe: logic for which actions to return for AggOrders
+
+
+
+    async def _fetch(self, session, url):
+        async with session.get(url) as response:
+            return await response.json()
+
+    def stop(self):
+        self.running = False
+
     def _parse_message(self, message):
         event, payload = message["e"], json.loads(message)
         func = getattr(self, f"_parse_{event}", None)
@@ -103,35 +142,6 @@ class BinanceSocketManager():
             amount=float(raw_trade["q"]),
         )
 
-    def _parse_depthUpdate(self, update):
-        # FixMe: check for last "U" = "u+1" from previous update
-        # check if bid/ask update exists in DB
-        # if quantity == 0 then remove
-        orders = []
-
-        agg_order = models.AggOrder(
-            timestamp=datetime.fromtimestamp(update["e"]),
-            last_update_id=update["u"]
-            buy_sym_id=update["s"][0:3],
-            sell_sym_id=update["s"][3:6],
-            exchange=self.exchange,
-        )
-
-        for bid in update["b"]:
-            new_bid_order = agg_order
-            new_bid_order.order_type = "bid"
-            new_bid_order.price = bid[0]
-            new_bid_order.quantity = bid[1]
-            orders.append(new_bid_order)
-
-        for ask in update["a"]:
-            new_ask_order = agg_order
-            new_ask_order.order_type = "ask"
-            new_ask_order.price = ask[0]
-            new_ask_order.quantity = ask[1]
-            orders.append(new_ask_order)
-
-        # check if order type with price level exists
         
          
 
