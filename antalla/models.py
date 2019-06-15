@@ -53,7 +53,9 @@ class Trade(Base):
     buyer_fee = Column(Float)
     seller_fee = Column(Float)
     gas_fee = Column(Float)
-    order_hash = Column(String, index=True)
+    exchange_order_id = Column(String, index=True)
+    buy_order_id = Column(String)
+    sell_order_id = Column(String)
 
 class AggOrder(Base):
     __tablename__ = "aggregate_orders"
@@ -67,5 +69,5 @@ class AggOrder(Base):
     exchange_id = Column(Integer, ForeignKey("exchanges.id"), nullable=False, index=True)
     exchange = relationship("Exchange")
     order_type = Column(String, nullable=False)
-    price = Column(Float, nullable=False)
+    price = Column(Float, nullable=False, index=True)
     quantity = Column(Float, nullable=False)
