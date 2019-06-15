@@ -1,7 +1,9 @@
 [
   {"name":"Ether", "symbol":"ETH"},
+  {"name":"Bitcoin", "symbol":"BTC"},
   {"name": "Fatom", "symbol":"FTM"},
   {"name": "LTO", "symbol":"LTO"},
   {"name": "Aurora", "symbol":"AURA"},
-  {"name": "Idex", "symbol":"IDXM"}
+  {"name": "Idex", "symbol":"IDXM"},
+  {"name": "Binance", "symbol":"BNB"}
 ]
