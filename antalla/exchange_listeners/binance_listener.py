@@ -32,15 +32,13 @@ class BinanceListener(ExchangeListener):
 
     async def _listen(self):
         async with websockets.connect(self._ws_url) as websocket: 
-            # FixMe: setup snapshot data in db
-            # initial_actions = await self._setup_snapshots()
-            # self.on_event(initial_actions)
+            initial_actions = await self._setup_snapshots()
+            self.on_event(initial_actions)
             while self.running:
                 data = await websocket.recv()
                 logging.debug("received %s from binance", data)
-                # FixMe: actions need to be returned 
-                # actions = self._parse_message(json.loads(data))
-                # self.on_event(actions)
+                actions = self._parse_message(json.loads(data))
+                self.on_event(actions)
 
     def _get_ws_url(self):
         self._ws_url = settings.BINANCE_COMBINED_STREAM
@@ -53,37 +51,36 @@ class BinanceListener(ExchangeListener):
         actions = []
         for pair in settings.BINANCE_MARKETS:
             async with aiohttp.ClientSession() as session:
-                url = settings.BINANCE_API + pair.upper() + "&limit=" + DEPTH_SNAPSHOT_LIMIT
+                url = settings.BINANCE_API + pair.upper() + "&limit=" + str(DEPTH_SNAPSHOT_LIMIT)
                 logging.debug("GET request: %s", url)
                 snapshot = await self._fetch(session, url)
                 logging.debug("GET orderbook snapshot for '%s': %s", pair, snapshot)
-                actions.append(self._parse_snapshot(snapshot, pair))
+                actions.extend(self._parse_snapshot(snapshot, pair))
         return actions
 
     def _parse_snapshot(self, snapshot, pair):
         order_info = models.AggOrder(
             timestamp=datetime.fromtimestamp(snapshot["lastUpdateId"]),
+            last_update_id=datetime.fromtimestamp(snapshot["lastUpdateId"]),
             buy_sym_id=pair[0:3],
             sell_sym_id=pair[3:6],
             exchange=self.exchange,
         )
         orders = self._convert_raw_orders(snapshot, order_info, "bids", "asks")
         logging.debug("parsed %d orders in depth snapshot for pair '%s'", len(orders), pair.lower())
-        # FixMe: add action logic
+        return self._parse_agg_orders(orders)
 
     def _parse_depthUpdate(self, update):
         # FixMe: check for last "U" = "u+1" from previous update
-        # check if bid/ask update exists in DB
-        # if quantity == 0 then remove
         order_info = models.AggOrder(
-            timestamp=datetime.fromtimestamp(update["e"]),
+            timestamp=datetime.fromtimestamp(update["E"] / 1000),
             last_update_id=update["u"],
             buy_sym_id=update["s"][0:3],
             sell_sym_id=update["s"][3:6],
             exchange=self.exchange,
         )
         orders = self._convert_raw_orders(update, order_info, "b", "a")
-        # FixMe: add action logic
+        return self._parse_agg_orders(orders)
 
     def _convert_raw_orders(self, orders, order_info, bid_key, ask_key):
         all_orders = []
@@ -94,22 +91,18 @@ class BinanceListener(ExchangeListener):
             new_bid_order.price = bid[0]
             new_bid_order.quantity = bid[1]
             all_orders.append(new_bid_order)
-
         for ask in orders[ask_key]:
             new_ask_order = models.AggOrder()
             new_ask_order = order_info
             new_ask_order.order_type = "ask"
             new_ask_order.price = ask[0]
             new_ask_order.quantity = ask[1]
-            all_orders.append(new_ask_order)
-        
+            all_orders.append(new_ask_order)        
         return all_orders
 
     def _parse_agg_orders(self, orders):
-        actions = []
-        # FixMe: logic for which actions to return for AggOrders
-
-
+        return [actions.InsertAction(orders)]
+        
 
     async def _fetch(self, session, url):
         async with session.get(url) as response:
@@ -119,7 +112,7 @@ class BinanceListener(ExchangeListener):
         self.running = False
 
     def _parse_message(self, message):
-        event, payload = message["e"], json.loads(message)
+        event, payload = message["data"]["e"], message["data"]
         func = getattr(self, f"_parse_{event}", None)
         if func:
             return func(payload)
@@ -128,12 +121,12 @@ class BinanceListener(ExchangeListener):
     def _parse_trade(self, trade):
         trade = self._convert_raw_trade(trade, trade["s"][0:3], trade["s"][3:6])
         # FixMe: update filled orders
-        return actions.InsertAction(trade)
-
+        return [actions.InsertAction(trade)] 
+        
     def _convert_raw_trade(self, raw_trade, buy_sym, sell_sym):
         return models.Trade(
-            timestamp=datetime.fromtimestamp(raw_trade["T"]),
-            exchange=self._exchange,
+            timestamp=datetime.fromtimestamp(raw_trade["T"] / 1000),
+            exchange=self.exchange,
             buy_sym_id=buy_sym,
             sell_sym_id=sell_sym,
             maker=raw_trade["b"],

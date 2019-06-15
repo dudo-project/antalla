@@ -62,7 +62,7 @@ class IdexListener(ExchangeListener):
             return func(payload)
         return []
 
-    def _parse_market_orders(self, payload):
+   def _parse_market_orders(self, payload):
         buy_sym, sell_sym = payload["market"].split("_")
         orders = [self._convert_raw_order(order, buy_sym, sell_sym)
                   for order in payload["orders"]]
