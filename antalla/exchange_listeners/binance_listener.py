@@ -21,6 +21,7 @@ class BinanceListener(ExchangeListener):
         super().__init__(exchange, on_event)
         self.running = False
         self._get_ws_url()
+        self._api_url = settings.BINANCE_API
 
     async def listen(self):
         self.running = True
@@ -51,9 +52,8 @@ class BinanceListener(ExchangeListener):
         actions = []
         for pair in settings.BINANCE_MARKETS:
             async with aiohttp.ClientSession() as session:
-                url = settings.BINANCE_API + pair.upper() + "&limit=" + str(DEPTH_SNAPSHOT_LIMIT)
-                logging.debug("GET request: %s", url)
-                snapshot = await self._fetch(session, url)
+                uri = settings.BINANCE_API + "/api/v1/depth?symbol=" + pair.upper() + "&limit=" + str(DEPTH_SNAPSHOT_LIMIT)
+                snapshot = await self._fetch(session, uri)
                 logging.debug("GET orderbook snapshot for '%s': %s", pair, snapshot)
                 actions.extend(self._parse_snapshot(snapshot, pair))
         return actions
@@ -106,6 +106,7 @@ class BinanceListener(ExchangeListener):
 
     async def _fetch(self, session, url):
         async with session.get(url) as response:
+            logging.debug("GET request: %s, status: %s", url, response.status)
             return await response.json()
 
     def stop(self):
@@ -120,7 +121,6 @@ class BinanceListener(ExchangeListener):
 
     def _parse_trade(self, trade):
         trade = self._convert_raw_trade(trade, trade["s"][0:3], trade["s"][3:6])
-        # FixMe: update filled orders
         return [actions.InsertAction([trade])] 
         
     def _convert_raw_trade(self, raw_trade, buy_sym, sell_sym):
