@@ -21,3 +21,5 @@ BINANCE_PRIVATE_API = "api/v3"
 
 DB_URL = os.environ.get("DB_URL", "sqlite:///antalla.db")
 PACKAGE = "antalla"
+
+COINBASE_WS_URL = "wss://ws-feed.pro.coinbase.com"
