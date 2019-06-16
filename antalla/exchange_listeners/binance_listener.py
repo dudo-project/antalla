@@ -121,7 +121,7 @@ class BinanceListener(ExchangeListener):
     def _parse_trade(self, trade):
         trade = self._convert_raw_trade(trade, trade["s"][0:3], trade["s"][3:6])
         # FixMe: update filled orders
-        return [actions.InsertAction(trade)] 
+        return [actions.InsertAction([trade])] 
         
     def _convert_raw_trade(self, raw_trade, buy_sym, sell_sym):
         return models.Trade(
