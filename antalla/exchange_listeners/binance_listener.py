@@ -2,10 +2,11 @@ import json
 import logging
 
 from datetime import datetime
+import time
 
 from dateutil.parser import parse as parse_date
 import websockets
-import aiohttp 
+import aiohttp
 
 from .. import settings
 from .. import models
@@ -66,6 +67,7 @@ class BinanceListener(ExchangeListener):
 
     def _parse_market(self, pair):
         # returns the individual coin symbols from a pair string of any possible length
+        # example 'pair': "BTCETH", "BTC_ETH", "WAVE_"ETH", "ETH_WAVE", "WAVE_USDT"
         pairs = pair.split("_")
         if len(pairs) == 2:
             buy_sym_id = pairs[0]
@@ -88,53 +90,56 @@ class BinanceListener(ExchangeListener):
         return buy_sym_id, sell_sym_id
 
     def _parse_snapshot(self, snapshot, pair):
-        pairs = self._parse_market(pair)
-        order_info = models.AggOrder(
-            #timestamp=,
-            last_update_id=snapshot["lastUpdateId"],
-            buy_sym_id=pairs[0],
-            sell_sym_id=pairs[1],
-            exchange=self.exchange,
-        )
-        orders = self._convert_raw_orders(snapshot, order_info, "bids", "asks")
+        order_info = {
+            "pair": pair,
+            "timestamp": time.time(),
+            "last_update_id": snapshot["lastUpdateId"],              
+        }
+        orders = self._convert_raw_orders(snapshot, "bids", "asks", order_info)
         logging.debug("parsed %d orders in depth snapshot for pair '%s'", len(orders), pair.lower())
         return self._parse_agg_orders(orders)
 
     def _parse_depthUpdate(self, update):
-        # FixMe: check for last "U" = "u+1" from previous update
+        # FixMe: could check for last "U" = "u+1" from previous update
+        order_info = {
+            "pair": update["s"],
+            "timestamp": update["E"],
+            "last_update_id": update["u"],
+        }
+        orders = self._convert_raw_orders(update, "b", "a", order_info)
         pair = self._parse_market(update["s"])
-        order_info = models.AggOrder(
-            timestamp=datetime.fromtimestamp(update["E"] / 1000),
-            last_update_id=update["u"],
-            buy_sym_id=pair[0],
-            sell_sym_id=pair[1],
-            exchange=self.exchange,
-        )
-        orders = self._convert_raw_orders(update, order_info, "b", "a")
+        logging.debug("parsed %d orders in 'depth update' for pair '%s'", len(orders), ''.join(pair))
         return self._parse_agg_orders(orders)
 
-    def _convert_raw_orders(self, orders, order_info, bid_key, ask_key):
+    def _create_agg_order(self, order_info):
+        pair = self._parse_market(order_info["pair"])
+        return models.AggOrder(
+            timestamp=datetime.fromtimestamp(order_info["timestamp"] / 1000),
+            last_update_id=order_info["last_update_id"],
+            buy_sym_id=pair[0],
+            sell_sym_id=pair[1],
+            exchange = self.exchange,  
+        )
+
+    def _convert_raw_orders(self, orders, bid_key, ask_key, order_info):
         all_orders = []
         for bid in orders[bid_key]:
-            new_bid_order = models.AggOrder()
-            new_bid_order = order_info
+            new_bid_order = self._create_agg_order(order_info)
             new_bid_order.order_type = "bid"
             new_bid_order.price = bid[0]
             new_bid_order.quantity = bid[1]
             all_orders.append(new_bid_order)
         for ask in orders[ask_key]:
-            new_ask_order = models.AggOrder()
-            new_ask_order = order_info
+            new_ask_order = self._create_agg_order(order_info)
             new_ask_order.order_type = "ask"
             new_ask_order.price = ask[0]
             new_ask_order.quantity = ask[1]
-            all_orders.append(new_ask_order)        
+            all_orders.append(new_ask_order)       
         return all_orders
 
     def _parse_agg_orders(self, orders):
         return [actions.InsertAction(orders)]
         
-
     async def _fetch(self, session, url):
         async with session.get(url) as response:
             logging.debug("GET request: %s, status: %s", url, response.status)
@@ -151,6 +156,7 @@ class BinanceListener(ExchangeListener):
         return []
 
     def _parse_trade(self, trade):
+        # 'trade["s"]' = e.g. "BNBBTC"
         trade_symbols = self._parse_market(trade["s"])
         trade = self._convert_raw_trade(trade, trade_symbols[0], trade_symbols[1])
         return [actions.InsertAction([trade])] 
