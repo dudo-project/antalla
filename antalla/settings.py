@@ -23,3 +23,10 @@ DB_URL = os.environ.get("DB_URL", "sqlite:///antalla.db")
 PACKAGE = "antalla"
 
 COINBASE_WS_URL = "wss://ws-feed.pro.coinbase.com"
+COINBASE_MARKETS = ["ETH_USD", "ETH_EUR"]
+COINBASE_CHANNELS = ["full"]
+COINBASE_API_KEY = ""
+COINBASE_API_SECRET = ""
+
+DB_URL = os.environ.get("DB_URL", "sqlite:///antalla.db")
+PACKAGE = "antalla"
