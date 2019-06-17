@@ -9,7 +9,7 @@ IDEX_EVENTS = ["market_orders", "market_cancels", "market_trades"]
 IDEX_API_KEY = "17paIsICur8sA0OBqG6dH5G1rmrHNMwt4oNk4iX9"
 IDEX_WS_URL = "wss://datastream.idex.market"
 
-BINANCE_MARKETS = ["BNBBTC", "ETHBTC"]
+BINANCE_MARKETS = ["BNB_BTC", "ETH_BTC"]
 BINANCE_STREAMS = ["depth", "trade"]
 BINANCE_SINGLE_STREAM = "wss://stream.binance.com:9443/ws/"
 BINANCE_COMBINED_STREAM = "wss://stream.binance.com:9443/stream?streams="

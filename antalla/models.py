@@ -61,7 +61,7 @@ class AggOrder(Base):
     __tablename__ = "aggregate_orders"
     id = Column(Integer, primary_key=True)
     last_update_id = Column(Integer, nullable=False)
-    timestamp = Column(DateTime, nullable=False, index=True)
+    timestamp = Column(DateTime, index=True)
     buy_sym_id = Column(String,ForeignKey("coins.symbol"), nullable=False, index=True)
     buy_sym = relationship("Coin", foreign_keys=[buy_sym_id])
     sell_sym_id = Column(String, ForeignKey("coins.symbol"), nullable=False, index=True)

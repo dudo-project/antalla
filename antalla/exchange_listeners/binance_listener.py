@@ -22,6 +22,7 @@ class BinanceListener(ExchangeListener):
         self.running = False
         self._get_ws_url()
         self._api_url = settings.BINANCE_API
+        self._get_symbols()
 
     async def listen(self):
         self.running = True
@@ -41,29 +42,58 @@ class BinanceListener(ExchangeListener):
                 actions = self._parse_message(json.loads(data))
                 self.on_event(actions)
 
+    def _get_symbols(self):
+        self._all_symbols = []
+        for pair in settings.BINANCE_MARKETS:
+            self._all_symbols.extend(self._parse_market(pair))
+
     def _get_ws_url(self):
         self._ws_url = settings.BINANCE_COMBINED_STREAM
         for stream in settings.BINANCE_STREAMS:
             for pair in settings.BINANCE_MARKETS:
-                self._ws_url = self._ws_url + pair.lower() + "@" + stream + "/"
+                self._ws_url = self._ws_url + ''.join(pair.lower().split("_")) + "@" + stream + "/"
         logging.debug("websocket connecting to: %s", self._ws_url)
 
     async def _setup_snapshots(self):
         actions = []
         for pair in settings.BINANCE_MARKETS:
             async with aiohttp.ClientSession() as session:
-                uri = settings.BINANCE_API + "/api/v1/depth?symbol=" + pair.upper() + "&limit=" + str(DEPTH_SNAPSHOT_LIMIT)
+                uri = settings.BINANCE_API + "/api/v1/depth?symbol=" + ''.join(pair.upper().split("_")) + "&limit=" + str(DEPTH_SNAPSHOT_LIMIT)
                 snapshot = await self._fetch(session, uri)
                 logging.debug("GET orderbook snapshot for '%s': %s", pair, snapshot)
                 actions.extend(self._parse_snapshot(snapshot, pair))
         return actions
 
+    def _parse_market(self, pair):
+        # returns the individual coin symbols from a pair string of any possible length
+        pairs = pair.split("_")
+        if len(pairs) == 2:
+            buy_sym_id = pairs[0]
+            sell_sym_id = pairs[1]
+        elif len(pairs[0]) == 6:
+            buy_sym_id = pairs[0][0:3]
+            sell_sym_id = pairs[0][3:6]
+        elif len(pairs[0]) == 8:
+            buy_sym_id = pairs[0][0:4]
+            sell_sym_id = pairs[0][4:8]
+        else:
+            if all(sym in self._all_symbols for sym in [pairs[0][0:4], pairs[0][4:7]]):
+                buy_sym_id = pairs[0][0:4]
+                sell_sym_id = pairs[0][4:7]
+            elif all(sym in self._all_symbols for sym in [pairs[0][0:3], pairs[0][3:7]]):
+                buy_sym_id = pairs[0][0:3]
+                sell_sym_id = pairs[0][3:7]
+            else:
+                raise Exception("unknown pair {} to parse. Check if both symbols are specified in settings.BINANCE_MARKETS".format(pairs[0]))
+        return buy_sym_id, sell_sym_id
+
     def _parse_snapshot(self, snapshot, pair):
+        pairs = self._parse_market(pair)
         order_info = models.AggOrder(
-            timestamp=datetime.fromtimestamp(snapshot["lastUpdateId"]),
-            last_update_id=datetime.fromtimestamp(snapshot["lastUpdateId"]),
-            buy_sym_id=pair[0:3],
-            sell_sym_id=pair[3:6],
+            #timestamp=,
+            last_update_id=snapshot["lastUpdateId"],
+            buy_sym_id=pairs[0],
+            sell_sym_id=pairs[1],
             exchange=self.exchange,
         )
         orders = self._convert_raw_orders(snapshot, order_info, "bids", "asks")
@@ -72,11 +102,12 @@ class BinanceListener(ExchangeListener):
 
     def _parse_depthUpdate(self, update):
         # FixMe: check for last "U" = "u+1" from previous update
+        pair = self._parse_market(update["s"])
         order_info = models.AggOrder(
             timestamp=datetime.fromtimestamp(update["E"] / 1000),
             last_update_id=update["u"],
-            buy_sym_id=update["s"][0:3],
-            sell_sym_id=update["s"][3:6],
+            buy_sym_id=pair[0],
+            sell_sym_id=pair[1],
             exchange=self.exchange,
         )
         orders = self._convert_raw_orders(update, order_info, "b", "a")
@@ -120,7 +151,8 @@ class BinanceListener(ExchangeListener):
         return []
 
     def _parse_trade(self, trade):
-        trade = self._convert_raw_trade(trade, trade["s"][0:3], trade["s"][3:6])
+        trade_symbols = self._parse_market(trade["s"])
+        trade = self._convert_raw_trade(trade, trade_symbols[0], trade_symbols[1])
         return [actions.InsertAction([trade])] 
         
     def _convert_raw_trade(self, raw_trade, buy_sym, sell_sym):
