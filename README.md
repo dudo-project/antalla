@@ -56,6 +56,7 @@ CEX exchange listeners:
 - [ ] OKEX
 - [ ] HitBTC
 - [ ] Huobi Global
+
 DEX exchange listeners:
 - [x] IDEX
 - [ ] EtherDelta

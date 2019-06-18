@@ -10,6 +10,7 @@ from .exchange_listener import ExchangeListener
 class WebsocketListener(ExchangeListener):
     def __init__(self, exchange, on_event, ws_url):
         super().__init__(exchange, on_event)
+        logging.debug("create WebsocketListener for %s", exchange)
         self._running = False
         self._ws_url = ws_url
 
@@ -27,7 +28,6 @@ class WebsocketListener(ExchangeListener):
             await self._setup_connection(websocket)
             while self.running:
                 data = await websocket.recv()
-                # FIXME: implement error handling for case of 'data["type"] == "error"'
                 logging.debug("received %s from %s", data, self.exchange)
                 actions = self._parse_message(json.loads(data))
                 self.on_event(actions)
