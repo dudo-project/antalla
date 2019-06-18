@@ -84,7 +84,7 @@ class BinanceListener(WebsocketListener):
             symbols = split_at(pair, split_index)
             if all(sym in self._all_symbols for sym in symbols):
                 return symbols
-        raise Exception("unknown pair {} to parse. Check if both symbols are specified in settings.BINANCE_MARKETS".format(pairs[0]))
+        raise Exception("unknown pair {} to parse. Check if both symbols are specified in settings.BINANCE_MARKETS".format(pair))
 
     def _parse_snapshot(self, snapshot, pair):
         order_info = {
@@ -124,13 +124,13 @@ class BinanceListener(WebsocketListener):
             new_bid_order = self._create_agg_order(order_info)
             new_bid_order.order_type = "bid"
             new_bid_order.price = float(bid[0])
-            new_bid_order.quantity = float(bid[1])
+            new_bid_order.size = float(bid[1])
             all_orders.append(new_bid_order)
         for ask in orders[ask_key]:
             new_ask_order = self._create_agg_order(order_info)
             new_ask_order.order_type = "ask"
             new_ask_order.price = float(ask[0])
-            new_ask_order.quantity = float(ask[1])
+            new_ask_order.size = float(ask[1])
             all_orders.append(new_ask_order)       
         return all_orders
 
@@ -164,5 +164,5 @@ class BinanceListener(WebsocketListener):
             maker=raw_trade["b"],
             taker=raw_trade["a"],
             price=float(raw_trade["p"]),
-            amount=float(raw_trade["q"]),
+            size=float(raw_trade["q"]),
         )

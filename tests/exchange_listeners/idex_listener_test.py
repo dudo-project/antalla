@@ -34,7 +34,7 @@ class IdexListenerTest(unittest.TestCase):
         self.assertEqual(order.exchange, self.dummy_exchange)
         self.assertEqual(order.buy_sym_id, "ETH")
         self.assertEqual(order.sell_sym_id, "LTO")
-        self.assertEqual(order.quantity, 2993350626535471684.0)
+        self.assertEqual(order.sizes[0].size, 2993350626535471684.0)
         self.assertEqual(order.price, 57183587438.0/2993350626535471684.0)
         self.assertEqual(order.side, "buy")
         self.assertEqual(order.user, "0xb10de8d7571acf19f4ec5ef1cf1bc3b5369f734e")

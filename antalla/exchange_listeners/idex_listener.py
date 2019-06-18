@@ -53,10 +53,21 @@ class IdexListener(WebsocketListener):
             buy_sym_id=buy_sym,
             sell_sym_id=sell_sym,
             price=float(raw_order["amountSell"])/float(raw_order["amountBuy"]),
-            quantity=float(raw_order["amountBuy"]),
+            sizes=[self._new_order_size(
+                raw_order["createdAt"],
+                float(raw_order["amountBuy"]),
+                raw_order["hash"]
+                )],
             side="buy",
             user=raw_order["user"],
             exchange_order_id=raw_order["hash"],
+        )
+
+    def _new_order_size(self, timestamp, size, order_id):
+        return models.OrderSize(
+            timestamp=parse_date(timestamp),
+            exchange_order_id=order_id,
+            size=float(size)
         )
 
     def _parse_market_cancels(self, payload):
@@ -95,7 +106,7 @@ class IdexListener(WebsocketListener):
             exchange_order_id=raw_trade["orderHash"],
             gas_fee=float(raw_trade["gasFee"]),
             price=float(raw_trade["price"]),
-            amount=float(raw_trade["amount"]),
+            size=float(raw_trade["amount"]),
             total=float(raw_trade["total"]),
             buyer_fee=float(raw_trade["buyerFee"]),
             seller_fee=float(raw_trade["sellerFee"])

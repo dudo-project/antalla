@@ -36,21 +36,21 @@ class BinanceListenerTest(unittest.TestCase):
         self.assertEqual(order_0.sell_sym_id, "BTC")
         self.assertEqual(order_0.last_update_id, 161)
         self.assertEqual(order_0.price, 0.0024)
-        self.assertEqual(order_0.quantity, 10.0)
+        self.assertEqual(order_0.size, 10.0)
         self.assertEqual(order_0.order_type, "bid")
         self.assertEqual(order_0.exchange, self.dummy_exchange)
         self.assertEqual(order_1.buy_sym_id, "BNB")
         self.assertEqual(order_1.sell_sym_id, "BTC")
         self.assertEqual(order_1.last_update_id, 161)
         self.assertEqual(order_1.price, 0.0038)
-        self.assertEqual(order_1.quantity, 8.0)
+        self.assertEqual(order_1.size, 8.0)
         self.assertEqual(order_0.order_type, "bid")
         self.assertEqual(order_2.exchange, self.dummy_exchange)
         self.assertEqual(order_2.buy_sym_id, "BNB")
         self.assertEqual(order_2.sell_sym_id, "BTC")
         self.assertEqual(order_2.last_update_id, 161)
         self.assertEqual(order_2.price, 0.0026)
-        self.assertEqual(order_2.quantity, 100.0)
+        self.assertEqual(order_2.size, 100.0)
         self.assertEqual(order_2.order_type, "ask")
         
     def test_parse_snapshot(self):
@@ -69,14 +69,14 @@ class BinanceListenerTest(unittest.TestCase):
         self.assertEqual(order_0.sell_sym_id, "BTC")
         self.assertEqual(order_0.last_update_id, 1027024)
         self.assertEqual(order_0.price, 4.00000000)
-        self.assertEqual(order_0.quantity, 431.00000000)
+        self.assertEqual(order_0.size, 431.00000000)
         self.assertEqual(order_0.order_type, "bid")
         self.assertEqual(order_0.exchange, self.dummy_exchange)
         self.assertEqual(order_4.buy_sym_id, "BNB")
         self.assertEqual(order_4.sell_sym_id, "BTC")
         self.assertEqual(order_4.last_update_id, 1027024)
         self.assertEqual(order_4.price, 5.00000000)
-        self.assertEqual(order_4.quantity, 60.00000000)
+        self.assertEqual(order_4.size, 60.00000000)
         self.assertEqual(order_4.order_type, "ask")
         
     def test_parse_trade(self):
@@ -90,7 +90,7 @@ class BinanceListenerTest(unittest.TestCase):
         trade = insert_action.items[0]
         self.assertEqual(trade.buy_sym_id, "BNB")
         self.assertEqual(trade.sell_sym_id, "BTC")
-        self.assertEqual(trade.amount, 100.0)
+        self.assertEqual(trade.size, 100.0)
         self.assertEqual(trade.price, 0.001)
 
     def assertAreAllActions(self, items):
