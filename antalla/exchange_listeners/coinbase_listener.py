@@ -11,40 +11,21 @@ from .. import settings
 from .. import models
 from .. import actions
 from ..exchange_listener import ExchangeListener
+from ..websocket_listener import WebsocketListener
 
 @ExchangeListener.register("coinbase")
-class CoinbaseListener(ExchangeListener):
-    def __init__(self, exchange, on_event):
-        super().__init__(exchange, on_event)
-        self.running = False
+class CoinbaseListener(WebsocketListener):
+    def __init__(self, exchange, on_event, ws_url=settings.COINBASE_WS_URL):
+        super().__init__(exchange, on_event, ws_url)
         self._format_markets()
 
-    async def listen(self):
-        self.running = True
-        while self.running:
-            try:
-                await self._listen()
-            except (websockets.exceptions.ConnectionClosed, ConnectionResetError) as e:
-                logging.error("coinbase websocket disconnected: %s", e)
-
-    async def _listen(self):
-        async with websockets.connect(settings.COINBASE_WS_URL) as websocket: 
-            # TODO: get snapshot of orderbook via GET
-            await self._setup_connection(websocket)
-            while self.running:
-                data = await websocket.recv()
-                # FIXME: implement error handling for case of 'data["type"] == "error"'
-                logging.debug("received %s from coinbase", data)
-                actions = self._parse_message(json.loads(data))
-                self.on_event(actions)
-    
     def _parse_message(self, message):
         event, payload = message["type"], message
         func = getattr(self, f"_parse_{event}", None)
         if func:
             return func(payload)
         return []
-
+    
     def _parse_received(self, received):
         return [actions.InsertAction([self._convert_raw_order(received)])]
 
@@ -143,13 +124,8 @@ class CoinbaseListener(ExchangeListener):
     async def _send_message(self, websocket, request, product_ids, channels):
         data = dict(type=request, product_ids=product_ids, channels=channels)
         message = json.dumps(data)
-        print(message)
         logging.debug("> %s: %s", request, product_ids)
         await websocket.send(message)
         response = await websocket.recv()
         logging.debug("< %s", response)
         return json.loads(response)
-
-    def stop(self):
-        self.running = False
-
