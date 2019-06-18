@@ -12,26 +12,19 @@ from .. import settings
 from .. import models
 from .. import actions
 from ..exchange_listener import ExchangeListener
+from ..websocket_listener import WebsocketListener
 
 # needs to be 5, 10, 20, 50, 100, 500 or 1000
 DEPTH_SNAPSHOT_LIMIT = 1000
 
 @ExchangeListener.register("binance")
-class BinanceListener(ExchangeListener):
-    def __init__(self, exchange, on_event):
-        super().__init__(exchange, on_event)
+class BinanceListener(WebsocketListener):
+    def __init__(self, exchange, on_event, ws_url=None):
+        super().__init__(exchange, on_event, ws_url)
         self.running = False
         self._get_ws_url()
         self._api_url = settings.BINANCE_API
         self._get_symbols()
-
-    async def listen(self):
-        self.running = True
-        while self.running:
-            try:
-                await self._listen()
-            except (websockets.exceptions.ConnectionClosed, ConnectionResetError) as e:
-                logging.error("binance websocket disconnected: %s", e)
 
     async def _listen(self):
         async with websockets.connect(self._ws_url) as websocket: 
@@ -104,7 +97,7 @@ class BinanceListener(ExchangeListener):
         return self._parse_agg_orders(orders)
 
     def _parse_depthUpdate(self, update):
-        # FixMe: could check for last "U" = "u+1" from previous update
+        # FIXME: could check for last "U" = "u+1" from previous update
         order_info = {
             "pair": update["s"],
             "timestamp": update["E"],
@@ -149,9 +142,6 @@ class BinanceListener(ExchangeListener):
             logging.debug("GET request: %s, status: %s", url, response.status)
             return await response.json()
 
-    def stop(self):
-        self.running = False
-
     def _parse_message(self, message):
         event, payload = message["data"]["e"], message["data"]
         func = getattr(self, f"_parse_{event}", None)
@@ -176,9 +166,3 @@ class BinanceListener(ExchangeListener):
             price=float(raw_trade["p"]),
             amount=float(raw_trade["q"]),
         )
-
-        
-         
-
-        
-
