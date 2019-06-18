@@ -27,7 +27,6 @@ class WebsocketListener(ExchangeListener):
             await self._setup_connection(websocket)
             while self.running:
                 data = await websocket.recv()
-                # FIXME: implement error handling for case of 'data["type"] == "error"'
                 logging.debug("received %s from %s", data, self.exchange)
                 actions = self._parse_message(json.loads(data))
                 self.on_event(actions)

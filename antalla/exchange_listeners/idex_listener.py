@@ -9,33 +9,12 @@ from .. import settings
 from .. import models
 from .. import actions
 from ..exchange_listener import ExchangeListener
-
+from ..websocket_listener import WebsocketListener
 
 @ExchangeListener.register("idex")
-class IdexListener(ExchangeListener):
-    def __init__(self, exchange, on_event):
-        super().__init__(exchange, on_event)
-        self.running = False
-
-    async def listen(self):
-        self.running = True
-        while self.running:
-            try:
-                await self._listen()
-            except (websockets.exceptions.ConnectionClosed, ConnectionResetError) as e:
-                logging.error("idex websocket disconnected: %s", e)
-
-    async def _listen(self):
-        async with websockets.connect(settings.IDEX_WS_URL) as websocket: 
-            await self._setup_connection(websocket)
-            while self.running:
-                data = await websocket.recv()
-                logging.debug("received %s from idex", data)
-                actions = self._parse_message(json.loads(data))
-                self.on_event(actions)
-
-    def stop(self):
-        self.running = False
+class IdexListener(WebsocketListener):
+    def __init__(self, exchange, on_event, ws_url=settings.IDEX_WS_URL):
+        super().__init__(exchange, on_event, ws_url)
 
     async def _send_message(self, websocket, request, payload, **kwargs):
         data = dict(request=request, payload=json.dumps(payload))
