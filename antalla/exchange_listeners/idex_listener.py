@@ -73,8 +73,9 @@ class IdexListener(ExchangeListener):
             exchange=self.exchange,
             buy_sym_id=buy_sym,
             sell_sym_id=sell_sym,
-            amount_buy=float(raw_order["amountBuy"]),
-            amount_sell=float(raw_order["amountSell"]),
+            price=float(raw_order["amountSell"])/float(raw_order["amountBuy"]),
+            quantity=float(raw_order["amountBuy"]),
+            side="buy",
             user=raw_order["user"],
             exchange_order_id=raw_order["hash"],
         )
