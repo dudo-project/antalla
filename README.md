@@ -45,15 +45,6 @@ Once the URL is set, the database can be initialized with the following command:
 antalla init-db
 ```
 
-### Running antalla
-
-Once the DB is initialized, antalla can be ran with the following command
-
-```
-antalla run
-```
-
-The list of markets to listen for can be customized through the `MARKET` environment variable, which should be formatted as follow `ETH_AURA,ETH_IDXM`.
 
 ### Exchange listeners
 
@@ -72,5 +63,17 @@ DEX exchange listeners:
 - [ ] Paradex
 - [ ] Radar Relay
 
+For each exchange the API key and secret can be set via environment variables in the format `<exchange>_API_KEY` and `<exchange>_API_SECRET`, respectively.
+
+
+### Running antalla
+
+Once the DB is initialized, antalla can be ran with the following command
+
+```
+antalla run
+```
+
+The list of markets to listen for can be customized through the `MARKET` environment variable, which should be formatted as follow `ETH_AURA,ETH_IDXM`.
 
 [1]: https://docs.sqlalchemy.org/en/latest/dialects/postgresql.html#module-sqlalchemy.dialects.postgresql.psycopg2
