@@ -55,5 +55,22 @@ antalla run
 
 The list of markets to listen for can be customized through the `MARKET` environment variable, which should be formatted as follow `ETH_AURA,ETH_IDXM`.
 
+### Exchange listeners
+
+Exchange listeners have been implemented for the following centraliseed exchanges (CEXs) and decentralised exchanges (DEXs).
+
+CEX exchange listeners:
+- [x] Binance
+- [x] Coinbase
+- [ ] OKEX
+- [ ] HitBTC
+- [ ] Huobi Global
+DEX exchange listeners:
+- [x] IDEX
+- [ ] EtherDelta
+- [ ] token.store
+- [ ] Paradex
+- [ ] Radar Relay
+
 
 [1]: https://docs.sqlalchemy.org/en/latest/dialects/postgresql.html#module-sqlalchemy.dialects.postgresql.psycopg2
