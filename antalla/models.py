@@ -28,16 +28,33 @@ class Order(Base):
     sell_sym = relationship("Coin", foreign_keys=[sell_sym_id])
     exchange_id = Column(Integer, ForeignKey("exchanges.id"), nullable=False, index=True)
     exchange = relationship("Exchange")
-    quantity = Column(Float)
-    gas_fee = Column(Float)
+    sizes = relationship("OrderSize", back_populates="order")
+    gas_fee = Column(Float) 
     user = Column(String)
     side = Column(String)
     price = Column(Float, nullable=False)
-    remaining_size = Column(Float)
     exchange_order_id = Column(String, index=True, nullable=False)
     last_updated = Column(DateTime)
     order_type = Column(String)
-    funds = Column(Float)
+    funds = relationship("MarketOrderFunds", back_populates="order")
+
+
+class MarketOrderFunds(Base):
+    __tablename__ = "market_order_funds"
+    exchange_order_id = Column(String, ForeignKey("orders.exchange_order_id"), index=True, nullable=False)
+    order = relationship("Order", foreign_keys=[exchange_order_id])
+    id = Column(Integer, primary_key=True)
+    timestamp = Column(DateTime, nullable=False)
+    funds = Column(Float, nullable=False)
+    
+
+class OrderSize(Base):
+    __tablename__ = "order_sizes"
+    exchange_order_id = Column(String, ForeignKey("orders.exchange_order_id"), index=True, nullable=False)
+    order = relationship("Order", foreign_keys=[exchange_order_id])
+    id = Column(Integer, primary_key=True)
+    timestamp = Column(DateTime, nullable=False)
+    size = Column(Float, nullable=False)
 
 
 class Trade(Base):
@@ -54,7 +71,7 @@ class Trade(Base):
     maker = Column(String)
     taker = Column(String)
     price = Column(Float, nullable=False)
-    amount = Column(Float, nullable=False)
+    size = Column(Float, nullable=False)
     total = Column(Float)
     buyer_fee = Column(Float)
     seller_fee = Column(Float)
@@ -77,6 +94,4 @@ class AggOrder(Base):
     exchange = relationship("Exchange")
     order_type = Column(String, nullable=False)
     price = Column(Float, nullable=False, index=True)
-    quantity = Column(Float, nullable=False)
-
-    
+    size = Column(Float, nullable=False)

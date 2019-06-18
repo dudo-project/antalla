@@ -40,10 +40,14 @@ class CoinbaseListener(WebsocketListener):
             order_type=received["order_type"]
         )
         if "funds" in received:
-            order.funds = received["funds"]
+            order.funds = [self._new_market_order_funds(
+                received["time"], 
+                received["funds"],
+                received["order_id"]
+                )]
         else:
-            order.price = received["price"]
-            order.quantity = received["size"]
+            order.price = float(received["price"])
+            order.sizes = [self._new_order_size(received["time"], received["size"], received["order_id"])]
         return order
 
     def _parse_open(self, open_order):
@@ -57,8 +61,12 @@ class CoinbaseListener(WebsocketListener):
             sell_sym_id=open_order["product_id"].split("-")[1],
             exchange_order_id=open_order["order_id"],
             side=open_order["side"],
-            price=open_order["price"],
-            remaining_size=open_order["remaining_size"],
+            price=float(open_order["price"]),
+            sizes=[self._new_order_size(
+                open_order["time"],
+                open_order["remaining_size"],
+                open_order["order_id"]
+            )],
             exchange=self.exchange
         )
         
@@ -79,22 +87,38 @@ class CoinbaseListener(WebsocketListener):
             update_fields
             )] 
 
+    def _new_order_size(self, timestamp, size, order_id):
+        return models.OrderSize(
+            timestamp=parse_date(timestamp),
+            exchange_order_id=order_id,
+            size=float(size)
+        )
+
+    def _new_market_order_funds(self, timestamp, funds, order_id):
+        return models.MarketOrderFunds(
+            timestamp=parse_date(timestamp),
+            exchange_order_id=order_id,
+            funds=float(funds)
+        )
+
     def _parse_change(self, update):
         # an order has changed: result of self-trade prevention adjusting order size or available funds
-        update_fields = {}
-        update_fields["last_updated"]
         if "new_size" in update:
-            update_fields["new_size"] = update["new_size"]
+            return [actions.InsertAction([self._new_order_size(
+                update["time"],
+                update["new_size"],
+                update["order_id"]
+            )])]
         elif "new_funds" in update:
-            update_fields["new_funds"] = update["new_funds"]
+            return [actions.InsertAction([self._new_market_order_funds(
+                update["time"],
+                update["new_funds"],
+                update["order_id"]
+            )])]
         else:
             # FIXME: raise an exception
             logging.debug("failed to process order: %s", update)
-        return [actions.UpdateAction(
-            models.Order, 
-            {"exchange_order_id": update["order_id"], "exchange_id": self.exchange.id},
-            update_fields
-            )]
+        return []
 
     def _parse_match(self, match):
         # a trade occurred between two orders 
@@ -109,8 +133,8 @@ class CoinbaseListener(WebsocketListener):
             sell_sym_id=match["product_id"].split("-")[1],
             maker_order_id=match["maker_order_id"],
             taker_order_id=match["taker_order_id"],
-            price=match["price"],
-            amount=match["size"]
+            price=float(match["price"]),
+            size=float(match["size"])
         )
 
     async def _setup_connection(self, websocket):
