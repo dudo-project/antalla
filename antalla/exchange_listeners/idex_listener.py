@@ -50,7 +50,6 @@ class IdexListener(ExchangeListener):
     async def _setup_connection(self, websocket):
         handshake_data = dict(version="1.0.0", key=settings.IDEX_API_KEY)
         handshake_res = await self._send_message(websocket, "handshake", handshake_data)
-
         subscription_data = dict(topics=settings.MARKETS, events=settings.IDEX_EVENTS)
         await self._send_message(websocket, "subscribeToMarkets",
                                  subscription_data, sid=handshake_res["sid"])
@@ -74,8 +73,9 @@ class IdexListener(ExchangeListener):
             exchange=self.exchange,
             buy_sym_id=buy_sym,
             sell_sym_id=sell_sym,
-            amount_buy=float(raw_order["amountBuy"]),
-            amount_sell=float(raw_order["amountSell"]),
+            price=float(raw_order["amountSell"])/float(raw_order["amountBuy"]),
+            quantity=float(raw_order["amountBuy"]),
+            side="buy",
             user=raw_order["user"],
             exchange_order_id=raw_order["hash"],
         )

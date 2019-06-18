@@ -28,12 +28,18 @@ class Order(Base):
     sell_sym = relationship("Coin", foreign_keys=[sell_sym_id])
     exchange_id = Column(Integer, ForeignKey("exchanges.id"), nullable=False, index=True)
     exchange = relationship("Exchange")
-    amount_buy = Column(Float, nullable=False)
-    amount_sell = Column(Float, nullable=False)
+    quantity = Column(Float)
     gas_fee = Column(Float)
     user = Column(String)
-    exchange_order_id = Column(String, index=True, nullable=False, unique=True)
-    
+    side = Column(String)
+    price = Column(Float, nullable=False)
+    remaining_size = Column(Float)
+    exchange_order_id = Column(String, index=True, nullable=False)
+    last_updated = Column(DateTime)
+    order_type = Column(String)
+    funds = Column(Float)
+
+
 class Trade(Base):
     __tablename__ = "trades"
     timestamp = Column(DateTime, nullable=False, index=True)
@@ -45,8 +51,8 @@ class Trade(Base):
     sell_sym = relationship("Coin", foreign_keys=[sell_sym_id])
     exchange_id = Column(Integer, ForeignKey("exchanges.id"), nullable=False, index=True)
     exchange = relationship("Exchange")
-    maker = Column(String, nullable=False)
-    taker = Column(String, nullable=False)
+    maker = Column(String)
+    taker = Column(String)
     price = Column(Float, nullable=False)
     amount = Column(Float, nullable=False)
     total = Column(Float)
@@ -54,8 +60,9 @@ class Trade(Base):
     seller_fee = Column(Float)
     gas_fee = Column(Float)
     exchange_order_id = Column(String, index=True, unique=True)
-    buy_order_id = Column(String)
-    sell_order_id = Column(String)
+    maker_order_id = Column(String, index=True)
+    taker_order_id = Column(String, index=True)
+
 
 class AggOrder(Base):
     __tablename__ = "aggregate_orders"
@@ -71,3 +78,5 @@ class AggOrder(Base):
     order_type = Column(String, nullable=False)
     price = Column(Float, nullable=False, index=True)
     quantity = Column(Float, nullable=False)
+
+    
