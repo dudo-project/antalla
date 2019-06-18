@@ -123,14 +123,14 @@ class BinanceListener(WebsocketListener):
         for bid in orders[bid_key]:
             new_bid_order = self._create_agg_order(order_info)
             new_bid_order.order_type = "bid"
-            new_bid_order.price = bid[0]
-            new_bid_order.quantity = bid[1]
+            new_bid_order.price = float(bid[0])
+            new_bid_order.quantity = float(bid[1])
             all_orders.append(new_bid_order)
         for ask in orders[ask_key]:
             new_ask_order = self._create_agg_order(order_info)
             new_ask_order.order_type = "ask"
-            new_ask_order.price = ask[0]
-            new_ask_order.quantity = ask[1]
+            new_ask_order.price = float(ask[0])
+            new_ask_order.quantity = float(ask[1])
             all_orders.append(new_ask_order)       
         return all_orders
 
