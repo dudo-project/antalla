@@ -32,7 +32,7 @@ class Order(Base):
     amount_sell = Column(Float, nullable=False)
     gas_fee = Column(Float)
     user = Column(String)
-    exchange_order_id = Column(String, index=True, nullable=False)
+    exchange_order_id = Column(String, index=True, nullable=False, unique=True)
     
 class Trade(Base):
     __tablename__ = "trades"
@@ -53,7 +53,7 @@ class Trade(Base):
     buyer_fee = Column(Float)
     seller_fee = Column(Float)
     gas_fee = Column(Float)
-    exchange_order_id = Column(String, index=True)
+    exchange_order_id = Column(String, index=True, unique=True)
     buy_order_id = Column(String)
     sell_order_id = Column(String)
 

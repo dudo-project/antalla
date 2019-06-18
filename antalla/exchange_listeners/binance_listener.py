@@ -66,28 +66,32 @@ class BinanceListener(ExchangeListener):
         return actions
 
     def _parse_market(self, pair):
-        # returns the individual coin symbols from a pair string of any possible length
-        # example 'pair': "BTCETH", "BTC_ETH", "WAVE_"ETH", "ETH_WAVE", "WAVE_USDT"
-        pairs = pair.split("_")
-        if len(pairs) == 2:
-            buy_sym_id = pairs[0]
-            sell_sym_id = pairs[1]
-        elif len(pairs[0]) == 6:
-            buy_sym_id = pairs[0][0:3]
-            sell_sym_id = pairs[0][3:6]
-        elif len(pairs[0]) == 8:
-            buy_sym_id = pairs[0][0:4]
-            sell_sym_id = pairs[0][4:8]
-        else:
-            if all(sym in self._all_symbols for sym in [pairs[0][0:4], pairs[0][4:7]]):
-                buy_sym_id = pairs[0][0:4]
-                sell_sym_id = pairs[0][4:7]
-            elif all(sym in self._all_symbols for sym in [pairs[0][0:3], pairs[0][3:7]]):
-                buy_sym_id = pairs[0][0:3]
-                sell_sym_id = pairs[0][3:7]
-            else:
-                raise Exception("unknown pair {} to parse. Check if both symbols are specified in settings.BINANCE_MARKETS".format(pairs[0]))
-        return buy_sym_id, sell_sym_id
+        """
+        returns the individual coin symbols from a pair string of any possible length
+
+        >>> from types import SimpleNamespace
+        >>> symbols = ["BTC", "ETH", "WAVE", "USD"]
+        >>> dummy_self = SimpleNamespace(_all_symbols=symbols)
+        >>> BinanceListener._parse_market(dummy_self, "BTC_ETH")
+        ('BTC', 'ETH')
+        >>> BinanceListener._parse_market(dummy_self, "BTCETH")
+        ('BTC', 'ETH')
+        >>> BinanceListener._parse_market(dummy_self, "WAVEETH")
+        ('WAVE', 'ETH')
+        >>> BinanceListener._parse_market(dummy_self, "USDWAVE")
+        ('USD', 'WAVE')
+        """   
+        split_at = lambda string, n: (string[:n], string[n:])
+        symbols = pair.split("_")
+        if len(symbols) == 2:
+            return tuple(symbols)
+        if len(pair) % 2 == 0:
+            return split_at(pair, len(pair) // 2)
+        for split_index in [3, 4]:
+            symbols = split_at(pair, split_index)
+            if all(sym in self._all_symbols for sym in symbols):
+                return symbols
+        raise Exception("unknown pair {} to parse. Check if both symbols are specified in settings.BINANCE_MARKETS".format(pairs[0]))
 
     def _parse_snapshot(self, snapshot, pair):
         order_info = {
