@@ -48,7 +48,7 @@ antalla init-db
 
 ### Exchange listeners
 
-Exchange listeners have been implemented for the following centraliseed exchanges (CEXs) and decentralised exchanges (DEXs).
+Exchange listeners have been implemented for the following centralised exchanges (CEXs) and decentralised exchanges (DEXs).
 
 CEX exchange listeners:
 - [x] Binance
