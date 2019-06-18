@@ -113,7 +113,7 @@ class IdexListener(ExchangeListener):
             sell_sym_id=sell_sym,
             maker=raw_trade["maker"],
             taker=raw_trade["taker"],
-            order_hash=raw_trade["orderHash"],
+            exchange_order_id=raw_trade["orderHash"],
             gas_fee=float(raw_trade["gasFee"]),
             price=float(raw_trade["price"]),
             amount=float(raw_trade["amount"]),

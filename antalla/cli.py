@@ -14,7 +14,7 @@ subparsers = parser.add_subparsers(dest="command")
 init_db_parser = subparsers.add_parser("init-db")
 
 run_parser = subparsers.add_parser("run")
-run_parser.add_argument("--exchanges", nargs="*", choices=ExchangeListener.registered())
+run_parser.add_argument("--exchange", nargs="*", choices=ExchangeListener.registered())
 
 
 def run():

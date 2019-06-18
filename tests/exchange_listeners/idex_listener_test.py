@@ -70,7 +70,7 @@ class IdexListenerTest(unittest.TestCase):
         self.assertIsInstance(insert_action, actions.InsertAction)
         self.assertEqual(len(insert_action.items), 1)
         self.assertIsInstance(insert_action.items[0], models.Trade)
-        self.assertEqual(insert_action.items[0].order_hash, payload["trades"][0]["orderHash"])
+        self.assertEqual(insert_action.items[0].exchange_order_id, payload["trades"][0]["orderHash"])
 
         update_action: actions.UpdateAction = parsed_actions[1]
         self.assertIsInstance(update_action, actions.UpdateAction)

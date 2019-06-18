@@ -28,8 +28,8 @@ def init_db(args):
 
 
 def run(args):
-    if args["exchanges"]:
-        exchanges = args["exchanges"]
+    if args["exchange"]:
+        exchanges = args["exchange"]
     else:
         exchanges = ExchangeListener.registered()
     orchestrator = Orchestrator(exchanges)
