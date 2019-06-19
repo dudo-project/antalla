@@ -19,7 +19,8 @@ class ExchangeListener(BaseFactory):
         async with aiohttp.ClientSession() as session:
             markets = await self._fetch(session, markets_uri)
             logging.debug("markets retrieved from %s: %s", self.exchange.name, markets)
-            self._parse_markets(markets)
+            actions = self._parse_markets(markets)
+            self.on_event(actions)
 
     async def _fetch(self, session, url):
         async with session.get(url) as response:

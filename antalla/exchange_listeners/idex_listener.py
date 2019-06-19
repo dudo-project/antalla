@@ -135,10 +135,10 @@ class IdexListener(WebsocketListener):
                 ))
             else:
                 logging.debug("parse markets for '{}' - invalid market format: '{}' is not a pair of markets - IGNORE".format(self.exchange.name, market))  
-        self.on_event([actions.InsertAction(new_markets)])
+        return [actions.InsertAction(new_markets)]
         
     def _create_exchange_market(self, volume, exchange):
         return models.ExchangeMarket(
-            volume=volume,
+            volume=float(volume),
             exchange=exchange
         )
