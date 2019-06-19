@@ -30,5 +30,8 @@ COINBASE_MARKETS = ["ETH_USD", "ETH_EUR"]
 COINBASE_CHANNELS = ["full"]
 COINBASE_API_KEY = os.environ.get("COINBASE_API_KEY")
 COINBASE_API_SECRET = os.environ.get("COINBASE_API_SECRET")
+COINBASE_API = "https://api.pro.coinbase.com"
+COINBASE_API_PRODUCTS = "products"
+COINBASE_API_TICKER =  "ticker"
 
 PACKAGE = "antalla"

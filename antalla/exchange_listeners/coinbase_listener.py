@@ -6,6 +6,7 @@ from datetime import datetime
 from dateutil.parser import parse as parse_date
 import websockets
 import aiohttp
+import asyncio
 
 from .. import settings
 from .. import models
@@ -86,6 +87,73 @@ class CoinbaseListener(WebsocketListener):
             {"exchange_order_id": order["order_id"], "exchange_id": self.exchange.id},
             update_fields
             )] 
+
+    def _get_markets_uri(self):
+        return (
+            settings.COINBASE_API + "/" +
+            settings.COINBASE_API_PRODUCTS
+            )
+
+    def _get_products_uri(self):
+        return (
+            settings.COINBASE_API + "/" +
+            settings.COINBASE_API_PRODUCTS
+        )
+
+    async def get_markets(self):
+        markets_uri = self._get_products_uri()
+        async with aiohttp.ClientSession() as session:
+            incomplete_markets = await self._fetch(session, markets_uri)
+            incomplete_markets = self._parse_market(incomplete_markets)
+            logging.debug("markets retrieved from %s: %s", self.exchange.name, incomplete_markets)
+            markets = await self._get_volume(incomplete_markets)
+            logging.debug("retrieved complete markets: %s", markets)
+            actions = self._parse_markets(markets)
+            self.on_event(actions)
+
+    async def _get_volume(self, markets):
+        complete_markets = []
+        requests = 0
+        async with aiohttp.ClientSession() as session:
+            for market_id in markets:
+                ticker_data = await self._fetch(session, settings.COINBASE_API+"/"+
+                settings.COINBASE_API_PRODUCTS+"/"+market_id+
+                "/"+settings.COINBASE_API_TICKER)
+                complete_markets.append(self._parse_volume(ticker_data, market_id))
+                requests = (requests + 1) % 3
+                if requests == 0:
+                    await asyncio.sleep(1)
+            return complete_markets
+
+    def _parse_markets(self, markets):
+        new_markets = []
+        exchange_markets = []
+        for market in markets:                    
+            new_market = models.Market(
+                buy_sym_id=market["buy_sym_id"],
+                sell_sym_id=market["sell_sym_id"],
+            )
+            new_markets.append(new_market)
+            exchange_markets.append(models.ExchangeMarket(
+                volume=float(market["volume"]),
+                exchange=self.exchange,
+                market=new_market
+            ))                    
+        return [actions.InsertAction(new_markets), actions.InsertAction(exchange_markets)]
+
+    def _parse_volume(self, ticker, pair):
+        return dict(
+            buy_sym_id=pair.split("-")[0],
+            sell_sym_id=pair.split("-")[1],
+            volume=ticker["volume"]
+        )
+
+    def _parse_market(self, raw_markets):
+        markets = []
+        for market in raw_markets:
+            markets.append(market["id"])
+        return markets
+
 
     def _new_order_size(self, timestamp, size, order_id):
         return models.OrderSize(
