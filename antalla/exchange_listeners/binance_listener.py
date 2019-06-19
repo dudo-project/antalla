@@ -178,11 +178,7 @@ class BinanceListener(WebsocketListener):
             if len(pair) == 2:
                 new_market = models.Market(
                     buy_sym_id=pair[0],
-                    sell_sym_id=pair[1],
-                    exchange_markets=[self._create_exchange_market(
-                        market["volume"],
-                        self.exchange
-                    )]
+                    sell_sym_id=pair[1]
                 )
                 new_markets.append(new_market)
                 exchange_markets.append(models.ExchangeMarket(

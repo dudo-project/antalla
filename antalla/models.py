@@ -151,6 +151,7 @@ class AggOrder(Base):
     def __repr__(self):
         return f"AggOrder(id={self.id})"
 
+
 class Market(Base):
     __tablename__ = "markets"
     id = Column(Integer, primary_key=True)

@@ -123,6 +123,23 @@ class CoinbaseListenerTest(unittest.TestCase):
         #self.assertEqual(order.maker_order_id, "ac928c66-ca53-498f-9c13-a110027a60e8")
         #self.assertEqual(order.taker_order_id, "132fb6ae-456b-4654-b4e0-d681ac05cea1")
 
+    def test_parse_markets(self):
+        raw_markets = self.raw_fixture("coinbase/coinbase-markets.json")
+        markets = self.coinbase_listener._parse_market(json.loads(raw_markets))
+        ticker = json.loads(self.raw_fixture("coinbase/coinbase-volume.json"))
+        insert_actions_markets = []
+        insert_actions_exchange_markets = []
+        for market in markets:
+            all_markets = [self.coinbase_listener._parse_volume(ticker, market)]
+            parsed_actions = self.coinbase_listener._parse_markets(all_markets)
+            self.assertEqual(len(parsed_actions), 2)
+            insert_actions_markets.append(parsed_actions[0])
+            insert_actions_exchange_markets.append(parsed_actions[1])
+        self.assertEqual(insert_actions_markets[0].items[0].buy_sym_id, "REP")
+        self.assertEqual(insert_actions_markets[0].items[0].sell_sym_id, "USD")
+        self.assertEqual(insert_actions_exchange_markets[0].items[0].volume, 60486.28451826)
+        self.assertEqual(insert_actions_exchange_markets[0].items[0].exchange, self.dummy_exchange)
+
     def test_parse_done_cancel(self):
         payload = self.raw_fixture("coinbase/coinbase-done-canceled.json")
         parsed_actions = self.coinbase_listener._parse_done(json.loads(payload))
