@@ -88,19 +88,22 @@ class IdexListenerTest(unittest.TestCase):
         payload = self.raw_fixture("idex/idex-markets.json")
         parsed_actions = self.idex_listener._parse_markets(json.loads(payload))
         self.assertAreAllActions(parsed_actions)
-        self.assertEqual(len(parsed_actions), 1)
-        insert_action: actions.InsertAction = parsed_actions[0]
-        self.assertIsInstance(insert_action, actions.InsertAction)
-        self.assertIsInstance(insert_action.items[0], models.Market)
-        self.assertEqual(len(insert_action.items), 12)
-        self.assertEqual(insert_action.items[0].buy_sym_id,"WBTC")
-        self.assertEqual(insert_action.items[0].sell_sym_id,"LIKE")
-        self.assertEqual(insert_action.items[0].exchange_markets[0].exchange, self.dummy_exchange)
-        self.assertEqual(insert_action.items[0].exchange_markets[0].volume, 0.0)
-        self.assertEqual(insert_action.items[1].buy_sym_id,"ETH")
-        self.assertEqual(insert_action.items[1].sell_sym_id,"BOUNCY")
-        self.assertEqual(insert_action.items[1].exchange_markets[0].exchange, self.dummy_exchange)
-        self.assertEqual(insert_action.items[1].exchange_markets[0].volume, 2.595979889336787651)
+        self.assertEqual(len(parsed_actions), 2)
+        insert_action_0: actions.InsertAction = parsed_actions[0]
+        insert_action_1: actions.InsertAction = parsed_actions[1]
+        self.assertIsInstance(insert_action_0, actions.InsertAction)
+        self.assertIsInstance(insert_action_0.items[0], models.Market)
+        self.assertEqual(len(insert_action_0.items), 12)
+        self.assertEqual(insert_action_0.items[0].buy_sym_id,"WBTC")
+        self.assertEqual(insert_action_0.items[0].sell_sym_id,"LIKE")
+        self.assertIsInstance(insert_action_1.items[0], models.ExchangeMarket)
+        self.assertEqual(insert_action_1.items[0].exchange, self.dummy_exchange)
+        self.assertEqual(insert_action_1.items[0].volume, 0.0)
+        self.assertEqual(insert_action_0.items[1].buy_sym_id,"ETH")
+        self.assertEqual(insert_action_0.items[1].sell_sym_id,"BOUNCY")
+        self.assertIsInstance(insert_action_1.items[1], models.ExchangeMarket)
+        self.assertEqual(insert_action_1.items[1].exchange, self.dummy_exchange)
+        self.assertEqual(insert_action_1.items[1].volume, 2.595979889336787651)
 
     def assertAreAllActions(self, items):
         for item in items:
