@@ -8,6 +8,8 @@ else:
 IDEX_EVENTS = ["market_orders", "market_cancels", "market_trades"]
 IDEX_API_KEY = "17paIsICur8sA0OBqG6dH5G1rmrHNMwt4oNk4iX9"
 IDEX_WS_URL = "wss://datastream.idex.market"
+IDEX_API = "https://api.idex.market"
+IDEX_API_MARKETS = "return24Volume"
 
 BINANCE_MARKETS = ["BNB_BTC", "ETH_BTC"]
 BINANCE_STREAMS = ["depth", "trade"]
@@ -18,6 +20,7 @@ BINANCE_SECRET_KEY = "G4XdKRYm9A7Wtq2zoNTV6WJbRf3NN3s4156zRQKvCVGyyQFsPkZMlIbXlj
 BINANCE_API = "https://api.binance.com"
 BINANCE_PUBLIC_API = "api/v1"
 BINANCE_PRIVATE_API = "api/v3"
+BINANCE_API_MARKETS = "ticker/24hr?"
 
 DB_URL = os.environ.get("DB_URL", "sqlite:///antalla.db")
 PACKAGE = "antalla"

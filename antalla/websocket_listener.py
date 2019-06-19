@@ -3,7 +3,6 @@ import websockets
 import json
 import logging
 import asyncio
-import abc
 
 from .exchange_listener import ExchangeListener
 
@@ -23,7 +22,6 @@ class WebsocketListener(ExchangeListener):
 
     async def _listen(self):
         async with websockets.connect(self._ws_url) as websocket: 
-            # TODO: get snapshot of orderbook via GET
             await self._setup_connection(websocket)
             while self.running:
                 data = await websocket.recv()
@@ -39,4 +37,3 @@ class WebsocketListener(ExchangeListener):
     
     def stop(self):
         self.running = False
-

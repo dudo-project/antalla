@@ -9,6 +9,7 @@ from .actions import Action, InsertAction, UpdateAction
 
 DEFAULT_COMMIT_INTERVAL = 100
 
+import aiohttp
 
 class Orchestrator:
     def __init__(self, exchange_names, session=None, commit_interval=DEFAULT_COMMIT_INTERVAL):
@@ -28,6 +29,9 @@ class Orchestrator:
 
     async def start(self):
         await asyncio.gather(*[e.listen() for e in self.exchange_listeners])
+
+    async def get_markets(self):
+        await asyncio.gather(*[e.get_markets() for e in self.exchange_listeners])
 
     def stop(self):
         for exchange_listener in self.exchange_listeners:

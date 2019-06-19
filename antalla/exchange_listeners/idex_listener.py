@@ -11,6 +11,8 @@ from .. import actions
 from ..exchange_listener import ExchangeListener
 from ..websocket_listener import WebsocketListener
 
+import aiohttp
+
 @ExchangeListener.register("idex")
 class IdexListener(WebsocketListener):
     def __init__(self, exchange, on_event, ws_url=settings.IDEX_WS_URL):
@@ -110,4 +112,33 @@ class IdexListener(WebsocketListener):
             total=float(raw_trade["total"]),
             buyer_fee=float(raw_trade["buyerFee"]),
             seller_fee=float(raw_trade["sellerFee"])
+        )
+
+    def _get_markets_uri(self):
+        return (
+            settings.IDEX_API + "/" +
+            settings.IDEX_API_MARKETS
+            )
+
+    def _parse_markets(self, markets):
+        new_markets = []
+        for key in markets.keys():
+            market = key.split("_")
+            if len(market) == 2:
+                    new_markets.append(models.Market(
+                    buy_sym_id=market[0],
+                    sell_sym_id=market[1],
+                    exchange_markets=[self._create_exchange_market(
+                        markets[key].get(market[0]),
+                        self.exchange
+                    )]
+                ))
+            else:
+                logging.debug("parse markets for '{}' - invalid market format: '{}' is not a pair of markets - IGNORE".format(self.exchange.name, market))  
+        self.on_event([actions.InsertAction(new_markets)])
+        
+    def _create_exchange_market(self, volume, exchange):
+        return models.ExchangeMarket(
+            volume=volume,
+            exchange=exchange
         )

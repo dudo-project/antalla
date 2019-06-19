@@ -44,6 +44,7 @@ class Exchange(Base):
     __tablename__ = "exchanges"
     name = Column(String)
     id = Column(Integer, primary_key=True)
+    markets = relationship("ExchangeMarket", back_populates="exchange")
 
     def __repr__(self):
         return f"Exchange(name='{self.name}')"
@@ -147,6 +148,24 @@ class AggOrder(Base):
     price = Column(Float, nullable=False, index=True)
     size = Column(Float, nullable=False)
 
-
     def __repr__(self):
         return f"AggOrder(id={self.id})"
+
+class Market(Base):
+    __tablename__ = "markets"
+    id = Column(Integer, primary_key=True)
+    buy_sym_id = Column(String,ForeignKey("coins.symbol"), nullable=False, index=True)
+    buy_sym = relationship("Coin", foreign_keys=[buy_sym_id])
+    sell_sym_id = Column(String, ForeignKey("coins.symbol"), nullable=False, index=True)
+    sell_sym = relationship("Coin", foreign_keys=[sell_sym_id])
+    exchange_markets = relationship("ExchangeMarket", back_populates="market")
+
+
+class ExchangeMarket(Base):
+    __tablename__ = "exchange_markets"
+    id = Column(Integer, primary_key=True)
+    volume = Column(Float, nullable=False)
+    exchange_id = Column(Integer, ForeignKey("exchanges.id"), nullable=False, index=True)
+    exchange = relationship("Exchange", foreign_keys=[exchange_id])
+    market_id = Column(Integer, ForeignKey("markets.id"))
+    market = relationship("Market", foreign_keys=[market_id])

@@ -16,6 +16,9 @@ init_db_parser = subparsers.add_parser("init-db")
 run_parser = subparsers.add_parser("run")
 run_parser.add_argument("--exchange", nargs="*", choices=ExchangeListener.registered())
 
+markets = subparsers.add_parser("markets")
+markets.add_argument("--exchange", nargs="*", choices=ExchangeListener.registered())
+
 
 def run():
     args = vars(parser.parse_args())
@@ -28,3 +31,6 @@ def run():
     command = args["command"].replace("-", "_")
     func = getattr(commands, command)
     func(args)
+
+
+    
