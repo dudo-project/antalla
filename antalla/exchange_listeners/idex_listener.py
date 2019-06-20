@@ -11,6 +11,8 @@ from .. import actions
 from ..exchange_listener import ExchangeListener
 from ..websocket_listener import WebsocketListener
 
+import aiohttp
+
 @ExchangeListener.register("idex")
 class IdexListener(WebsocketListener):
     def __init__(self, exchange, on_event, ws_url=settings.IDEX_WS_URL):
@@ -66,6 +68,7 @@ class IdexListener(WebsocketListener):
     def _new_order_size(self, timestamp, size, order_id):
         return models.OrderSize(
             timestamp=parse_date(timestamp),
+            exchange=self.exchange,
             exchange_order_id=order_id,
             size=float(size)
         )
@@ -110,4 +113,36 @@ class IdexListener(WebsocketListener):
             total=float(raw_trade["total"]),
             buyer_fee=float(raw_trade["buyerFee"]),
             seller_fee=float(raw_trade["sellerFee"])
+        )
+
+    def _get_markets_uri(self):
+        return (
+            settings.IDEX_API + "/" +
+            settings.IDEX_API_MARKETS
+            )
+
+    def _parse_markets(self, markets):
+        new_markets = []
+        exchange_markets = []
+        for key in markets.keys():
+            market = key.split("_")
+            if len(market) == 2:
+                    new_market = models.Market(
+                        buy_sym_id=market[0],
+                        sell_sym_id=market[1],
+                    )
+                    new_markets.append(new_market)
+                    exchange_markets.append(models.ExchangeMarket(
+                        volume=float(markets[key].get(market[0])),
+                        exchange=self.exchange,
+                        market=new_market
+                    ))                    
+            else:
+                logging.debug("parse markets for '{}' - invalid market format: '{}' is not a pair of markets - IGNORE".format(self.exchange.name, market))  
+        return [actions.InsertAction(new_markets), actions.InsertAction(exchange_markets)]
+        
+    def _create_exchange_market(self, volume, exchange):
+        return models.ExchangeMarket(
+            volume=float(volume),
+            exchange=exchange
         )

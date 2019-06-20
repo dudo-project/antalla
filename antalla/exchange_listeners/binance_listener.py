@@ -6,7 +6,7 @@ import time
 
 from dateutil.parser import parse as parse_date
 import websockets
-import aiohttp
+import aiohttp 
 
 from .. import settings
 from .. import models
@@ -58,34 +58,6 @@ class BinanceListener(WebsocketListener):
                 actions.extend(self._parse_snapshot(snapshot, pair))
         return actions
 
-    def _parse_market(self, pair):
-        """
-        returns the individual coin symbols from a pair string of any possible length
-
-        >>> from types import SimpleNamespace
-        >>> symbols = ["BTC", "ETH", "WAVE", "USD"]
-        >>> dummy_self = SimpleNamespace(_all_symbols=symbols)
-        >>> BinanceListener._parse_market(dummy_self, "BTC_ETH")
-        ('BTC', 'ETH')
-        >>> BinanceListener._parse_market(dummy_self, "BTCETH")
-        ('BTC', 'ETH')
-        >>> BinanceListener._parse_market(dummy_self, "WAVEETH")
-        ('WAVE', 'ETH')
-        >>> BinanceListener._parse_market(dummy_self, "USDWAVE")
-        ('USD', 'WAVE')
-        """   
-        split_at = lambda string, n: (string[:n], string[n:])
-        symbols = pair.split("_")
-        if len(symbols) == 2:
-            return tuple(symbols)
-        if len(pair) % 2 == 0:
-            return split_at(pair, len(pair) // 2)
-        for split_index in [3, 4]:
-            symbols = split_at(pair, split_index)
-            if all(sym in self._all_symbols for sym in symbols):
-                return symbols
-        raise Exception("unknown pair {} to parse. Check if both symbols are specified in settings.BINANCE_MARKETS".format(pair))
-
     def _parse_snapshot(self, snapshot, pair):
         order_info = {
             "pair": pair,
@@ -107,6 +79,13 @@ class BinanceListener(WebsocketListener):
         pair = self._parse_market(update["s"])
         logging.debug("parsed %d orders in 'depth update' for pair '%s'", len(orders), ''.join(pair))
         return self._parse_agg_orders(orders)
+
+    def _get_markets_uri(self):
+        return (
+            settings.BINANCE_API + "/" +
+            settings.BINANCE_PUBLIC_API + "/" +
+            settings.BINANCE_API_MARKETS
+        )
 
     def _create_agg_order(self, order_info):
         pair = self._parse_market(order_info["pair"])
@@ -136,11 +115,6 @@ class BinanceListener(WebsocketListener):
 
     def _parse_agg_orders(self, orders):
         return [actions.InsertAction(orders)]
-        
-    async def _fetch(self, session, url):
-        async with session.get(url) as response:
-            logging.debug("GET request: %s, status: %s", url, response.status)
-            return await response.json()
 
     def _parse_message(self, message):
         event, payload = message["data"]["e"], message["data"]
@@ -166,3 +140,53 @@ class BinanceListener(WebsocketListener):
             price=float(raw_trade["p"]),
             size=float(raw_trade["q"]),
         )
+
+    def _parse_market(self, pair):
+        """
+        returns the individual coin symbols from a pair string of any possible length
+
+        >>> from types import SimpleNamespace
+        >>> symbols = ["BTC", "ETH", "WAVE", "USD"]
+        >>> dummy_self = SimpleNamespace(_all_symbols=symbols)
+        >>> BinanceListener._parse_market(dummy_self, "BTC_ETH")
+        ('BTC', 'ETH')
+        >>> BinanceListener._parse_market(dummy_self, "BTCETH")
+        ('BTC', 'ETH')
+        >>> BinanceListener._parse_market(dummy_self, "WAVEETH")
+        ('WAVE', 'ETH')
+        >>> BinanceListener._parse_market(dummy_self, "USDWAVE")
+        ('USD', 'WAVE')
+        """   
+        split_at = lambda string, n: (string[:n], string[n:])
+        symbols = pair.split("_")
+        if len(symbols) == 2:
+            return tuple(symbols)
+        if len(pair) % 2 == 0:
+            return split_at(pair, len(pair) // 2)
+        for split_index in [3, 4]:
+            symbols = split_at(pair, split_index)
+            if all(sym in self._all_symbols for sym in symbols):
+                return symbols
+        raise Exception("unknown pair {} to parse. Check if both symbols are specified in settings.BINANCE_MARKETS".format(pair))
+
+
+    def _parse_markets(self, markets):
+        new_markets = []
+        exchange_markets = []
+        for market in markets:
+            pair = self._parse_market(market["symbol"])
+            if len(pair) == 2:
+                new_market = models.Market(
+                    buy_sym_id=pair[0],
+                    sell_sym_id=pair[1]
+                )
+                new_markets.append(new_market)
+                exchange_markets.append(models.ExchangeMarket(
+                    volume=float(market["volume"]),
+                    exchange=self.exchange,
+                    market=new_market
+                ))
+            else:
+                logging.debug("parse markets for '{}' - invalid market format: '{}' is not a pair of markets - IGNORE".format(self.exchange.name, market))  
+        return [actions.InsertAction(new_markets), actions.InsertAction(exchange_markets)]
+        

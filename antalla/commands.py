@@ -29,10 +29,10 @@ def init_db(args):
 
 def run(args):
     if args["exchange"]:
-        exchanges = args["exchange"]
+        exchange = args["exchange"]
     else:
-        exchanges = ExchangeListener.registered()
-    orchestrator = Orchestrator(exchanges)
+        exchange = ExchangeListener.registered()
+    orchestrator = Orchestrator(exchange)
     def handler(_signum, _frame):
         orchestrator.stop()
     signal.signal(signal.SIGINT, handler)
@@ -40,3 +40,20 @@ def run(args):
         asyncio.get_event_loop().run_until_complete(orchestrator.start())
     except KeyboardInterrupt:
         orchestrator.stop()
+
+def markets(args):
+    if args["exchange"]:
+        exchange = args["exchange"]
+    else:
+        exchange = ExchangeListener.registered()
+    orchestrator = Orchestrator(exchange)
+    def handler(_signum, _frame):
+        orchestrator.stop()
+    signal.signal(signal.SIGINT, handler)
+    try:
+        asyncio.get_event_loop().run_until_complete(orchestrator.get_markets())
+    except KeyboardInterrupt:
+        orchestrator.stop()
+
+       
+            
