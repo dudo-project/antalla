@@ -132,9 +132,10 @@ class CoinbaseListenerTest(unittest.TestCase):
         for market in markets:
             all_markets = [self.coinbase_listener._parse_volume(ticker, market)]
             parsed_actions = self.coinbase_listener._parse_markets(all_markets)
-            self.assertEqual(len(parsed_actions), 2)
-            insert_actions_markets.append(parsed_actions[0])
-            insert_actions_exchange_markets.append(parsed_actions[1])
+            self.assertEqual(len(parsed_actions), 3)
+            self.assertIsInstance(parsed_actions[0].items[0], models.Coin)
+            insert_actions_markets.append(parsed_actions[1])
+            insert_actions_exchange_markets.append(parsed_actions[2])
         self.assertEqual(insert_actions_markets[0].items[0].buy_sym_id, "REP")
         self.assertEqual(insert_actions_markets[0].items[0].sell_sym_id, "USD")
         self.assertEqual(insert_actions_exchange_markets[0].items[0].volume, 60486.28451826)
