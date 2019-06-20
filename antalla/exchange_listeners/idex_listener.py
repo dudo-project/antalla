@@ -139,8 +139,9 @@ class IdexListener(WebsocketListener):
                 new_markets.append(new_market)
                 exchange_markets.append(models.ExchangeMarket(
                     volume=float(markets[key].get(market[0])),
-                    exchange=self.exchange,
-                    market=new_market
+                    exchange_id=self.exchange.id,
+                    buy_sym_id=market[0],
+                    sell_sym_id=market[1],
                 ))
             else:
                 logging.warning("parse markets for '{}' - invalid market format: '{}' is not a pair of markets - IGNORE".format(self.exchange.name, market))

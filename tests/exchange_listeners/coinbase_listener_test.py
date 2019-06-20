@@ -73,7 +73,7 @@ class CoinbaseListenerTest(unittest.TestCase):
         self.assertIsInstance(insert_action, actions.InsertAction)
         self.assertEqual(len(insert_action.items), 1)
         order = insert_action.items[0]
-        self.assertEqual(order.exchange, self.dummy_exchange)
+        self.assertEqual(order.exchange_id, self.dummy_exchange.id)
         self.assertEqual(order.funds[0].funds, 3000.234)
         self.assertEqual(order.side, "buy")
         self.assertEqual(order.order_type, "market")
@@ -96,7 +96,7 @@ class CoinbaseListenerTest(unittest.TestCase):
         self.assertIsInstance(insert_action, actions.InsertAction)
         self.assertEqual(len(insert_action.items), 1)
         order = insert_action.items[0]
-        self.assertEqual(order.exchange, self.dummy_exchange)
+        self.assertEqual(order.exchange_id, self.dummy_exchange.id)
         self.assertEqual(order.buy_sym_id, "BNB")
         self.assertEqual(order.sell_sym_id, "BTC")
         self.assertEqual(order.exchange_order_id, "d50ec984-77a8-460a-b958-66f114b0de9b")
@@ -139,7 +139,7 @@ class CoinbaseListenerTest(unittest.TestCase):
         self.assertEqual(insert_actions_markets[0].items[0].buy_sym_id, "REP")
         self.assertEqual(insert_actions_markets[0].items[0].sell_sym_id, "USD")
         self.assertEqual(insert_actions_exchange_markets[0].items[0].volume, 60486.28451826)
-        self.assertEqual(insert_actions_exchange_markets[0].items[0].exchange, self.dummy_exchange)
+        self.assertEqual(insert_actions_exchange_markets[0].items[0].exchange_id, self.dummy_exchange.id)
 
     def test_parse_done_cancel(self):
         payload = self.raw_fixture("coinbase/coinbase-done-canceled.json")

@@ -36,7 +36,7 @@ class CoinbaseListener(WebsocketListener):
             buy_sym_id=received["product_id"].split("-")[0],
             sell_sym_id=received["product_id"].split("-")[1],
             exchange_order_id=received["order_id"],
-            exchange=self.exchange,
+            exchange_id=self.exchange.id,
             side=received["side"],
             order_type=received["order_type"]
         )
@@ -141,8 +141,9 @@ class CoinbaseListener(WebsocketListener):
             new_markets.append(new_market)
             exchange_markets.append(models.ExchangeMarket(
                 volume=float(market["volume"]),
-                exchange=self.exchange,
-                market=new_market
+                exchange_id=self.exchange.id,
+                buy_sym_id=market["buy_sym_id"],
+                sell_sym_id=market["sell_sym_id"],
             ))
         return [
             actions.InsertAction(coins, check_duplicates=True, commit=True),

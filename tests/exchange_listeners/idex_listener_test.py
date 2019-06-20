@@ -100,12 +100,12 @@ class IdexListenerTest(unittest.TestCase):
         self.assertEqual(insert_market.items[0].buy_sym_id,"WBTC")
         self.assertEqual(insert_market.items[0].sell_sym_id,"LIKE")
         self.assertIsInstance(insert_market_exchange.items[0], models.ExchangeMarket)
-        self.assertEqual(insert_market_exchange.items[0].exchange, self.dummy_exchange)
+        self.assertEqual(insert_market_exchange.items[0].exchange_id, self.dummy_exchange.id)
         self.assertEqual(insert_market_exchange.items[0].volume, 0.0)
         self.assertEqual(insert_market.items[1].buy_sym_id,"ETH")
         self.assertEqual(insert_market.items[1].sell_sym_id,"BOUNCY")
         self.assertIsInstance(insert_market_exchange.items[1], models.ExchangeMarket)
-        self.assertEqual(insert_market_exchange.items[1].exchange, self.dummy_exchange)
+        self.assertEqual(insert_market_exchange.items[1].exchange_id, self.dummy_exchange.id)
         self.assertEqual(insert_market_exchange.items[1].volume, 2.595979889336787651)
 
     def assertAreAllActions(self, items):

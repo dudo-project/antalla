@@ -196,8 +196,9 @@ class BinanceListener(WebsocketListener):
                 new_markets.append(new_market)
                 exchange_markets.append(models.ExchangeMarket(
                     volume=float(market["volume"]),
-                    exchange=self.exchange,
-                    market=new_market
+                    exchange_id=self.exchange.id,
+                    buy_sym_id=pair[0],
+                    sell_sym_id=pair[1],
                 ))
             else:
                 logging.debug("parse markets for '{}' - invalid market format: '{}' is not a pair of markets - IGNORE".format(self.exchange.name, market))  
