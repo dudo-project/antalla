@@ -1,7 +1,7 @@
-class Action:
-    def __init__(self, commit=False):
-        self.commit = commit
+from sqlalchemy.dialects.postgresql import insert
 
+
+class Action:
     def execute(self, session) -> int:
         """executes an action on the session and returns the number of rows affected
         """
@@ -9,34 +9,34 @@ class Action:
 
 
 class InsertAction(Action):
-    def __init__(self, items, check_duplicates=False, commit=False):
-        super().__init__(commit=commit)
+    def __init__(self, items):
+        super().__init__()
         self.items = items
-        self.check_duplicates = check_duplicates
+        self.item_type = None
+        if self.items:
+            self.item_type = type(items[0])
+            if not all(isinstance(item, self.item_type) for item in self.items):
+                raise ValueError("all items should be of the same type")
 
     def execute(self, session):
-        inserted_count = 0
-        for item in set(self.items):
-            if self.should_add(item, session):
-                inserted_count += 1
-                session.add(item)
-        return inserted_count
-
-    def should_add(self, item, session):
-        if not self.check_duplicates:
-            return True
-        if self.check_duplicates is True:
-            columns = [v.name for v in item.__table__.primary_key]
-        else:
-            columns = self.check_duplicates
-        filters = {k: getattr(item, k) for k in columns}
-        query = session.query(type(item)).filter_by(**filters).exists()
-        return not session.query(query).scalar()
+        if not self.items:
+            return 0
+        values = []
+        items = set(self.items)
+        index_elements = [v.name for v in self.item_type.__table__.primary_key]
+        for item in items:
+            data = vars(item)
+            data.pop("_sa_instance_state", None)
+            values.append(data)
+        insert_stmt = insert(self.item_type).values(values) \
+                                            .on_conflict_do_nothing(index_elements=index_elements)
+        session.execute(insert_stmt)
+        return len(items)
 
 
 class UpdateAction(Action):
-    def __init__(self, model, query, update, commit=False):
-        super().__init__(commit=commit)
+    def __init__(self, model, query, update):
+        super().__init__()
         self.model = model
         self.query = query
         self.update = update

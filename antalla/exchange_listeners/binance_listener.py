@@ -86,7 +86,7 @@ class BinanceListener(WebsocketListener):
             last_update_id=order_info["last_update_id"],
             buy_sym_id=pair[0],
             sell_sym_id=pair[1],
-            exchange = self.exchange,  
+            exchange_id=self.exchange.id, 
         )
 
     def _convert_raw_orders(self, orders, bid_key, ask_key, order_info):
@@ -124,7 +124,7 @@ class BinanceListener(WebsocketListener):
     def _convert_raw_trade(self, raw_trade, buy_sym, sell_sym):
         return models.Trade(
             timestamp=datetime.fromtimestamp(raw_trade["T"] / 1000),
-            exchange=self.exchange,
+            exchange_id=self.exchange.id,
             buy_sym_id=buy_sym,
             sell_sym_id=sell_sym,
             maker=raw_trade["b"],
@@ -203,13 +203,7 @@ class BinanceListener(WebsocketListener):
             else:
                 logging.debug("parse markets for '{}' - invalid market format: '{}' is not a pair of markets - IGNORE".format(self.exchange.name, market))  
         return [
-            actions.InsertAction(coins, check_duplicates=True, commit=True),
-            actions.InsertAction(new_markets, check_duplicates=True, commit=True),
-            actions.InsertAction(exchange_markets, check_duplicates=True, commit=True)
+            actions.InsertAction(coins),
+            actions.InsertAction(new_markets),
+            actions.InsertAction(exchange_markets)
         ]
-
-    def _create_exchange_market(self, volume, exchange):
-        return models.ExchangeMarket(
-            volume=float(volume),
-            exchange=exchange
-        )

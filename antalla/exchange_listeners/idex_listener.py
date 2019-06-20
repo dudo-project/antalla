@@ -44,22 +44,21 @@ class IdexListener(WebsocketListener):
 
     def _parse_market_orders(self, payload):
         buy_sym, sell_sym = payload["market"].split("_")
-        orders = [self._convert_raw_order(order, buy_sym, sell_sym)
-                  for order in payload["orders"]]
-        return [actions.InsertAction(orders)]
+        orders = []
+        order_sizes = []
+        for order in payload["orders"]:
+            orders.append(self._convert_raw_order(order, buy_sym, sell_sym))
+            order_sizes.append(self._new_order_size(
+                order["createdAt"], float(order["amountBuy"]), order["hash"]))
+        return [actions.InsertAction(orders), actions.InsertAction(order_sizes)]
 
     def _convert_raw_order(self, raw_order, buy_sym, sell_sym):
         return models.Order(
             timestamp=parse_date(raw_order["createdAt"]),
-            exchange=self.exchange,
+            exchange_id=self.exchange.id,
             buy_sym_id=buy_sym,
             sell_sym_id=sell_sym,
             price=float(raw_order["amountSell"])/float(raw_order["amountBuy"]),
-            sizes=[self._new_order_size(
-                raw_order["createdAt"],
-                float(raw_order["amountBuy"]),
-                raw_order["hash"]
-                )],
             side="buy",
             user=raw_order["user"],
             exchange_order_id=raw_order["hash"],
@@ -68,7 +67,7 @@ class IdexListener(WebsocketListener):
     def _new_order_size(self, timestamp, size, order_id):
         return models.OrderSize(
             timestamp=parse_date(timestamp),
-            exchange=self.exchange,
+            exchange_id=self.exchange.id,
             exchange_order_id=order_id,
             size=float(size)
         )
@@ -101,7 +100,7 @@ class IdexListener(WebsocketListener):
         return models.Trade(
             timestamp=datetime.fromtimestamp(raw_trade["timestamp"]),
             trade_type=raw_trade["type"],
-            exchange=self.exchange,
+            exchange_id=self.exchange.id,
             buy_sym_id=buy_sym,
             sell_sym_id=sell_sym,
             maker=raw_trade["maker"],
@@ -146,13 +145,7 @@ class IdexListener(WebsocketListener):
             else:
                 logging.warning("parse markets for '{}' - invalid market format: '{}' is not a pair of markets - IGNORE".format(self.exchange.name, market))
         return [
-            actions.InsertAction(coins, check_duplicates=True, commit=True),
-            actions.InsertAction(new_markets, check_duplicates=True, commit=True),
-            actions.InsertAction(exchange_markets, check_duplicates=True, commit=True)
+            actions.InsertAction(coins),
+            actions.InsertAction(new_markets),
+            actions.InsertAction(exchange_markets)
         ]
-        
-    def _create_exchange_market(self, volume, exchange):
-        return models.ExchangeMarket(
-            volume=float(volume),
-            exchange=exchange
-        )

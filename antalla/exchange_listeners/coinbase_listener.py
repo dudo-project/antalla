@@ -28,7 +28,13 @@ class CoinbaseListener(WebsocketListener):
         return []
     
     def _parse_received(self, received):
-        return [actions.InsertAction([self._convert_raw_order(received)])]
+        order, funds, size = self._convert_raw_order(received)
+        inserts = [actions.InsertAction([order])]
+        if funds:
+            inserts.append(actions.InsertAction([funds]))
+        if size:
+            inserts.append(actions.InsertAction([size]))
+        return inserts
 
     def _convert_raw_order(self, received):
         order = models.Order(
@@ -41,19 +47,32 @@ class CoinbaseListener(WebsocketListener):
             order_type=received["order_type"]
         )
         if "funds" in received:
-            order.funds = [self._new_market_order_funds(
+            funds = self._new_market_order_funds(
                 received["time"], 
                 received["funds"],
                 received["order_id"]
-                )]
+            )
+            return order, funds, None
         else:
             order.price = float(received["price"])
-            order.sizes = [self._new_order_size(received["time"], received["size"], received["order_id"])]
-        return order
+            size = self._new_order_size(
+                received["time"],
+                received["size"],
+                received["order_id"]
+            )
+            return order, None, size
 
     def _parse_open(self, open_order):
         # only for orders that are not fully filled immediately 
-        return [actions.InsertAction([self._convert_raw_open_order(open_order)])]
+        order_size = self._new_order_size(
+                open_order["time"],
+                open_order["remaining_size"],
+                open_order["order_id"]
+            )
+        return [
+            actions.InsertAction([self._convert_raw_open_order(open_order)]),
+            actions.InsertAction([order_size])
+        ]
 
     def _convert_raw_open_order(self, open_order):
         return models.Order(
@@ -63,12 +82,7 @@ class CoinbaseListener(WebsocketListener):
             exchange_order_id=open_order["order_id"],
             side=open_order["side"],
             price=float(open_order["price"]),
-            sizes=[self._new_order_size(
-                open_order["time"],
-                open_order["remaining_size"],
-                open_order["order_id"]
-            )],
-            exchange=self.exchange
+            exchange_id=self.exchange.id,
         )
         
     def _parse_done(self, order):
@@ -146,9 +160,9 @@ class CoinbaseListener(WebsocketListener):
                 sell_sym_id=market["sell_sym_id"],
             ))
         return [
-            actions.InsertAction(coins, check_duplicates=True, commit=True),
-            actions.InsertAction(new_markets, check_duplicates=True, commit=True),
-            actions.InsertAction(exchange_markets, check_duplicates=True, commit=True),
+            actions.InsertAction(coins),
+            actions.InsertAction(new_markets),
+            actions.InsertAction(exchange_markets),
         ]
 
     def _parse_volume(self, ticker, pair):
@@ -168,7 +182,7 @@ class CoinbaseListener(WebsocketListener):
     def _new_order_size(self, timestamp, size, order_id):
         return models.OrderSize(
             timestamp=parse_date(timestamp),
-            exchange=self.exchange,
+            exchange_id=self.exchange.id,
             exchange_order_id=order_id,
             size=float(size)
         )
@@ -176,7 +190,7 @@ class CoinbaseListener(WebsocketListener):
     def _new_market_order_funds(self, timestamp, funds, order_id):
         return models.MarketOrderFunds(
             timestamp=parse_date(timestamp),
-            exchange=self.exchange,
+            exchange_id=self.exchange.id,
             exchange_order_id=order_id,
             funds=float(funds)
         )
@@ -207,7 +221,7 @@ class CoinbaseListener(WebsocketListener):
     def _convert_raw_match(self, match):
         return models.Trade(
             timestamp=parse_date(match["time"]),
-            exchange=self.exchange,
+            exchange_id=self.exchange.id,
             trade_type=match["side"],
             buy_sym_id=match["product_id"].split("-")[0],
             sell_sym_id=match["product_id"].split("-")[1],

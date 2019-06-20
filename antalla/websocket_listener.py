@@ -17,7 +17,9 @@ class WebsocketListener(ExchangeListener):
         while self.running:
             try:
                 await self._listen()
-            except (websockets.exceptions.ConnectionClosed, ConnectionResetError) as e:
+            except (websockets.exceptions.InvalidState,
+                    websockets.exceptions.InvalidHandshake,
+                    ConnectionResetError) as e:
                 logging.error("%s websocket disconnected: %s", self.exchange, e)
 
     async def _listen(self):

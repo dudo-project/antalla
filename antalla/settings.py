@@ -23,7 +23,7 @@ BINANCE_PRIVATE_API = "api/v3"
 BINANCE_API_MARKETS = "ticker/24hr?"
 BINANCE_API_INFO = "exchangeInfo"
 
-DB_URL = os.environ.get("DB_URL", "sqlite:///antalla.db")
+DB_URL = os.environ.get("DB_URL", "postgresql+psycopg2://antalla@localhost/antalla?client_encoding=utf8")
 PACKAGE = "antalla"
 
 COINBASE_WS_URL = "wss://ws-feed.pro.coinbase.com"

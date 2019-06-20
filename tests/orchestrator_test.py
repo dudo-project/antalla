@@ -10,7 +10,6 @@ from antalla import models
 
 def create_mock_action():
     mock_action = MagicMock()
-    mock_action.commit = False
     mock_action.execute.return_value = 2
     return mock_action
 
