@@ -47,6 +47,12 @@ class Coin(Base):
     def __repr__(self):
         return f"Coin(symbol='{self.symbol}')"
 
+    def __hash__(self):
+        return hash(self.symbol)
+
+    def __eq__(self, other):
+        return self.symbol == other.symbol
+
 
 class Exchange(Base):
     __tablename__ = "exchanges"

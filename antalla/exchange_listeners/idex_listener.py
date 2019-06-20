@@ -124,22 +124,31 @@ class IdexListener(WebsocketListener):
     def _parse_markets(self, markets):
         new_markets = []
         exchange_markets = []
+        coins = []
         for key in markets.keys():
             market = key.split("_")
             if len(market) == 2:
-                    new_market = models.Market(
-                        buy_sym_id=market[0],
-                        sell_sym_id=market[1],
-                    )
-                    new_markets.append(new_market)
-                    exchange_markets.append(models.ExchangeMarket(
-                        volume=float(markets[key].get(market[0])),
-                        exchange=self.exchange,
-                        market=new_market
-                    ))                    
+                coins.extend([
+                    models.Coin(symbol=market[0]),
+                    models.Coin(symbol=market[1]),
+                ])
+                new_market = models.Market(
+                    buy_sym_id=market[0],
+                    sell_sym_id=market[1],
+                )
+                new_markets.append(new_market)
+                exchange_markets.append(models.ExchangeMarket(
+                    volume=float(markets[key].get(market[0])),
+                    exchange=self.exchange,
+                    market=new_market
+                ))
             else:
-                logging.debug("parse markets for '{}' - invalid market format: '{}' is not a pair of markets - IGNORE".format(self.exchange.name, market))  
-        return [actions.InsertAction(new_markets), actions.InsertAction(exchange_markets)]
+                logging.warning("parse markets for '{}' - invalid market format: '{}' is not a pair of markets - IGNORE".format(self.exchange.name, market))
+        return [
+            actions.InsertAction(coins, check_duplicates=True, commit=True),
+            actions.InsertAction(new_markets, check_duplicates=True, commit=True),
+            actions.InsertAction(exchange_markets, check_duplicates=True, commit=True)
+        ]
         
     def _create_exchange_market(self, volume, exchange):
         return models.ExchangeMarket(

@@ -1,4 +1,7 @@
 class Action:
+    def __init__(self, commit=False):
+        self.commit = commit
+
     def execute(self, session) -> int:
         """executes an action on the session and returns the number of rows affected
         """
@@ -6,13 +9,14 @@ class Action:
 
 
 class InsertAction(Action):
-    def __init__(self, items, check_duplicates=False):
+    def __init__(self, items, check_duplicates=False, commit=False):
+        super().__init__(commit=commit)
         self.items = items
         self.check_duplicates = check_duplicates
 
     def execute(self, session):
         inserted_count = 0
-        for item in self.items:
+        for item in set(self.items):
             if self.should_add(item, session):
                 inserted_count += 1
                 session.add(item)
@@ -31,7 +35,8 @@ class InsertAction(Action):
 
 
 class UpdateAction(Action):
-    def __init__(self, model, query, update):
+    def __init__(self, model, query, update, commit=False):
+        super().__init__(commit=commit)
         self.model = model
         self.query = query
         self.update = update
