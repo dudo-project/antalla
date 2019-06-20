@@ -158,6 +158,7 @@ class CoinbaseListener(WebsocketListener):
     def _new_order_size(self, timestamp, size, order_id):
         return models.OrderSize(
             timestamp=parse_date(timestamp),
+            exchange=self.exchange,
             exchange_order_id=order_id,
             size=float(size)
         )
@@ -165,6 +166,7 @@ class CoinbaseListener(WebsocketListener):
     def _new_market_order_funds(self, timestamp, funds, order_id):
         return models.MarketOrderFunds(
             timestamp=parse_date(timestamp),
+            exchange=self.exchange,
             exchange_order_id=order_id,
             funds=float(funds)
         )

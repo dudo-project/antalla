@@ -9,15 +9,23 @@ from .db import Base
 class BelongsToOrder:
     @declared_attr
     def exchange_id(cls):
-        return Column("exchange_id", Integer, nullable=False)
+        return Column(Integer, ForeignKey("exchanges.id"), nullable=False)
+
+    @declared_attr
+    def exchange(cls):
+        return relationship("Exchange", foreign_keys=[cls.exchange_id])
 
     @declared_attr
     def exchange_order_id(cls):
-        return Column("exchange_order_id", String, nullable=False)
+        return Column(String, nullable=False)
 
     @declared_attr
     def order(cls):
-        return relationship("Order", foreign_keys=[cls.exchange_id, cls.exchange_order_id])
+        return relationship(
+            "Order",
+            foreign_keys=[cls.exchange_id, cls.exchange_order_id],
+            viewonly=True
+        )
 
     @declared_attr
     def __table_args__(cls):

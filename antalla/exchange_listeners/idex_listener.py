@@ -68,6 +68,7 @@ class IdexListener(WebsocketListener):
     def _new_order_size(self, timestamp, size, order_id):
         return models.OrderSize(
             timestamp=parse_date(timestamp),
+            exchange=self.exchange,
             exchange_order_id=order_id,
             size=float(size)
         )
