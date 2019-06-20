@@ -43,11 +43,9 @@ class Orchestrator:
         for action in actions:
             self._track_actions(action)
             self._rows_modified += action.execute(self.session)
-            if action.commit:
-                self.session.commit()
 
         if self._rows_modified >= self.commit_interval:
-            logging.info(("commit number [%s]: committing changes to antalla.db. "
+            logging.info(("commit number [%s]: committing changes "
                 "Insert Actions: %s, Update Actions: %s"), 
                 self._stats["commits"], self._stats["inserts"], self._stats["updates"])
             self.session.commit()

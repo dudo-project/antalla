@@ -10,23 +10,10 @@ class ActionsTest(unittest.TestCase):
         self.mock_session = MagicMock()
 
     def test_insert_action(self):
-        items = [1, 2, 3]
+        items = [models.Coin(symbol="a"), models.Coin(symbol="b"), models.Coin(symbol="c")]
         action = InsertAction(items)
         self.assertEqual(action.execute(self.mock_session), 3)
-        self.mock_session.add.assert_has_calls([call(1), call(2), call(3)])
-
-    def test_insert_action_skip_existing(self):
-        items = [models.Order(exchange_id=1, exchange_order_id="abc")]
-        action = InsertAction(items, check_duplicates=True)
-        self.mock_session.query.return_value.scalar.return_value = True
-        self.assertEqual(action.execute(self.mock_session), 0)
-        self.mock_session.add.assert_not_called()
-        self.mock_session.query.return_value.filter_by.assert_called_once_with(
-            exchange_id=1, exchange_order_id="abc"
-        )
-        self.mock_session.query.return_value.scalar.return_value = False
-        self.assertEqual(action.execute(self.mock_session), 1)
-        self.mock_session.add.assert_called_once()
+        self.mock_session.execute.assert_called_once()
 
     def test_update_action(self):
         model = MagicMock()
