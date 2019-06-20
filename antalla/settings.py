@@ -21,6 +21,7 @@ BINANCE_API = "https://api.binance.com"
 BINANCE_PUBLIC_API = "api/v1"
 BINANCE_PRIVATE_API = "api/v3"
 BINANCE_API_MARKETS = "ticker/24hr?"
+BINANCE_API_INFO = "exchangeInfo"
 
 DB_URL = os.environ.get("DB_URL", "sqlite:///antalla.db")
 PACKAGE = "antalla"

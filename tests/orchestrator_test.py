@@ -8,12 +8,18 @@ from antalla.exchange_listener import ExchangeListener
 from antalla import models
 
 
+def create_mock_action():
+    mock_action = MagicMock()
+    mock_action.commit = False
+    mock_action.execute.return_value = 2
+    return mock_action
+
+
 @ExchangeListener.register("dummy")
 class DummyListener(ExchangeListener):
     def __init__(self, exchange, on_event):
         super().__init__(exchange, on_event)
-        self.mock_action = MagicMock()
-        self.mock_action.execute.return_value = 2
+        self.mock_action = create_mock_action()
         self.mock_stop = MagicMock()
 
     async def listen(self):
@@ -46,9 +52,9 @@ class OrchestratorTest(unittest.TestCase):
         self.dummy_listener.mock_stop.assert_called_once()
 
     def test_periodic_commit(self):
-        self.orchestrator._on_event([self.dummy_listener.mock_action])
+        self.orchestrator._on_event([create_mock_action()])
         self.mock_session.commit.assert_not_called()
-        self.orchestrator._on_event([self.dummy_listener.mock_action])
+        self.orchestrator._on_event([create_mock_action()])
         self.mock_session.commit.assert_called_once()
 
     @property
