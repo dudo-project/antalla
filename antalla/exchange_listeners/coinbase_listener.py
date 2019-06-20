@@ -128,7 +128,12 @@ class CoinbaseListener(WebsocketListener):
     def _parse_markets(self, markets):
         new_markets = []
         exchange_markets = []
-        for market in markets:                    
+        coins = []
+        for market in markets:
+            coins.extend([
+                models.Coin(symbol=market["buy_sym_id"]),
+                models.Coin(symbol=market["sell_sym_id"]),
+            ])
             new_market = models.Market(
                 buy_sym_id=market["buy_sym_id"],
                 sell_sym_id=market["sell_sym_id"],
@@ -138,8 +143,12 @@ class CoinbaseListener(WebsocketListener):
                 volume=float(market["volume"]),
                 exchange=self.exchange,
                 market=new_market
-            ))                    
-        return [actions.InsertAction(new_markets), actions.InsertAction(exchange_markets)]
+            ))
+        return [
+            actions.InsertAction(coins, check_duplicates=True, commit=True),
+            actions.InsertAction(new_markets, check_duplicates=True, commit=True),
+            actions.InsertAction(exchange_markets, check_duplicates=True, commit=True),
+        ]
 
     def _parse_volume(self, ticker, pair):
         return dict(
