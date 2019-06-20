@@ -11,7 +11,7 @@ IDEX_WS_URL = "wss://datastream.idex.market"
 IDEX_API = "https://api.idex.market"
 IDEX_API_MARKETS = "return24Volume"
 
-BINANCE_MARKETS = ["BNB_BTC", "ETH_BTC"]
+BINANCE_MARKETS = ["BNB_BTC", "ETH_BTC", "LTC_BTC"]
 BINANCE_STREAMS = ["depth", "trade"]
 BINANCE_SINGLE_STREAM = "wss://stream.binance.com:9443/ws/"
 BINANCE_COMBINED_STREAM = "wss://stream.binance.com:9443/stream?streams="

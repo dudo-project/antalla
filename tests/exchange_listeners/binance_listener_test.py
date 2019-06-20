@@ -93,6 +93,30 @@ class BinanceListenerTest(unittest.TestCase):
         self.assertEqual(trade.size, 100.0)
         self.assertEqual(trade.price, 0.001)
 
+    def test_parse_markets(self):
+        payload = self.raw_fixture("binance/binance-markets.json")
+        parsed_actions = self.binance_listener._parse_markets(json.loads(payload))
+        self.assertAreAllActions(parsed_actions)
+        self.assertEqual(len(parsed_actions), 2)
+        insert_markets = parsed_actions[0]
+        insert_exchange_markets = parsed_actions[1]
+        self.assertEqual(len(insert_markets.items), 3)
+        self.assertEqual(len(insert_exchange_markets.items), 3)
+        self.assertIsInstance(insert_markets, actions.InsertAction)
+        self.assertIsInstance(insert_exchange_markets, actions.InsertAction)
+        self.assertEqual(insert_markets.items[0].buy_sym_id, "ETH")
+        self.assertEqual(insert_markets.items[0].sell_sym_id, "BTC")
+        self.assertEqual(insert_exchange_markets.items[0].volume, 135449.04600000)
+        self.assertEqual(insert_exchange_markets.items[0].exchange, self.dummy_exchange)
+        self.assertEqual(insert_markets.items[1].buy_sym_id, "LTC")
+        self.assertEqual(insert_markets.items[1].sell_sym_id, "BTC")
+        self.assertEqual(insert_exchange_markets.items[1].volume, 116736.71000000)
+        self.assertEqual(insert_exchange_markets.items[1].exchange, self.dummy_exchange)
+        self.assertEqual(insert_markets.items[2].buy_sym_id, "BNB")
+        self.assertEqual(insert_markets.items[2].sell_sym_id, "BTC")
+        self.assertEqual(insert_exchange_markets.items[2].volume, 3054635.71000000)
+        self.assertEqual(insert_exchange_markets.items[2].exchange, self.dummy_exchange)
+        
     def assertAreAllActions(self, items):
         for item in items:
             self.assertIsInstance(item, actions.Action)
