@@ -6,13 +6,28 @@ class Action:
 
 
 class InsertAction(Action):
-    def __init__(self, items):
+    def __init__(self, items, check_duplicates=False):
         self.items = items
+        self.check_duplicates = check_duplicates
 
     def execute(self, session):
+        inserted_count = 0
         for item in self.items:
-            session.add(item)
-        return len(self.items)
+            if self.should_add(item, session):
+                inserted_count += 1
+                session.add(item)
+        return inserted_count
+
+    def should_add(self, item, session):
+        if not self.check_duplicates:
+            return True
+        if self.check_duplicates is True:
+            columns = [v.name for v in item.__table__.primary_key]
+        else:
+            columns = self.check_duplicates
+        filters = {k: getattr(item, k) for k in columns}
+        query = session.query(type(item)).filter_by(**filters).exists()
+        return not session.query(query).scalar()
 
 
 class UpdateAction(Action):

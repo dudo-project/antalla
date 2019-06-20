@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import MagicMock, call
 
 from antalla.actions import InsertAction, UpdateAction
+from antalla import models
 
 
 class ActionsTest(unittest.TestCase):
@@ -13,6 +14,19 @@ class ActionsTest(unittest.TestCase):
         action = InsertAction(items)
         self.assertEqual(action.execute(self.mock_session), 3)
         self.mock_session.add.assert_has_calls([call(1), call(2), call(3)])
+
+    def test_insert_action_skip_existing(self):
+        items = [models.Order(exchange_id=1, exchange_order_id="abc")]
+        action = InsertAction(items, check_duplicates=True)
+        self.mock_session.query.return_value.scalar.return_value = True
+        self.assertEqual(action.execute(self.mock_session), 0)
+        self.mock_session.add.assert_not_called()
+        self.mock_session.query.return_value.filter_by.assert_called_once_with(
+            exchange_id=1, exchange_order_id="abc"
+        )
+        self.mock_session.query.return_value.scalar.return_value = False
+        self.assertEqual(action.execute(self.mock_session), 1)
+        self.mock_session.add.assert_called_once()
 
     def test_update_action(self):
         model = MagicMock()
