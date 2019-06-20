@@ -1,3 +1,4 @@
+from os import path
 import json
 import logging
 
@@ -24,22 +25,16 @@ class BinanceListener(WebsocketListener):
         self.running = False
         self._get_ws_url()
         self._api_url = settings.BINANCE_API
-        self._get_symbols()
 
     async def _listen(self):
+        initial_actions = await self._setup_listener()
+        self.on_event(initial_actions)
         async with websockets.connect(self._ws_url) as websocket: 
-            initial_actions = await self._setup_snapshots()
-            self.on_event(initial_actions)
             while self.running:
                 data = await websocket.recv()
                 logging.debug("received %s from binance", data)
                 actions = self._parse_message(json.loads(data))
                 self.on_event(actions)
-
-    def _get_symbols(self):
-        self._all_symbols = []
-        for pair in settings.BINANCE_MARKETS:
-            self._all_symbols.extend(self._parse_market(pair))
 
     def _get_ws_url(self):
         self._ws_url = settings.BINANCE_COMBINED_STREAM
@@ -48,10 +43,11 @@ class BinanceListener(WebsocketListener):
                 self._ws_url = self._ws_url + ''.join(pair.lower().split("_")) + "@" + stream + "/"
         logging.debug("websocket connecting to: %s", self._ws_url)
 
-    async def _setup_snapshots(self):
+    async def _setup_listener(self):
         actions = []
-        for pair in settings.BINANCE_MARKETS:
-            async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession() as session:
+            self._all_symbols = await self.fetch_all_symbols(session)
+            for pair in settings.BINANCE_MARKETS:
                 uri = settings.BINANCE_API + "/api/v1/depth?symbol=" + ''.join(pair.upper().split("_")) + "&limit=" + str(DEPTH_SNAPSHOT_LIMIT)
                 snapshot = await self._fetch(session, uri)
                 logging.debug("GET orderbook snapshot for '%s': %s", pair, snapshot)
@@ -80,12 +76,8 @@ class BinanceListener(WebsocketListener):
         logging.debug("parsed %d orders in 'depth update' for pair '%s'", len(orders), ''.join(pair))
         return self._parse_agg_orders(orders)
 
-    def _get_markets_uri(self):
-        return (
-            settings.BINANCE_API + "/" +
-            settings.BINANCE_PUBLIC_API + "/" +
-            settings.BINANCE_API_MARKETS
-        )
+    def _get_uri(self, endpoint):
+        return path.join(settings.BINANCE_API, settings.BINANCE_PUBLIC_API, endpoint)
 
     def _create_agg_order(self, order_info):
         pair = self._parse_market(order_info["pair"])
@@ -163,18 +155,40 @@ class BinanceListener(WebsocketListener):
             return tuple(symbols)
         if len(pair) % 2 == 0:
             return split_at(pair, len(pair) // 2)
-        for split_index in [3, 4]:
+        for split_index in range(2, 10):
             symbols = split_at(pair, split_index)
             if all(sym in self._all_symbols for sym in symbols):
                 return symbols
         raise Exception("unknown pair {} to parse. Check if both symbols are specified in settings.BINANCE_MARKETS".format(pair))
 
+    async def fetch_all_symbols(self, session):
+        exchange_info = await self._fetch(session, self._get_uri(settings.BINANCE_API_INFO))
+        all_symbols = set()
+        for symbol_info in exchange_info["symbols"]:
+            all_symbols.add(symbol_info["baseAsset"])
+            all_symbols.add(symbol_info["quoteAsset"])
+        return set(all_symbols)
+
+    async def get_markets(self):
+        async with aiohttp.ClientSession() as session:
+            symbols = await self.fetch_all_symbols(session)
+            self._all_symbols = symbols
+            markets = await self._fetch(session, self._get_uri(settings.BINANCE_API_MARKETS))
+            logging.debug("markets retrieved from %s: %s", self.exchange.name, markets)
+            actions = self._parse_markets(markets)
+            self.on_event(actions)
+
     def _parse_markets(self, markets):
         new_markets = []
         exchange_markets = []
+        coins = []
         for market in markets:
             pair = self._parse_market(market["symbol"])
             if len(pair) == 2:
+                coins.extend([
+                    models.Coin(symbol=pair[0]),
+                    models.Coin(symbol=pair[1]),
+                ])
                 new_market = models.Market(
                     buy_sym_id=pair[0],
                     sell_sym_id=pair[1]
@@ -187,7 +201,11 @@ class BinanceListener(WebsocketListener):
                 ))
             else:
                 logging.debug("parse markets for '{}' - invalid market format: '{}' is not a pair of markets - IGNORE".format(self.exchange.name, market))  
-        return [actions.InsertAction(new_markets), actions.InsertAction(exchange_markets)]
+        return [
+            actions.InsertAction(coins, check_duplicates=True, commit=True),
+            actions.InsertAction(new_markets, check_duplicates=True, commit=True),
+            actions.InsertAction(exchange_markets, check_duplicates=True, commit=True)
+        ]
 
     def _create_exchange_market(self, volume, exchange):
         return models.ExchangeMarket(

@@ -97,9 +97,14 @@ class BinanceListenerTest(unittest.TestCase):
         payload = self.raw_fixture("binance/binance-markets.json")
         parsed_actions = self.binance_listener._parse_markets(json.loads(payload))
         self.assertAreAllActions(parsed_actions)
-        self.assertEqual(len(parsed_actions), 2)
-        insert_markets = parsed_actions[0]
-        insert_exchange_markets = parsed_actions[1]
+        self.assertEqual(len(parsed_actions), 3)
+        insert_coins = parsed_actions[0]
+        insert_markets = parsed_actions[1]
+        insert_exchange_markets = parsed_actions[2]
+
+        self.assertIsInstance(insert_coins, actions.InsertAction)
+        self.assertIsInstance(insert_coins.items[0], models.Coin)
+
         self.assertEqual(len(insert_markets.items), 3)
         self.assertEqual(len(insert_exchange_markets.items), 3)
         self.assertIsInstance(insert_markets, actions.InsertAction)
