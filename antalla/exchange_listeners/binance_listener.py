@@ -169,7 +169,6 @@ class BinanceListener(WebsocketListener):
                 return symbols
         raise Exception("unknown pair {} to parse. Check if both symbols are specified in settings.BINANCE_MARKETS".format(pair))
 
-
     def _parse_markets(self, markets):
         new_markets = []
         exchange_markets = []
@@ -189,4 +188,9 @@ class BinanceListener(WebsocketListener):
             else:
                 logging.debug("parse markets for '{}' - invalid market format: '{}' is not a pair of markets - IGNORE".format(self.exchange.name, market))  
         return [actions.InsertAction(new_markets), actions.InsertAction(exchange_markets)]
-        
+
+    def _create_exchange_market(self, volume, exchange):
+        return models.ExchangeMarket(
+            volume=float(volume),
+            exchange=exchange
+        )
