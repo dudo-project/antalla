@@ -43,6 +43,8 @@ class Coin(Base):
     __tablename__ = "coins"
     symbol = Column(String, primary_key=True)
     name = Column(String)
+    price_usd = Column(Float)
+    last_price_updated = Column(DateTime)
 
     def __repr__(self):
         return f"Coin(symbol='{self.symbol}')"
@@ -168,45 +170,45 @@ class AggOrder(Base):
 
 class Market(Base):
     __tablename__ = "markets"
-    buy_sym_id = Column(String,ForeignKey("coins.symbol"), nullable=False, index=True, primary_key=True)
-    buy_sym = relationship("Coin", foreign_keys=[buy_sym_id])
-    sell_sym_id = Column(String, ForeignKey("coins.symbol"), nullable=False, index=True, primary_key=True)
-    sell_sym = relationship("Coin", foreign_keys=[sell_sym_id])
+    first_coin_id = Column(String,ForeignKey("coins.symbol"), nullable=False, index=True, primary_key=True)
+    first_coin = relationship("Coin", foreign_keys=[first_coin_id])
+    second_coin_id = Column(String, ForeignKey("coins.symbol"), nullable=False, index=True, primary_key=True)
+    second_coin = relationship("Coin", foreign_keys=[second_coin_id])
     exchange_markets = relationship("ExchangeMarket", back_populates="market")
 
     def __eq__(self, other):
-        return (self.buy_sym_id, self.sell_sym_id) == (other.buy_sym_id, other.sell_sym_id)
+        return (self.first_coin_id, self.second_coin_id) == (other.first_coin_id, other.second_coin_id)
 
     def __hash__(self):
-        return hash((self.buy_sym_id, self.sell_sym_id))
+        return hash((self.first_coin_id, self.second_coin_id))
 
     def __repr__(self):
-        return f"Market(buy_sym_id='{self.buy_sym_id}', sell_sym_id='{self.sell_sym_id}')"
+        return f"Market(buy_sym_id='{self.first_coin_id}', sell_sym_id='{self.second_coin_id}')"
 
 
 class ExchangeMarket(Base):
     __tablename__ = "exchange_markets"
     volume = Column(Float, nullable=False)
 
-    buy_sym_id = Column(String, ForeignKey("coins.symbol"), nullable=False, index=True)
-    sell_sym_id = Column(String, ForeignKey("coins.symbol"), nullable=False, index=True)
+    first_coin_id = Column(String, ForeignKey("coins.symbol"), nullable=False, index=True)
+    second_coin_id = Column(String, ForeignKey("coins.symbol"), nullable=False, index=True)
 
     exchange_id = Column(Integer, ForeignKey("exchanges.id"), nullable=False, index=True)
     exchange = relationship("Exchange", foreign_keys=[exchange_id])
-    market = relationship("Market", foreign_keys=[buy_sym_id, sell_sym_id])
+    market = relationship("Market", foreign_keys=[first_coin_id, second_coin_id])
 
     __table_args__ = (
-        PrimaryKeyConstraint("buy_sym_id", "sell_sym_id", "exchange_id"),
+        PrimaryKeyConstraint("first_coin_id", "second_coin_id", "exchange_id"),
         ForeignKeyConstraint(
-            ["buy_sym_id", "sell_sym_id"],
-            ["markets.buy_sym_id", "markets.sell_sym_id"],
+            ["first_coin_id", "second_coin_id"],
+            ["markets.first_coin_id", "markets.second_coin_id"],
         ),
-        Index("exchange-market-fk-idx", "buy_sym_id", "sell_sym_id")
+        Index("exchange-market-fk-idx", "first_coin_id", "second_coin_id")
     )
 
     def __eq__(self, other):
-        return (self.buy_sym_id, self.sell_sym_id, self.exchange_id) == \
-               (other.buy_sym_id, other.sell_sym_id, other.exchange_id)
+        return (self.first_coin_id, self.second_coin_id, self.exchange_id) == \
+               (other.first_coin_id, other.second_coin_id, other.exchange_id)
 
     def __hash__(self):
-        return hash((self.buy_sym_id, self.sell_sym_id, self.exchange_id))
+        return hash((self.first_coin_id, self.second_coin_id, self.exchange_id))

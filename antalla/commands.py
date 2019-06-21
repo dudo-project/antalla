@@ -3,10 +3,12 @@ from os import path
 import json
 import pkg_resources
 import asyncio
+import logging
 
 from . import db, models, settings
 from .exchange_listener import ExchangeListener
 from .orchestrator import Orchestrator
+from . import market_crawler
 
 
 def init_db(args):
@@ -55,5 +57,16 @@ def markets(args):
     except KeyboardInterrupt:
         orchestrator.stop()
 
-       
-            
+def fetch_prices(args):
+    asyncio.get_event_loop().run_until_complete(start_crawler())
+
+async def start_crawler():
+    n = 0
+    async with market_crawler.MarketCrawler() as crawler:
+        coins = models.Coin.query.all()
+        for coin in coins:
+            coin.price = await crawler.get_price(coin.symbol)
+            n += 1
+            asyncio.sleep(1)    
+    logging.info("UPDATE - %s coin prices have been updated in antalla db", n)
+    db.session.commit()

@@ -17,8 +17,9 @@ run_parser = subparsers.add_parser("run")
 run_parser.add_argument("--exchange", nargs="*", choices=ExchangeListener.registered())
 
 markets = subparsers.add_parser("markets")
-markets.add_argument("--exchange", nargs="*", choices=ExchangeListener.registered())
+markets.add_argument("--exchange", "-e", nargs="*", choices=ExchangeListener.registered())
 
+fetch_prices = subparsers.add_parser("fetch-prices", help="gets the latest USD price for each coin in the antalla db")
 
 def run():
     args = vars(parser.parse_args())
