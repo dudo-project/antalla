@@ -35,6 +35,6 @@ COINBASE_API = "https://api.pro.coinbase.com"
 COINBASE_API_PRODUCTS = "products"
 COINBASE_API_TICKER =  "ticker"
 
-COINMARKETCAP_URL = "https://coinmarketcap.com/currencies"
+COINMARKETCAP_URL = "https://coinmarketcap.com/all/views/all/"
 
 PACKAGE = "antalla"
