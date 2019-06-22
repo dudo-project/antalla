@@ -85,16 +85,16 @@ def norm_volume(args):
     for e in exchanges:
         exchange = models.Exchange.query.filter_by(name=e).all()
         if exchange != None:
-            id = exchange.id
+            id = exchange[0].id
             set_usd_vol(id)
-            logging.info("usd volume computed for exchange: '%s'", exchange.name)
+            logging.info("usd volume computed for exchange: '%s'", exchange[0].name)
         else:
             logging.warning("exchange '%s' not found in db - check '--exchange' flag is set with correct argument", e)
 
 def set_usd_vol(exchange_id):
     exchange_markets = models.ExchangeMarket.query.filter_by(exchange_id=exchange_id).all()
     for exm in exchange_markets:
-        coin_price = get_usd_price(exm.symbol)
+        coin_price = get_usd_price(exm.quoted_volume_id)
         if exm.quoted_volume == None:
             logging.warning("no quoted volume for pair '{}-{}' on exchange id '{}'".format(exm.first_coin_id, exm.second_coin_id, exchange_id)) 
         else: 
@@ -103,7 +103,7 @@ def set_usd_vol(exchange_id):
             logging.debug("UPDATE 'volume_usd' - exchange id: {} - usd volume: {} - market: '{}-{}' - timestamp: {}".format(
                 exm.exchange_id, exm.volume_usd, exm.first_coin_id, exm.second_coin_id, exm.volume_usd_timestamp
             ))
-            db.session.add()
+            db.session.add(exm)
     db.session.commit()
 
 def get_usd_price(symbol):
