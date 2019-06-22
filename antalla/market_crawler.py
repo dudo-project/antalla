@@ -45,13 +45,13 @@ class MarketCrawler:
         returns the full name for a given token symbol using the specified mapping
 
         >>> crawler = MarketCrawler()
-        >>> crawler._lookup_coin('BTC')
+        >>> crawler.get_coin_name('BTC')
         'Bitcoin'
-        >>> crawler._lookup_coin('ZEC')
+        >>> crawler.get_coin_name('ZEC')
         'Zcash'
-        >>> crawler._lookup_coin('ZRX')
+        >>> crawler.get_coin_name('ZRX')
         '0x'
-        >>> crawler._lookup_coin('NANO')
+        >>> crawler.get_coin_name('NANO')
         'Nano'
         '''
         for c in self._coins:
