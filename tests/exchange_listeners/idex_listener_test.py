@@ -99,13 +99,18 @@ class IdexListenerTest(unittest.TestCase):
         self.assertIsInstance(insert_market, actions.InsertAction)
         self.assertIsInstance(insert_market.items[0], models.Market)
         self.assertEqual(len(insert_market.items), 12)
+
         self.assertEqual(insert_market.items[0].first_coin_id,"LIKE")
         self.assertEqual(insert_market.items[0].second_coin_id,"WBTC")
         self.assertIsInstance(insert_market_exchange.items[0], models.ExchangeMarket)
         self.assertEqual(insert_market_exchange.items[0].exchange_id, self.dummy_exchange.id)
-        #self.assertEqual(insert_market_exchange.items[0].volume, 0.0)
+        self.assertEqual(insert_market_exchange.items[0].quoted_volume, 0.0)
+        self.assertEqual(insert_market_exchange.items[0].quoted_volume_id, "WBTC")
+
         self.assertEqual(insert_market.items[1].first_coin_id,"BOUNCY")
         self.assertEqual(insert_market.items[1].second_coin_id,"ETH")
+        self.assertEqual(insert_market_exchange.items[1].quoted_volume, 2.595979889336787651)
+        self.assertEqual(insert_market_exchange.items[1].quoted_volume_id, "ETH")
         self.assertIsInstance(insert_market_exchange.items[1], models.ExchangeMarket)
         self.assertEqual(insert_market_exchange.items[1].exchange_id, self.dummy_exchange.id)
 

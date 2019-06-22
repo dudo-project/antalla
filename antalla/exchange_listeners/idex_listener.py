@@ -135,7 +135,7 @@ class IdexListener(WebsocketListener):
                 quoted_volume_id = market[0]
                 market.sort()
                 exchange_markets.append(models.ExchangeMarket(
-                    quoted_volume=float(markets[key].get(market[0])),
+                    quoted_volume=float(markets[key].get(quoted_volume_id)),
                     quoted_volume_id=quoted_volume_id,
                     exchange_id=self.exchange.id,
                     first_coin_id=market[0],
