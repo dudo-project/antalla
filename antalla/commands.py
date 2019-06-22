@@ -65,15 +65,15 @@ def fetch_prices(args):
 async def start_crawler():
     n = 0
     update_actions = []
-    async with market_crawler.MarketCrawler() as crawler:
-        coins = models.Coin.query.all()
-        for coin in coins:
-            coin.price_usd = await crawler.get_price(coin.symbol)
-            coin.last_price_updated = datetime.datetime.fromtimestamp(time.time())
-            if coin.name == None:
-                coin.name = crawler.get_coin_name(coin.symbol)
-            logging.debug("PRICE UPDATE - %s: %s USD", coin.symbol, coin.price_usd)
-            db.session.add(coin)
-            n += 1
+    crawler = market_crawler.MarketCrawler()
+    coins = models.Coin.query.all()
+    for coin in coins:
+        coin.price_usd = await crawler.get_price(coin.symbol)
+        coin.last_price_updated = datetime.datetime.fromtimestamp(time.time())
+        if coin.name == None:
+            coin.name = crawler.get_coin_name(coin.symbol)
+        logging.debug("PRICE UPDATE - %s: %s USD", coin.symbol, coin.price_usd)
+        db.session.add(coin)
+        n += 1
     logging.info("UPDATE - %s coin prices have been updated in antalla db", n)
     db.session.commit()

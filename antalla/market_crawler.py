@@ -1,11 +1,11 @@
 #%%
-import aiohttp
 import json
 import logging
 from os import path
 
+import aiohttp
 from bs4 import BeautifulSoup
-import urllib.parse
+
 from . import settings
 
 FIXTURES_PATH = path.join(path.dirname(__file__), "fixtures")
@@ -15,30 +15,16 @@ class MarketCrawler:
         self._http_session = None
         self._marketcap_url = settings.COINMARKETCAP_URL
         with open(path.join(FIXTURES_PATH, "coinmarketcap-mappings.json")) as f:
-            self._coins = json.load(f)
-        self._fetched_prices = False
-
-    async def __aenter__(self):
-        self._http_session = aiohttp.ClientSession()
-        return self
-
-    async def __aexit__(self, arg_1, arg_2, arg_3):
-        await self._http_session.close()
+            self._coins = {v["symbol"]: v["name"] for v in json.load(f)}
+        self._prices = {}
 
     async def get_price(self, symbol):
-        coin_name = self.get_coin_name(symbol)
-        if not coin_name:
+        if not self._prices:
+            await self._fetch_prices()
+        price = self._prices.get(symbol, 0)
+        if not price:
             logging.info("coin name not found for: %s", symbol)
-            return 0
-        if self._fetched_prices == False:
-            text = await self._fetch(self._http_session, settings.COINMARKETCAP_URL)
-            self._soup = BeautifulSoup(text)
-            logging.debug("fetched HTML for all USD prices: %s", self._soup)
-            self._fetched_prices = True
-        coin_uri = self._soup.find("td", {"data-sort": coin_name}).span.a["href"]
-        coin_uri = coin_uri + "#markets"
-        price = self._soup.find("a", {"href": coin_uri})["data-usd"]   
-        return float(price)
+        return price
 
     def get_coin_name(self, symbol):
         '''
@@ -54,11 +40,19 @@ class MarketCrawler:
         >>> crawler.get_coin_name('NANO')
         'Nano'
         '''
-        for c in self._coins:
-            if (c["symbol"] == symbol):
-                return c["name"]
-        return None
-        
+        return self._coins.get(symbol)
+
+    async def _fetch_prices(self):
+        async with aiohttp.ClientSession() as session:
+            text = await self._fetch(session, settings.COINMARKETCAP_URL)
+            soup = BeautifulSoup(text)
+            logging.debug("fetched HTML for all USD prices: %s", soup)
+        tbody = soup.find("table", {"id": "currencies-all"}).tbody
+        for row in tbody.find_all("tr"):
+            symbol = row.find("td", {"class": "col-symbol"}).text
+            price = float(row.find("a", {"class": "price"})["data-usd"])
+            self._prices[symbol] = price
+
     async def _fetch(self, session, url):
         async with session.get(url) as response:
             logging.debug("GET request: %s, status: %s", url, response.status)
