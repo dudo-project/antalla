@@ -30,7 +30,6 @@ def init_db(args):
 
         db.session.commit()
 
-
 def run(args):
     if args["exchange"]:
         exchange = args["exchange"]
@@ -77,3 +76,42 @@ async def start_crawler():
         n += 1
     logging.info("UPDATE - %s coin prices have been updated in antalla db", n)
     db.session.commit()
+
+def norm_volume(args):
+    if args["exchange"]:
+        exchanges = args["exchange"]
+    else:
+        exchanges = ExchangeListener.registered()
+    for e in exchanges:
+        exchange = models.Exchange.query.filter_by(name=e).all()
+        if exchange != None:
+            id = exchange.id
+            set_usd_vol(id)
+            logging.info("usd volume computed for exchange: '%s'", exchange.name)
+        else:
+            logging.warning("exchange '%s' not found in db - check '--exchange' flag is set with correct argument", e)
+
+def set_usd_vol(exchange_id):
+    exchange_markets = models.ExchangeMarket.query.filter_by(exchange_id=exchange_id).all()
+    for exm in exchange_markets:
+        coin_price = get_usd_price(exm.symbol)
+        if exm.quoted_volume == None:
+            logging.warning("no quoted volume for pair '{}-{}' on exchange id '{}'".format(exm.first_coin_id, exm.second_coin_id, exchange_id)) 
+        else: 
+            exm.volume_usd = coin_price * exm.quoted_volume
+            exm.volume_usd_timestamp = datetime.datetime.fromtimestamp(time.time())
+            logging.debug("UPDATE 'volume_usd' - exchange id: {} - usd volume: {} - market: '{}-{}' - timestamp: {}".format(
+                exm.exchange_id, exm.volume_usd, exm.first_coin_id, exm.second_coin_id, exm.volume_usd_timestamp
+            ))
+            db.session.add()
+    db.session.commit()
+
+def get_usd_price(symbol):
+    coins = models.Coin.query.filter_by(symbol=symbol.upper()).all()
+    if len(coins) == 0:
+        logging.debug("no USD price for symbol '%s' in db", symbol)
+        return 0
+    elif coins[0].price_usd == None:
+        return 0
+    else:
+        return float(coins[0].price_usd)

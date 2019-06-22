@@ -190,9 +190,8 @@ class BinanceListener(WebsocketListener):
                     models.Coin(symbol=pair[0]),
                     models.Coin(symbol=pair[1]),
                 ])
-                usd_price = float(self._get_usd_price(pair[0]))
-                usd_volume = float(market["volume"]) * usd_price 
                 pair = list(pair)
+                quoted_volume_id = pair[0]
                 pair.sort()
                 new_market = models.Market(
                     first_coin_id=pair[0],
@@ -200,7 +199,8 @@ class BinanceListener(WebsocketListener):
                 )
                 new_markets.append(new_market)
                 exchange_markets.append(models.ExchangeMarket(
-                    volume_usd=float(usd_volume),
+                    quoted_volume=float(market["volume"]),
+                    quoted_volume_id=quoted_volume_id,
                     exchange_id=self.exchange.id,
                     first_coin_id=pair[0],
                     second_coin_id=pair[1],

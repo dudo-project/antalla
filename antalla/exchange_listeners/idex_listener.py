@@ -132,11 +132,11 @@ class IdexListener(WebsocketListener):
                     models.Coin(symbol=market[0]),
                     models.Coin(symbol=market[1]),
                 ])
-                usd_price = float(self._get_usd_price(market[0]))
-                usd_volume = float(markets[key].get(market[0])) * usd_price 
+                quoted_volume_id = market[0]
                 market.sort()
                 exchange_markets.append(models.ExchangeMarket(
-                    volume_usd=float(usd_volume),
+                    quoted_volume=float(markets[key].get(market[0])),
+                    quoted_volume_id=quoted_volume_id,
                     exchange_id=self.exchange.id,
                     first_coin_id=market[0],
                     second_coin_id=market[1],

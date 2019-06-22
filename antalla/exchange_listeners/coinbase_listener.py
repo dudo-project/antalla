@@ -151,8 +151,6 @@ class CoinbaseListener(WebsocketListener):
             pairs = []
             pairs.append(market["buy_sym_id"])
             pairs.append(market["sell_sym_id"])
-            usd_price = float(self._get_usd_price(market["buy_sym_id"]))
-            usd_volume = float(market["volume"]) * usd_price 
             pairs.sort()
             new_market = models.Market(
                 first_coin_id=pairs[0],
@@ -160,7 +158,8 @@ class CoinbaseListener(WebsocketListener):
             )
             new_markets.append(new_market)
             exchange_markets.append(models.ExchangeMarket(
-                volume_usd=float(usd_volume),
+                quoted_volume=float(market["volume"]),
+                quoted_volume_id=market["buy_sym_id"],
                 exchange_id=self.exchange.id,
                 first_coin_id=pairs[0],
                 second_coin_id=pairs[1],

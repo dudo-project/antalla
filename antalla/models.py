@@ -189,6 +189,9 @@ class Market(Base):
 class ExchangeMarket(Base):
     __tablename__ = "exchange_markets"
     volume_usd = Column(Float, nullable=False)
+    quoted_volume = Column(Float, nullable=False)
+    vol_usd_timestamp = Column(DateTime,nullable=False)
+    quoted_volume_id = Column(String, ForeignKey("coins.symbol"), nullable=False)
 
     first_coin_id = Column(String, ForeignKey("coins.symbol"), nullable=False, index=True)
     second_coin_id = Column(String, ForeignKey("coins.symbol"), nullable=False, index=True)
