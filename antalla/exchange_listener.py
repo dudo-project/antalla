@@ -2,6 +2,7 @@ import aiohttp
 import json
 import logging
 from .base_factory import BaseFactory
+from . import models
 
 class ExchangeListener(BaseFactory):
     def __init__(self, exchange, on_event):
@@ -33,3 +34,12 @@ class ExchangeListener(BaseFactory):
     def _parse_markets(self, markets):
         raise NotImplementedError()
 
+    def _get_usd_price(self, symbol):
+        coins = models.Coin.query.filter_by(symbol=symbol.upper()).all()
+        if len(coins) == 0:
+            logging.debug("no USD price for symbol '%s' in db", symbol)
+            return 0
+        elif coins[0].price_usd == None:
+            return 0
+        else:
+            return float(coins[0].price_usd)

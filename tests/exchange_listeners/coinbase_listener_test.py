@@ -147,7 +147,6 @@ class CoinbaseListenerTest(unittest.TestCase):
             insert_actions_exchange_markets.append(parsed_actions[2])
         self.assertEqual(insert_actions_markets[0].items[0].first_coin_id, "REP")
         self.assertEqual(insert_actions_markets[0].items[0].second_coin_id, "USD")
-        self.assertEqual(insert_actions_exchange_markets[0].items[0].volume, 60486.28451826)
         self.assertEqual(insert_actions_exchange_markets[0].items[0].exchange_id, self.dummy_exchange.id)
 
     def test_parse_done_cancel(self):

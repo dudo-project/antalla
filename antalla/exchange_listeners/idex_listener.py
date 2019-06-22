@@ -121,6 +121,7 @@ class IdexListener(WebsocketListener):
             )
 
     def _parse_markets(self, markets):
+        # volume is normalised to USD and market pairs are sorted to avoid reversed duplicates in db
         new_markets = []
         exchange_markets = []
         coins = []
@@ -131,14 +132,15 @@ class IdexListener(WebsocketListener):
                     models.Coin(symbol=market[0]),
                     models.Coin(symbol=market[1]),
                 ])
-                # TODO: normalise volume
+                usd_price = float(self._get_usd_price(market[0]))
+                usd_volume = float(markets[key].get(market[0])) * usd_price 
+                market.sort()
                 exchange_markets.append(models.ExchangeMarket(
-                    volume=float(markets[key].get(market[0])),
+                    volume_usd=float(usd_volume),
                     exchange_id=self.exchange.id,
                     first_coin_id=market[0],
                     second_coin_id=market[1],
                 ))
-                #market.sort()
                 new_market = models.Market(
                     first_coin_id=market[0],
                     second_coin_id=market[1],

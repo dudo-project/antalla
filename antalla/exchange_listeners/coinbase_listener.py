@@ -148,16 +148,22 @@ class CoinbaseListener(WebsocketListener):
                 models.Coin(symbol=market["buy_sym_id"]),
                 models.Coin(symbol=market["sell_sym_id"]),
             ])
+            pairs = []
+            pairs.append(market["buy_sym_id"])
+            pairs.append(market["sell_sym_id"])
+            usd_price = float(self._get_usd_price(market["buy_sym_id"]))
+            usd_volume = float(market["volume"]) * usd_price 
+            pairs.sort()
             new_market = models.Market(
-                first_coin_id=market["buy_sym_id"],
-                second_coin_id=market["sell_sym_id"],
+                first_coin_id=pairs[0],
+                second_coin_id=pairs[1],
             )
             new_markets.append(new_market)
             exchange_markets.append(models.ExchangeMarket(
-                volume=float(market["volume"]),
+                volume_usd=float(usd_volume),
                 exchange_id=self.exchange.id,
-                first_coin_id=market["buy_sym_id"],
-                second_coin_id=market["sell_sym_id"],
+                first_coin_id=pairs[0],
+                second_coin_id=pairs[1],
             ))
         return [
             actions.InsertAction(coins),
