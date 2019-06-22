@@ -24,6 +24,9 @@ fetch_prices = subparsers.add_parser("fetch-prices", help="fetches the latest US
 norm_volume = subparsers.add_parser("norm-volume", help="normalises the traded 24h volume for each market in USD")
 norm_volume.add_argument("--exchange", "-e", nargs="*", choices=ExchangeListener.registered())
 
+init_data = subparsers.add_parser("init-data", help="fetches exchange markets, traded volume and prices in USD")
+init_data.add_argument("--exchange", "-e", nargs="*", choices=ExchangeListener.registered()) 
+
 def run():
     args = vars(parser.parse_args())
 

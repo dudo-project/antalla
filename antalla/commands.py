@@ -58,6 +58,14 @@ def markets(args):
     except KeyboardInterrupt:
         orchestrator.stop()
 
+def init_data(args):
+    logging.info("fetching markets from exchanges")
+    markets(args)
+    logging.info("fetching latest price in USD for each coin")
+    fetch_prices(args)
+    logging.info("normalising traded volume in USD for all exchanges")    
+    norm_volume(args)
+
 def fetch_prices(args):
     asyncio.get_event_loop().run_until_complete(start_crawler())
 
