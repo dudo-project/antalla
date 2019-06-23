@@ -17,8 +17,15 @@ run_parser = subparsers.add_parser("run")
 run_parser.add_argument("--exchange", nargs="*", choices=ExchangeListener.registered())
 
 markets = subparsers.add_parser("markets")
-markets.add_argument("--exchange", nargs="*", choices=ExchangeListener.registered())
+markets.add_argument("--exchange", "-e", nargs="*", choices=ExchangeListener.registered())
 
+fetch_prices = subparsers.add_parser("fetch-prices", help="fetches the latest USD price for each coin in antalla db")
+
+norm_volume = subparsers.add_parser("norm-volume", help="normalises the traded 24h volume for each market in USD")
+norm_volume.add_argument("--exchange", "-e", nargs="*", choices=ExchangeListener.registered())
+
+init_data = subparsers.add_parser("init-data", help="fetches exchange markets, traded volume and prices in USD")
+init_data.add_argument("--exchange", "-e", nargs="*", choices=ExchangeListener.registered()) 
 
 def run():
     args = vars(parser.parse_args())

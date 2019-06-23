@@ -109,19 +109,25 @@ class BinanceListenerTest(unittest.TestCase):
         self.assertEqual(len(insert_exchange_markets.items), 3)
         self.assertIsInstance(insert_markets, actions.InsertAction)
         self.assertIsInstance(insert_exchange_markets, actions.InsertAction)
-        self.assertEqual(insert_markets.items[0].buy_sym_id, "ETH")
-        self.assertEqual(insert_markets.items[0].sell_sym_id, "BTC")
-        self.assertEqual(insert_exchange_markets.items[0].volume, 135449.04600000)
+
+        self.assertEqual(insert_markets.items[0].first_coin_id, "BTC")
+        self.assertEqual(insert_markets.items[0].second_coin_id, "ETH")
         self.assertEqual(insert_exchange_markets.items[0].exchange_id, self.dummy_exchange.id)
-        self.assertEqual(insert_markets.items[1].buy_sym_id, "LTC")
-        self.assertEqual(insert_markets.items[1].sell_sym_id, "BTC")
-        self.assertEqual(insert_exchange_markets.items[1].volume, 116736.71000000)
-        self.assertEqual(insert_exchange_markets.items[1].exchange_id, self.dummy_exchange.id)
-        self.assertEqual(insert_markets.items[2].buy_sym_id, "BNB")
-        self.assertEqual(insert_markets.items[2].sell_sym_id, "BTC")
-        self.assertEqual(insert_exchange_markets.items[2].volume, 3054635.71000000)
-        self.assertEqual(insert_exchange_markets.items[2].exchange_id, self.dummy_exchange.id)
+        self.assertEqual(insert_exchange_markets.items[0].quoted_volume_id, "ETH")
+        self.assertEqual(insert_exchange_markets.items[0].quoted_volume, 135449.04600000)
         
+        self.assertEqual(insert_markets.items[1].first_coin_id, "BTC")
+        self.assertEqual(insert_markets.items[1].second_coin_id, "LTC")
+        self.assertEqual(insert_exchange_markets.items[1].exchange_id, self.dummy_exchange.id)
+        self.assertEqual(insert_exchange_markets.items[1].quoted_volume_id, "LTC")
+        self.assertEqual(insert_exchange_markets.items[1].quoted_volume, 116736.71000000)
+        
+        self.assertEqual(insert_markets.items[2].first_coin_id, "BNB")
+        self.assertEqual(insert_markets.items[2].second_coin_id, "BTC")
+        self.assertEqual(insert_exchange_markets.items[2].exchange_id, self.dummy_exchange.id)
+        self.assertEqual(insert_exchange_markets.items[2].quoted_volume_id, "BNB")
+        self.assertEqual(insert_exchange_markets.items[2].quoted_volume, 3054635.71000000)
+
     def assertAreAllActions(self, items):
         for item in items:
             self.assertIsInstance(item, actions.Action)

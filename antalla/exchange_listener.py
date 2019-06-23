@@ -2,6 +2,7 @@ import aiohttp
 import json
 import logging
 from .base_factory import BaseFactory
+from . import models
 
 class ExchangeListener(BaseFactory):
     def __init__(self, exchange, on_event):
@@ -32,4 +33,3 @@ class ExchangeListener(BaseFactory):
 
     def _parse_markets(self, markets):
         raise NotImplementedError()
-

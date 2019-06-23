@@ -1,3 +1,4 @@
+#%%x
 from os import path
 import json
 import logging
@@ -189,16 +190,20 @@ class BinanceListener(WebsocketListener):
                     models.Coin(symbol=pair[0]),
                     models.Coin(symbol=pair[1]),
                 ])
+                pair = list(pair)
+                quoted_volume_id = pair[0]
+                pair.sort()
                 new_market = models.Market(
-                    buy_sym_id=pair[0],
-                    sell_sym_id=pair[1]
+                    first_coin_id=pair[0],
+                    second_coin_id=pair[1]
                 )
                 new_markets.append(new_market)
                 exchange_markets.append(models.ExchangeMarket(
-                    volume=float(market["volume"]),
+                    quoted_volume=float(market["volume"]),
+                    quoted_volume_id=quoted_volume_id,
                     exchange_id=self.exchange.id,
-                    buy_sym_id=pair[0],
-                    sell_sym_id=pair[1],
+                    first_coin_id=pair[0],
+                    second_coin_id=pair[1],
                 ))
             else:
                 logging.debug("parse markets for '{}' - invalid market format: '{}' is not a pair of markets - IGNORE".format(self.exchange.name, market))  

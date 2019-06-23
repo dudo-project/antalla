@@ -121,6 +121,7 @@ class IdexListener(WebsocketListener):
             )
 
     def _parse_markets(self, markets):
+        # volume is normalised to USD and market pairs are sorted to avoid reversed duplicates in db
         new_markets = []
         exchange_markets = []
         coins = []
@@ -131,17 +132,20 @@ class IdexListener(WebsocketListener):
                     models.Coin(symbol=market[0]),
                     models.Coin(symbol=market[1]),
                 ])
+                quoted_volume_id = market[0]
+                market.sort()
+                exchange_markets.append(models.ExchangeMarket(
+                    quoted_volume=float(markets[key].get(quoted_volume_id)),
+                    quoted_volume_id=quoted_volume_id,
+                    exchange_id=self.exchange.id,
+                    first_coin_id=market[0],
+                    second_coin_id=market[1],
+                ))
                 new_market = models.Market(
-                    buy_sym_id=market[0],
-                    sell_sym_id=market[1],
+                    first_coin_id=market[0],
+                    second_coin_id=market[1],
                 )
                 new_markets.append(new_market)
-                exchange_markets.append(models.ExchangeMarket(
-                    volume=float(markets[key].get(market[0])),
-                    exchange_id=self.exchange.id,
-                    buy_sym_id=market[0],
-                    sell_sym_id=market[1],
-                ))
             else:
                 logging.warning("parse markets for '{}' - invalid market format: '{}' is not a pair of markets - IGNORE".format(self.exchange.name, market))
         return [
