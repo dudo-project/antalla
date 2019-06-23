@@ -130,6 +130,8 @@ class CoinbaseListener(WebsocketListener):
         requests = 0
         async with aiohttp.ClientSession() as session:
             for market_id in markets:
+                if not self.running:
+                    break
                 ticker_data = await self._fetch(session, settings.COINBASE_API+"/"+
                 settings.COINBASE_API_PRODUCTS+"/"+market_id+
                 "/"+settings.COINBASE_API_TICKER)
@@ -148,10 +150,7 @@ class CoinbaseListener(WebsocketListener):
                 models.Coin(symbol=market["buy_sym_id"]),
                 models.Coin(symbol=market["sell_sym_id"]),
             ])
-            pairs = []
-            pairs.append(market["buy_sym_id"])
-            pairs.append(market["sell_sym_id"])
-            pairs.sort()
+            pairs = sorted([market["buy_sym_id"], market["sell_sym_id"]])
             new_market = models.Market(
                 first_coin_id=pairs[0],
                 second_coin_id=pairs[1],

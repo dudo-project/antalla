@@ -45,6 +45,12 @@ def run(args):
         orchestrator.stop()
 
 def markets(args):
+    try:
+        asyncio.get_event_loop().run_until_complete(_markets(args))
+    except KeyboardInterrupt:
+        logging.info("stop 'markets'")    
+
+async def _markets(args):
     if args["exchange"]:
         exchange = args["exchange"]
     else:
@@ -54,20 +60,32 @@ def markets(args):
         orchestrator.stop()
     signal.signal(signal.SIGINT, handler)
     try:
-        asyncio.get_event_loop().run_until_complete(orchestrator.get_markets())
+        await orchestrator.get_markets()
     except KeyboardInterrupt:
         orchestrator.stop()
 
 def init_data(args):
+    try:
+        asyncio.get_event_loop().run_until_complete(_init_data(args))
+    except KeyboardInterrupt:
+        logging.info("stop init-data")
+
+async def _init_data(args):
     logging.info("fetching markets from exchanges")
-    markets(args)
+    await _markets(args)
     logging.info("fetching latest price in USD for each coin")
-    fetch_prices(args)
+    await _fetch_prices(args)
     logging.info("normalising traded volume in USD for all exchanges")    
     norm_volume(args)
-
+    
 def fetch_prices(args):
-    asyncio.get_event_loop().run_until_complete(start_crawler())
+    try:
+        asyncio.get_event_loop().run_until_complete(_fetch_prices(args))
+    except KeyboardInterrupt:
+        logging.info("stop 'fetch-prices'")    
+
+async def _fetch_prices(args):
+    await start_crawler()
 
 async def start_crawler():
     n = 0
@@ -77,7 +95,7 @@ async def start_crawler():
     for coin in coins:
         coin.price_usd = await crawler.get_price(coin.symbol)
         coin.last_price_updated = datetime.datetime.fromtimestamp(time.time())
-        if coin.name == None:
+        if coin.name is None:
             coin.name = crawler.get_coin_name(coin.symbol)
         logging.debug("PRICE UPDATE - %s: %s USD", coin.symbol, coin.price_usd)
         db.session.add(coin)
@@ -103,7 +121,7 @@ def set_usd_vol(exchange_id):
     exchange_markets = models.ExchangeMarket.query.filter_by(exchange_id=exchange_id).all()
     for exm in exchange_markets:
         coin_price = get_usd_price(exm.quoted_volume_id)
-        if exm.quoted_volume == None:
+        if exm.quoted_volume is None:
             logging.warning("no quoted volume for pair '{}-{}' on exchange id '{}'".format(exm.first_coin_id, exm.second_coin_id, exchange_id)) 
         else: 
             exm.volume_usd = coin_price * exm.quoted_volume
@@ -115,11 +133,9 @@ def set_usd_vol(exchange_id):
     db.session.commit()
 
 def get_usd_price(symbol):
-    coins = models.Coin.query.filter_by(symbol=symbol.upper()).all()
-    if len(coins) == 0:
+    coin = models.Coin.query.get(symbol.upper())
+    if coin is None:
         logging.debug("no USD price for symbol '%s' in db", symbol)
         return 0
-    elif coins[0].price_usd == None:
-        return 0
     else:
-        return float(coins[0].price_usd)
+        return coin.usd_price
