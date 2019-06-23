@@ -84,3 +84,77 @@ class HitBTCListener(WebsocketListener):
             actions.InsertAction(add_markets),
             actions.InsertAction(add_exchange_markets)
             ]
+
+    def _parse_message(self, message):
+        if "method" in message.keys():
+            event, payload = message["method"], message["params"]
+            func = getattr(self, f"_parse_{event}", None)
+            if func:
+                return func(payload)
+            return []
+        else:
+            logging.warning("unknown message received < '{}'".format(message))
+            return []
+
+    def _parse_snapshotOrderbook(self, snapshot):
+        order_info = {
+            "pair": snapshot["symbol"],
+            "timestamp": snapshot["timestamp"],
+            "last_update_id": snapshot["sequence"],              
+        }
+        orders = self._convert_raw_orders(snapshot, "bid", "ask", order_info)
+        logging.debug("parsed %d orders in depth snapshot for pair '%s'", len(orders), snapshot["symbol"])
+        return self._parse_agg_orders(orders)
+
+    def _create_agg_order(self, order_info):
+        pair = self._parse_market(order_info["pair"])
+        if pair is not None:
+            return models.AggOrder(
+                timestamp=parse_date(order_info["timestamp"]),
+                last_update_id=order_info["last_update_id"],
+                buy_sym_id=pair[0],
+                sell_sym_id=pair[1],
+                exchange_id=self.exchange.id, 
+            )
+        else:
+            logging.warning("no market found for: '%s'", order_info["pair"])
+
+    def _convert_raw_orders(self, orders, bid_key, ask_key, order_info):
+        all_orders = []
+        for bid in orders[bid_key]:
+            new_bid_order = self._create_agg_order(order_info)
+            if new_bid_order is not None:
+                new_bid_order.order_type = "bid"
+                new_bid_order.price = float(bid["price"])
+                new_bid_order.size = float(bid["size"])
+                all_orders.append(new_bid_order)
+        for ask in orders[ask_key]:
+            new_ask_order = self._create_agg_order(order_info)
+            if new_ask_order is not None:
+                new_ask_order.order_type = "ask"
+                new_ask_order.price = float(ask["price"])
+                new_ask_order.size = float(ask["size"])
+                all_orders.append(new_ask_order)       
+        return all_orders
+
+    def _parse_agg_orders(self, orders):
+        return [actions.InsertAction(orders)]
+
+    async def _setup_connection(self, websocket):
+        async with aiohttp.ClientSession() as session:
+            self._all_symbols = await self.fetch_all_symbols(session)
+
+        for pair in settings.HITBTC_MARKETS:
+            market = ''.join(pair.split("_"))
+            await self._subscribe_orderbook(market, websocket)
+                
+    async def _subscribe_orderbook(self, market, websocket):
+        message = dict(
+            method="subscribeOrderbook",
+            params={"symbol": market.upper()},
+            id=settings.HITBTC_API_KEY
+        )
+        await websocket.send(json.dumps(message))
+        response = await websocket.recv()
+        logging.debug("< %s", response)
+        return json.loads(response)

@@ -79,3 +79,34 @@ class HitBTCListenerTest(unittest.TestCase):
         self.assertEqual(insert_exchange_markets.items[3].quoted_volume_id, "DOGE")
         self.assertEqual(insert_exchange_markets.items[3].quoted_volume, 719344170.0)
         self.assertEqual(insert_exchange_markets.items[3].quoted_vol_timestamp, parse_date("2019-04-24T15:10:08.539Z"))
+
+    def test_parse_snapshotOrderbook(self):
+        self.hitbtc_listener._all_symbols = [
+            dict(id="ETHBTC", baseCurrency="ETH", quoteCurrency="BTC"),
+        ]
+        payload = self.raw_fixture("hitbtc/hitbtc-snapshot.json")
+        payload = json.loads(payload)
+        payload = payload["params"]
+        parsed_actions = self.hitbtc_listener._parse_snapshotOrderbook(payload)
+        self.assertAreAllActions(parsed_actions)
+        self.assertEqual(len(parsed_actions), 1)
+        insert_action = parsed_actions[0]
+        self.assertIsInstance(insert_action, actions.InsertAction)
+        self.assertEqual(len(insert_action.items), 6)
+        self.assertIsInstance(insert_action.items[0], models.AggOrder)
+        self.assertEqual(insert_action.items[0].exchange_id, self.dummy_exchange.id)
+        self.assertEqual(insert_action.items[0].buy_sym_id, "ETH")
+        self.assertEqual(insert_action.items[0].sell_sym_id, "BTC")
+        self.assertEqual(insert_action.items[0].order_type, "bid")
+        self.assertEqual(insert_action.items[0].price, 0.054558)
+        self.assertEqual(insert_action.items[0].size, 0.500)
+        self.assertEqual(insert_action.items[0].timestamp, parse_date("2018-11-19T05:00:28.193Z"))
+
+        self.assertEqual(insert_action.items[3].exchange_id, self.dummy_exchange.id)
+        self.assertEqual(insert_action.items[3].buy_sym_id, "ETH")
+        self.assertEqual(insert_action.items[3].sell_sym_id, "BTC")
+        self.assertEqual(insert_action.items[3].order_type, "ask")
+        self.assertEqual(insert_action.items[3].price, 0.054588)
+        self.assertEqual(insert_action.items[3].size, 0.245)
+        self.assertEqual(insert_action.items[3].timestamp, parse_date("2018-11-19T05:00:28.193Z"))
+        

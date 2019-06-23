@@ -1,0 +1,25 @@
+{
+    "jsonrpc": "2.0",
+    "method": "updateOrderbook",
+    "params": {    
+      "ask": [
+        {
+          "price": "0.054590",
+          "size": "0.000"
+        },
+        {
+          "price": "0.054591",
+          "size": "0.000"
+        }
+      ],
+      "bid": [
+        {
+          "price": "0.054504",
+           "size": "0.000"
+        }
+      ],
+      "symbol": "ETHBTC",
+      "sequence": 8073830,
+      "timestamp": "2018-11-19T05:00:28.700Z"
+    }
+  }
