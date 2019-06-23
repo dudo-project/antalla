@@ -6,7 +6,7 @@ import json
 import unittest
 from unittest.mock import MagicMock
 
-
+from antalla import db
 from antalla import models
 from antalla import actions
 from antalla.exchange_listeners.binance_listener import BinanceListener
