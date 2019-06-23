@@ -45,6 +45,31 @@ Once the URL is set, the database can be initialized with the following command:
 antalla init-db
 ```
 
+### Fetching initial market data
+
+At any point in time, one can fetch the latest coin prices in USD, the markets offered by each exchange, as well as the respective 24h traded volume.
+The traded volume can also be normalised to USD in order to allow for more informative comparisons.
+
+All of the aforementioned can be fetched by running the command:
+
+```
+antalla init-data
+```
+
+Each time `init-data` is run, the price and volume information is updated in the db.
+This is equivalent to running the individual commands:
+
+```
+antalla markets
+antalla fetch-prices
+antalla norm-volume
+```
+
+Each subargument is further explained running:
+
+```
+anatalla <subarg> --help
+```
 
 ### Exchange listeners
 
