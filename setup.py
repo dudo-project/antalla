@@ -11,11 +11,13 @@ setup(
     "aiohttp==3.5.4",
     "beautifulsoup4==4.7.1"
     ],
+    zip_safe=False,
     scripts=["./bin/antalla"],
     package_data={
         "antalla": [
             "fixtures/coins.json",
             "fixtures/exchanges.json",
+            "fixtures/coinmarketcap-mappings.json",
         ]
     }
 )
