@@ -15,6 +15,9 @@ from .. import actions
 from ..exchange_listener import ExchangeListener
 from ..websocket_listener import WebsocketListener
 
+# max. is 1000
+TRADES_LIMIT = 10
+
 @ExchangeListener.register("hitbtc")
 class HitBTCListener(WebsocketListener):
     def __init__(self, exchange, on_event, ws_url=settings.HITBTC_WS_URL):
@@ -143,11 +146,13 @@ class HitBTCListener(WebsocketListener):
     async def _setup_connection(self, websocket):
         async with aiohttp.ClientSession() as session:
             self._all_symbols = await self.fetch_all_symbols(session)
-
         for pair in settings.HITBTC_MARKETS:
             market = ''.join(pair.split("_"))
-            await self._subscribe_orderbook(market, websocket)
-                
+            orderbook_message = await self._subscribe_orderbook(market, websocket)
+            #self._parse_message(orderbook_message)
+            trades_message = await self._subscribe_trades(market, websocket)
+            self._parse_message(trades_message)
+
     async def _subscribe_orderbook(self, market, websocket):
         message = dict(
             method="subscribeOrderbook",
@@ -158,11 +163,38 @@ class HitBTCListener(WebsocketListener):
         response = await websocket.recv()
         logging.debug("< %s", response)
         return json.loads(response)
-
+        
+    async def _subscribe_trades(self, market, websocket):
+        message = dict(
+            method="subscribeTrades",
+            params={"symbol": market.upper(), "limit": TRADES_LIMIT},
+            id=settings.HITBTC_API_KEY
+        )
+        await websocket.send(json.dumps(message))
+        response = await websocket.recv()
+        logging.debug("< %s", response)
+        return json.loads(response)
 
     #TODO: implement orderbook updates
 
 
+    def _parse_snapshotTrades(self, snapshot):
+        return self._parse_raw_trades(snapshot)
 
-    #TODO: implement trade updates
+    def _parse_updateTrades(self, trades):
+        return self._parse_raw_trades(trades)
 
+    def _parse_raw_trades(self, snapshot):
+        market = self._parse_market(snapshot["symbol"])
+        trades = []
+        for trade in snapshot["data"]:
+            trades.append(models.Trade(
+            timestamp=parse_date(trade["timestamp"]),
+            trade_type=trade["side"],
+            exchange_id=self.exchange.id,
+            buy_sym_id= market[0],
+            sell_sym_id= market[1],
+            price=float(trade["price"]),
+            size=float(trade["quantity"]),
+            ))
+        return [actions.InsertAction(trades)]

@@ -1,0 +1,16 @@
+{
+    "jsonrpc": "2.0",
+    "method": "updateTrades",
+    "params": {
+      "data": [
+        {
+          "id": 54469813,
+          "price": "0.054670",
+          "quantity": "0.183",
+          "side": "buy",
+          "timestamp": "2017-10-19T16:34:25.041Z"
+        }
+      ],
+      "symbol": "ETHBTC"
+    }
+  }    

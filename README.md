@@ -54,7 +54,7 @@ CEX exchange listeners:
 - [x] Binance
 - [x] Coinbase
 - [ ] OKEX
-- [ ] HitBTC
+- [x] HitBTC
 - [ ] Huobi Global
 
 DEX exchange listeners:
