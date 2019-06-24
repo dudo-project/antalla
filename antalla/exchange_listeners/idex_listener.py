@@ -32,7 +32,7 @@ class IdexListener(WebsocketListener):
     async def _setup_connection(self, websocket):
         handshake_data = dict(version="1.0.0", key=settings.IDEX_API_KEY)
         handshake_res = await self._send_message(websocket, "handshake", handshake_data)
-        subscription_data = dict(topics=settings.MARKETS, events=settings.IDEX_EVENTS)
+        subscription_data = dict(topics=settings.IDEX_MARKETS, events=settings.IDEX_EVENTS)
         await self._send_message(websocket, "subscribeToMarkets",
                                  subscription_data, sid=handshake_res["sid"])
 

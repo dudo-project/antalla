@@ -1,15 +1,12 @@
 import os
 
-if os.environ.get("MARKETS"):
-    MARKETS = os.environ["MARKETS"].split(",")
-else:
-    MARKETS = ["ETH_AURA", "ETH_IDXM", "ETH_FTM", "ETH_LTO"]
 
 IDEX_EVENTS = ["market_orders", "market_cancels", "market_trades"]
 IDEX_API_KEY = "17paIsICur8sA0OBqG6dH5G1rmrHNMwt4oNk4iX9"
 IDEX_WS_URL = "wss://datastream.idex.market"
 IDEX_API = "https://api.idex.market"
 IDEX_API_MARKETS = "return24Volume"
+IDEX_MARKETS = ["ETH_AURA", "ETH_IDXM", "ETH_FTM", "ETH_LTO"]
 
 BINANCE_MARKETS = ["BNB_BTC", "ETH_BTC", "LTC_BTC"]
 BINANCE_STREAMS = ["depth", "trade"]
