@@ -161,7 +161,7 @@ class AggOrder(Base):
     id = Column(Integer, primary_key=True)
     sequence_id = Column(String)
     last_update_id = Column(Integer, nullable=False)
-    timestamp = Column(DateTime, index=True)
+    timestamp = Column(DateTime, index=True, nullable=False)
     buy_sym_id = Column(String,ForeignKey("coins.symbol"), nullable=False, index=True)
     buy_sym = relationship("Coin", foreign_keys=[buy_sym_id])
     sell_sym_id = Column(String, ForeignKey("coins.symbol"), nullable=False, index=True)
@@ -171,6 +171,11 @@ class AggOrder(Base):
     order_type = Column(String, nullable=False)
     price = Column(Float, nullable=False, index=True)
     size = Column(Float, nullable=False)
+
+    __table_args__ = (
+        Index("agg_order_exchange_id_sequence_id_idx",
+              "exchange_id", "sequence_id", unique=True),
+    )
 
     @classmethod
     def index_elements(cls):
