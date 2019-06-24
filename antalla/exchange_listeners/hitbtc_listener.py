@@ -15,8 +15,7 @@ from .. import actions
 from ..exchange_listener import ExchangeListener
 from ..websocket_listener import WebsocketListener
 
-# max. is 1000
-TRADES_LIMIT = 10
+TRADES_LIMIT = 1000
 
 @ExchangeListener.register("hitbtc")
 class HitBTCListener(WebsocketListener):
@@ -169,29 +168,21 @@ class HitBTCListener(WebsocketListener):
             trades_message = await self._subscribe_trades(market, websocket)
             self._parse_message(trades_message)
 
-    async def _subscribe_orderbook(self, market, websocket):
-        message = dict(
-            method="subscribeOrderbook",
-            params={"symbol": market.upper()},
-            id=settings.HITBTC_API_KEY
-        )
+    async def _send_suscribe_message(self, method, params, websocket):
+        message = dict(method=method, id=settings.HITBTC_API_KEY)
+        message["params"] = params
         await websocket.send(json.dumps(message))
         response = await websocket.recv()
         logging.debug("< %s", response)
         return json.loads(response)
-    
-    #FIXME: the method above and below should make use of a another method handling the message sending
+
+    async def _subscribe_orderbook(self, market, websocket):
+        params = {"symbol": market.upper()},
+        return await self._send_suscribe_message("subscribeOrderbook", params, websocket)
 
     async def _subscribe_trades(self, market, websocket):
-        message = dict(
-            method="subscribeTrades",
-            params={"symbol": market.upper(), "limit": TRADES_LIMIT},
-            id=settings.HITBTC_API_KEY
-        )
-        await websocket.send(json.dumps(message))
-        response = await websocket.recv()
-        logging.debug("< %s", response)
-        return json.loads(response)
+        params = {"symbol": market.upper(), "limit": TRADES_LIMIT}
+        return await self._send_suscribe_message("subscribeTrades", params, websocket)
 
     def _parse_snapshotTrades(self, snapshot):
         return self._parse_raw_trades(snapshot)
