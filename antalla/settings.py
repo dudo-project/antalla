@@ -1,14 +1,24 @@
 import os
 
 
+MARKETS = [
+    "ETH_USDC",
+    "BTC_ETH",
+    "BTC_EOS",
+    "ETH_TUSD",
+    "BAT_ETH",
+    "TUSD_USDC",
+]
+
+
 IDEX_EVENTS = ["market_orders", "market_cancels", "market_trades"]
 IDEX_API_KEY = "17paIsICur8sA0OBqG6dH5G1rmrHNMwt4oNk4iX9"
 IDEX_WS_URL = "wss://datastream.idex.market"
 IDEX_API = "https://api.idex.market"
 IDEX_API_MARKETS = "return24Volume"
-IDEX_MARKETS = ["ETH_AURA", "ETH_IDXM", "ETH_FTM", "ETH_LTO"]
+IDEX_MARKETS = MARKETS
 
-BINANCE_MARKETS = ["BNB_BTC", "ETH_BTC", "LTC_BTC"]
+BINANCE_MARKETS = MARKETS
 BINANCE_STREAMS = ["depth", "trade"]
 BINANCE_SINGLE_STREAM = "wss://stream.binance.com:9443/ws/"
 BINANCE_COMBINED_STREAM = "wss://stream.binance.com:9443/stream?streams="
@@ -24,7 +34,7 @@ DB_URL = os.environ.get("DB_URL", "postgresql+psycopg2://antalla:antalla@localho
 PACKAGE = "antalla"
 
 COINBASE_WS_URL = "wss://ws-feed.pro.coinbase.com"
-COINBASE_MARKETS = ["ETH_USD", "ETH_EUR"]
+COINBASE_MARKETS = MARKETS
 COINBASE_CHANNELS = ["full"]
 COINBASE_API_KEY = os.environ.get("COINBASE_API_KEY")
 COINBASE_API_SECRET = os.environ.get("COINBASE_API_SECRET")
@@ -34,7 +44,7 @@ COINBASE_API_TICKER =  "ticker"
 
 COINMARKETCAP_URL = "https://coinmarketcap.com/all/views/all/"
 
-HITBTC_MARKETS = ["ETH_BTC", "LTC_BTC"]
+HITBTC_MARKETS = MARKETS
 HITBTC_WS_URL = "wss://api.hitbtc.com/api/2/ws"
 HITBTC_API = "https://api.hitbtc.com/api/2"
 HITBTC_API_MARKETS = "public/ticker"
