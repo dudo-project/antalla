@@ -33,3 +33,31 @@ class ExchangeListener(BaseFactory):
 
     def _parse_markets(self, markets):
         raise NotImplementedError()
+
+    def _parse_market(self, pair, all_symbols):
+        """
+        returns the individual coin symbols from a pair string of any possible length
+
+        >>> from types import SimpleNamespace
+        >>> symbols = ["BTC", "ETH", "WAVE", "USD"]
+        >>> dummy_self = SimpleNamespace(all_symbols=symbols)
+        >>> ExchangeListener._parse_market(dummy_self, "BTC_ETH", symbols)
+        ('BTC', 'ETH')
+        >>> ExchangeListener._parse_market(dummy_self, "BTCETH", symbols)
+        ('BTC', 'ETH')
+        >>> ExchangeListener._parse_market(dummy_self, "WAVEETH", symbols)
+        ('WAVE', 'ETH')
+        >>> ExchangeListener._parse_market(dummy_self, "USDWAVE", symbols)
+        ('USD', 'WAVE')
+        """   
+        split_at = lambda string, n: (string[:n], string[n:])
+        symbols = pair.split("_")
+        if len(symbols) == 2:
+            return tuple(symbols)
+        if len(pair) % 2 == 0:
+            return split_at(pair, len(pair) // 2)
+        for split_index in range(2, 10):
+            symbols = split_at(pair, split_index)
+            if all(sym in all_symbols for sym in symbols):
+                return symbols
+        raise Exception("unknown pair {} to parse".format(pair))

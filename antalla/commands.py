@@ -4,8 +4,7 @@ import json
 import pkg_resources
 import asyncio
 import logging
-import time
-import datetime
+from datetime import datetime
 
 from . import db, models, settings
 from .exchange_listener import ExchangeListener
@@ -94,7 +93,7 @@ async def start_crawler():
     coins = models.Coin.query.all()
     for coin in coins:
         coin.price_usd = await crawler.get_price(coin.symbol)
-        coin.last_price_updated = datetime.datetime.fromtimestamp(time.time())
+        coin.last_price_updated = datetime.now()
         if coin.name is None:
             coin.name = crawler.get_coin_name(coin.symbol)
         logging.debug("PRICE UPDATE - %s: %s USD", coin.symbol, coin.price_usd)
@@ -125,9 +124,9 @@ def set_usd_vol(exchange_id):
             logging.warning("no quoted volume for pair '{}-{}' on exchange id '{}'".format(exm.first_coin_id, exm.second_coin_id, exchange_id)) 
         else: 
             exm.volume_usd = coin_price * exm.quoted_volume
-            exm.volume_usd_timestamp = datetime.datetime.fromtimestamp(time.time())
+            exm.vol_usd_timestamp = datetime.now()
             logging.debug("UPDATE 'volume_usd' - exchange id: {} - usd volume: {} - market: '{}-{}' - timestamp: {}".format(
-                exm.exchange_id, exm.volume_usd, exm.first_coin_id, exm.second_coin_id, exm.volume_usd_timestamp
+                exm.exchange_id, exm.volume_usd, exm.first_coin_id, exm.second_coin_id, exm.vol_usd_timestamp
             ))
             db.session.add(exm)
     db.session.commit()
@@ -138,4 +137,4 @@ def get_usd_price(symbol):
         logging.debug("no USD price for symbol '%s' in db", symbol)
         return 0
     else:
-        return coin.usd_price
+        return coin.price_usd

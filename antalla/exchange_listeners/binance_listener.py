@@ -26,6 +26,7 @@ class BinanceListener(WebsocketListener):
         self.running = False
         self._get_ws_url()
         self._api_url = settings.BINANCE_API
+        self._all_symbols = []
 
     async def _listen(self):
         initial_actions = await self._setup_listener()
@@ -33,7 +34,6 @@ class BinanceListener(WebsocketListener):
         async with websockets.connect(self._ws_url) as websocket: 
             while self.running:
                 data = await websocket.recv()
-                logging.debug("received %s from binance", data)
                 actions = self._parse_message(json.loads(data))
                 self.on_event(actions)
 
@@ -73,7 +73,7 @@ class BinanceListener(WebsocketListener):
             "last_update_id": update["u"],
         }
         orders = self._convert_raw_orders(update, "b", "a", order_info)
-        pair = self._parse_market(update["s"])
+        pair = self._parse_market(update["s"], self._all_symbols)
         logging.debug("parsed %d orders in 'depth update' for pair '%s'", len(orders), ''.join(pair))
         return self._parse_agg_orders(orders)
 
@@ -81,7 +81,7 @@ class BinanceListener(WebsocketListener):
         return path.join(settings.BINANCE_API, settings.BINANCE_PUBLIC_API, endpoint)
 
     def _create_agg_order(self, order_info):
-        pair = self._parse_market(order_info["pair"])
+        pair = self._parse_market(order_info["pair"], self._all_symbols)
         return models.AggOrder(
             timestamp=datetime.fromtimestamp(order_info["timestamp"] / 1000),
             last_update_id=order_info["last_update_id"],
@@ -118,7 +118,7 @@ class BinanceListener(WebsocketListener):
 
     def _parse_trade(self, trade):
         # 'trade["s"]' = e.g. "BNBBTC"
-        trade_symbols = self._parse_market(trade["s"])
+        trade_symbols = self._parse_market(trade["s"], self._all_symbols)
         trade = self._convert_raw_trade(trade, trade_symbols[0], trade_symbols[1])
         return [actions.InsertAction([trade])] 
         
@@ -132,35 +132,8 @@ class BinanceListener(WebsocketListener):
             taker=raw_trade["a"],
             price=float(raw_trade["p"]),
             size=float(raw_trade["q"]),
+            exchange_trade_id=str(raw_trade["t"])
         )
-
-    def _parse_market(self, pair):
-        """
-        returns the individual coin symbols from a pair string of any possible length
-
-        >>> from types import SimpleNamespace
-        >>> symbols = ["BTC", "ETH", "WAVE", "USD"]
-        >>> dummy_self = SimpleNamespace(_all_symbols=symbols)
-        >>> BinanceListener._parse_market(dummy_self, "BTC_ETH")
-        ('BTC', 'ETH')
-        >>> BinanceListener._parse_market(dummy_self, "BTCETH")
-        ('BTC', 'ETH')
-        >>> BinanceListener._parse_market(dummy_self, "WAVEETH")
-        ('WAVE', 'ETH')
-        >>> BinanceListener._parse_market(dummy_self, "USDWAVE")
-        ('USD', 'WAVE')
-        """   
-        split_at = lambda string, n: (string[:n], string[n:])
-        symbols = pair.split("_")
-        if len(symbols) == 2:
-            return tuple(symbols)
-        if len(pair) % 2 == 0:
-            return split_at(pair, len(pair) // 2)
-        for split_index in range(2, 10):
-            symbols = split_at(pair, split_index)
-            if all(sym in self._all_symbols for sym in symbols):
-                return symbols
-        raise Exception("unknown pair {} to parse. Check if both symbols are specified in settings.BINANCE_MARKETS".format(pair))
 
     async def fetch_all_symbols(self, session):
         exchange_info = await self._fetch(session, self._get_uri(settings.BINANCE_API_INFO))
@@ -184,7 +157,7 @@ class BinanceListener(WebsocketListener):
         exchange_markets = []
         coins = []
         for market in markets:
-            pair = self._parse_market(market["symbol"])
+            pair = self._parse_market(market["symbol"], self._all_symbols)
             if len(pair) == 2:
                 coins.extend([
                     models.Coin(symbol=pair[0]),
@@ -204,6 +177,7 @@ class BinanceListener(WebsocketListener):
                     exchange_id=self.exchange.id,
                     first_coin_id=pair[0],
                     second_coin_id=pair[1],
+                    quoted_vol_timestamp=datetime.fromtimestamp(time.time())
                 ))
             else:
                 logging.debug("parse markets for '{}' - invalid market format: '{}' is not a pair of markets - IGNORE".format(self.exchange.name, market))  

@@ -19,6 +19,7 @@ class CoinbaseListener(WebsocketListener):
     def __init__(self, exchange, on_event, ws_url=settings.COINBASE_WS_URL):
         super().__init__(exchange, on_event, ws_url)
         self._format_markets()
+        self.running = False
 
     def _parse_message(self, message):
         event, payload = message["type"], message
@@ -130,8 +131,6 @@ class CoinbaseListener(WebsocketListener):
         requests = 0
         async with aiohttp.ClientSession() as session:
             for market_id in markets:
-                if not self.running:
-                    break
                 ticker_data = await self._fetch(session, settings.COINBASE_API+"/"+
                 settings.COINBASE_API_PRODUCTS+"/"+market_id+
                 "/"+settings.COINBASE_API_TICKER)
@@ -162,6 +161,7 @@ class CoinbaseListener(WebsocketListener):
                 exchange_id=self.exchange.id,
                 first_coin_id=pairs[0],
                 second_coin_id=pairs[1],
+                quoted_vol_timestamp=market["timestamp"]
             ))
         return [
             actions.InsertAction(coins),
@@ -173,7 +173,8 @@ class CoinbaseListener(WebsocketListener):
         return dict(
             buy_sym_id=pair.split("-")[0],
             sell_sym_id=pair.split("-")[1],
-            volume=ticker["volume"]
+            volume=ticker["volume"],
+            timestamp=ticker["time"]
         )
 
     def _parse_market(self, raw_markets):
@@ -232,7 +233,8 @@ class CoinbaseListener(WebsocketListener):
             maker_order_id=match["maker_order_id"],
             taker_order_id=match["taker_order_id"],
             price=float(match["price"]),
-            size=float(match["size"])
+            size=float(match["size"]),
+            exchange_trade_id=str(match["trade_id"])
         )
 
     async def _setup_connection(self, websocket):

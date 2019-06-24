@@ -37,4 +37,9 @@ COINBASE_API_TICKER =  "ticker"
 
 COINMARKETCAP_URL = "https://coinmarketcap.com/all/views/all/"
 
-PACKAGE = "antalla"
+HITBTC_MARKETS = ["ETH_BTC", "LTC_BTC"]
+HITBTC_WS_URL = "wss://api.hitbtc.com/api/2/ws"
+HITBTC_API = "https://api.hitbtc.com/api/2"
+HITBTC_API_MARKETS = "public/ticker"
+HITBTC_API_SYMBOLS = "public/symbol"
+HITBTC_API_KEY = "hBjmU7CawOCRg248JLloOerbOKg8I8k3"

@@ -1,6 +1,7 @@
 import json
 import logging
 from datetime import datetime
+import time
 
 from dateutil.parser import parse as parse_date
 import websockets
@@ -111,7 +112,8 @@ class IdexListener(WebsocketListener):
             size=float(raw_trade["amount"]),
             total=float(raw_trade["total"]),
             buyer_fee=float(raw_trade["buyerFee"]),
-            seller_fee=float(raw_trade["sellerFee"])
+            seller_fee=float(raw_trade["sellerFee"]),
+            exchange_trade_id=str(raw_trade["tid"])
         )
 
     def _get_markets_uri(self):
@@ -140,6 +142,7 @@ class IdexListener(WebsocketListener):
                     exchange_id=self.exchange.id,
                     first_coin_id=market[0],
                     second_coin_id=market[1],
+                    quoted_vol_timestamp=datetime.now()
                 ))
                 new_market = models.Market(
                     first_coin_id=market[0],

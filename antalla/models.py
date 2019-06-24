@@ -2,8 +2,15 @@ from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float
 from sqlalchemy import PrimaryKeyConstraint, UniqueConstraint, ForeignKeyConstraint, Index
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declared_attr
-from .db import Base
+from .db import Base as AbstractBase
 
+
+class Base(AbstractBase):
+    __abstract__ = True
+
+    @classmethod
+    def index_elements(cls):
+        return [v.name for v in cls.__table__.primary_key]
 
 
 class BelongsToOrder:
@@ -121,7 +128,10 @@ class OrderSize(BelongsToOrder, Base):
 class Trade(Base):
     __tablename__ = "trades"
 
-    id = Column(Integer, primary_key=True)
+    exchange_trade_id = Column(String, primary_key=True)
+    exchange_id = Column(Integer, ForeignKey("exchanges.id"), nullable=False, primary_key=True)
+
+    exchange = relationship("Exchange")
 
     timestamp = Column(DateTime, nullable=False, index=True)
     trade_type = Column(String)
@@ -129,8 +139,6 @@ class Trade(Base):
     buy_sym = relationship("Coin", foreign_keys=[buy_sym_id])
     sell_sym_id = Column(String, ForeignKey("coins.symbol"), nullable=False, index=True)
     sell_sym = relationship("Coin", foreign_keys=[sell_sym_id])
-    exchange_id = Column(Integer, ForeignKey("exchanges.id"), nullable=False, index=True)
-    exchange = relationship("Exchange")
     maker = Column(String)
     taker = Column(String)
     price = Column(Float, nullable=False)
@@ -139,21 +147,21 @@ class Trade(Base):
     buyer_fee = Column(Float)
     seller_fee = Column(Float)
     gas_fee = Column(Float)
-    exchange_order_id = Column(String, index=True, unique=True)
+    exchange_order_id = Column(String, index=True)
     maker_order_id = Column(String, index=True)
     taker_order_id = Column(String, index=True)
 
     def __repr__(self):
-        return f"Trade(id={self.id})"
+        return f"Trade(id={self.exchange_trade_id})"
 
 
 class AggOrder(Base):
     __tablename__ = "aggregate_orders"
 
     id = Column(Integer, primary_key=True)
-
+    sequence_id = Column(String)
     last_update_id = Column(Integer, nullable=False)
-    timestamp = Column(DateTime, index=True)
+    timestamp = Column(DateTime, index=True, nullable=False)
     buy_sym_id = Column(String,ForeignKey("coins.symbol"), nullable=False, index=True)
     buy_sym = relationship("Coin", foreign_keys=[buy_sym_id])
     sell_sym_id = Column(String, ForeignKey("coins.symbol"), nullable=False, index=True)
@@ -163,6 +171,15 @@ class AggOrder(Base):
     order_type = Column(String, nullable=False)
     price = Column(Float, nullable=False, index=True)
     size = Column(Float, nullable=False)
+
+    __table_args__ = (
+        Index("agg_order_exchange_id_sequence_id_idx",
+              "exchange_id", "sequence_id", unique=True),
+    )
+
+    @classmethod
+    def index_elements(cls):
+        return ["sequence_id", "exchange_id"]
 
     def __repr__(self):
         return f"AggOrder(id={self.id})"
@@ -190,6 +207,7 @@ class ExchangeMarket(Base):
     __tablename__ = "exchange_markets"
     volume_usd = Column(Float)
     quoted_volume = Column(Float, nullable=False)
+    quoted_vol_timestamp = Column(DateTime)
     vol_usd_timestamp = Column(DateTime)
     quoted_volume_id = Column(String, ForeignKey("coins.symbol"), nullable=False)
 
