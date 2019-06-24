@@ -131,7 +131,7 @@ class HitBTCListenerTest(unittest.TestCase):
         self.assertEqual(insert_action.items[0].size, 0.183)
         self.assertEqual(insert_action.items[0].price, 0.054670)
         self.assertEqual(insert_action.items[0].trade_type, "buy")
-        self.assertEqual(insert_action.items[0].id, 54469813)
+        self.assertEqual(insert_action.items[0].exchange_trade_id, 54469813)
         self.assertEqual(insert_action.items[0].timestamp, parse_date("2017-10-19T16:34:25.041Z"))
 
     def test_parse_update_orderbook(self):

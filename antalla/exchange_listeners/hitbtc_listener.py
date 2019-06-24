@@ -204,13 +204,13 @@ class HitBTCListener(WebsocketListener):
         trades = []
         for trade in snapshot["data"]:
             trades.append(models.Trade(
-            timestamp=parse_date(trade["timestamp"]),
-            trade_type=trade["side"],
-            exchange_id=self.exchange.id,
-            buy_sym_id= market[0],
-            sell_sym_id= market[1],
-            price=float(trade["price"]),
-            size=float(trade["quantity"]),
-            id=trade["id"]
+                timestamp=parse_date(trade["timestamp"]),
+                trade_type=trade["side"],
+                exchange_id=self.exchange.id,
+                buy_sym_id= market[0],
+                sell_sym_id= market[1],
+                price=float(trade["price"]),
+                size=float(trade["quantity"]),
+                exchange_trade_id=trade["id"]
             ))
         return [actions.InsertAction(trades)]

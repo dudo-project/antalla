@@ -121,7 +121,10 @@ class OrderSize(BelongsToOrder, Base):
 class Trade(Base):
     __tablename__ = "trades"
 
-    id = Column(String, primary_key=True)
+    exchange_trade_id = Column(String, primary_key=True)
+    exchange_id = Column(Integer, ForeignKey("exchanges.id"), nullable=False, primary_key=True)
+
+    exchange = relationship("Exchange")
 
     timestamp = Column(DateTime, nullable=False, index=True)
     trade_type = Column(String)
@@ -129,8 +132,6 @@ class Trade(Base):
     buy_sym = relationship("Coin", foreign_keys=[buy_sym_id])
     sell_sym_id = Column(String, ForeignKey("coins.symbol"), nullable=False, index=True)
     sell_sym = relationship("Coin", foreign_keys=[sell_sym_id])
-    exchange_id = Column(Integer, ForeignKey("exchanges.id"), nullable=False, index=True)
-    exchange = relationship("Exchange")
     maker = Column(String)
     taker = Column(String)
     price = Column(Float, nullable=False)
@@ -144,7 +145,7 @@ class Trade(Base):
     taker_order_id = Column(String, index=True)
 
     def __repr__(self):
-        return f"Trade(id={self.id})"
+        return f"Trade(id={self.exchange_trade_id})"
 
 
 class AggOrder(Base):

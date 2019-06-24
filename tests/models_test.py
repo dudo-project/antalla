@@ -27,7 +27,7 @@ class ModelsTest(unittest.TestCase):
         self.assertEqual(str(order_size), "OrderSize(id=1)")
 
     def test_trade_repr(self):
-        trade = models.Trade(id=1)
+        trade = models.Trade(exchange_trade_id=1)
         self.assertEqual(str(trade), "Trade(id=1)")
 
     def test_agg_order_repr(self):

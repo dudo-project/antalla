@@ -113,7 +113,7 @@ class IdexListener(WebsocketListener):
             total=float(raw_trade["total"]),
             buyer_fee=float(raw_trade["buyerFee"]),
             seller_fee=float(raw_trade["sellerFee"]),
-            id=str(raw_trade["tid"])
+            exchange_trade_id=str(raw_trade["tid"])
         )
 
     def _get_markets_uri(self):

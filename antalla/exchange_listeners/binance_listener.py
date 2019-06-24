@@ -132,7 +132,7 @@ class BinanceListener(WebsocketListener):
             taker=raw_trade["a"],
             price=float(raw_trade["p"]),
             size=float(raw_trade["q"]),
-            id=str(raw_trade["t"]) 
+            exchange_trade_id=str(raw_trade["t"])
         )
 
     async def fetch_all_symbols(self, session):

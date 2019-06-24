@@ -4,7 +4,6 @@ import json
 import pkg_resources
 import asyncio
 import logging
-import time
 from datetime import datetime
 
 from . import db, models, settings
@@ -94,7 +93,7 @@ async def start_crawler():
     coins = models.Coin.query.all()
     for coin in coins:
         coin.price_usd = await crawler.get_price(coin.symbol)
-        coin.last_price_updated = datetime.fromtimestamp(time.time())
+        coin.last_price_updated = datetime.now()
         if coin.name is None:
             coin.name = crawler.get_coin_name(coin.symbol)
         logging.debug("PRICE UPDATE - %s: %s USD", coin.symbol, coin.price_usd)
