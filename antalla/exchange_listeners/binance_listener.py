@@ -177,6 +177,7 @@ class BinanceListener(WebsocketListener):
                     exchange_id=self.exchange.id,
                     first_coin_id=pair[0],
                     second_coin_id=pair[1],
+                    quoted_vol_timestamp=datetime.fromtimestamp(time.time())
                 ))
             else:
                 logging.debug("parse markets for '{}' - invalid market format: '{}' is not a pair of markets - IGNORE".format(self.exchange.name, market))  

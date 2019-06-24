@@ -158,3 +158,11 @@ class HitBTCListener(WebsocketListener):
         response = await websocket.recv()
         logging.debug("< %s", response)
         return json.loads(response)
+
+
+    #TODO: implement orderbook updates
+
+
+
+    #TODO: implement trade updates
+

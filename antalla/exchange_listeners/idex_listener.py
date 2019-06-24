@@ -1,6 +1,7 @@
 import json
 import logging
 from datetime import datetime
+import time
 
 from dateutil.parser import parse as parse_date
 import websockets
@@ -140,6 +141,7 @@ class IdexListener(WebsocketListener):
                     exchange_id=self.exchange.id,
                     first_coin_id=market[0],
                     second_coin_id=market[1],
+                    quoted_vol_timestamp=datetime.now()
                 ))
                 new_market = models.Market(
                     first_coin_id=market[0],
