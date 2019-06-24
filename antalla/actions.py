@@ -23,7 +23,7 @@ class InsertAction(Action):
             return 0
         values = []
         items = set(self.items)
-        index_elements = [v.name for v in self.item_type.__table__.primary_key]
+        index_elements = self.item_type.index_elements()
         for item in items:
             data = vars(item)
             data.pop("_sa_instance_state", None)

@@ -2,8 +2,15 @@ from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float
 from sqlalchemy import PrimaryKeyConstraint, UniqueConstraint, ForeignKeyConstraint, Index
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declared_attr
-from .db import Base
+from .db import Base as AbstractBase
 
+
+class Base(AbstractBase):
+    __abstract__ = True
+
+    @classmethod
+    def index_elements(cls):
+        return [v.name for v in cls.__table__.primary_key]
 
 
 class BelongsToOrder:
@@ -164,6 +171,10 @@ class AggOrder(Base):
     order_type = Column(String, nullable=False)
     price = Column(Float, nullable=False, index=True)
     size = Column(Float, nullable=False)
+
+    @classmethod
+    def index_elements(cls):
+        return ["sequence_id", "exchange_id"]
 
     def __repr__(self):
         return f"AggOrder(id={self.id})"
