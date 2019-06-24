@@ -2,20 +2,21 @@
 import json
 import logging
 from os import path
+import pkg_resources
 
 import aiohttp
 from bs4 import BeautifulSoup
 
 from . import settings
 
-FIXTURES_PATH = path.join(path.dirname(__file__), "fixtures")
 
 class MarketCrawler:
     def __init__(self):
         self._http_session = None
         self._marketcap_url = settings.COINMARKETCAP_URL
-        with open(path.join(FIXTURES_PATH, "coinmarketcap-mappings.json")) as f:
-            self._coins = {v["symbol"]: v["name"] for v in json.load(f)}
+        coinmarket_filepath = path.join("fixtures", "coinmarketcap-mappings.json")
+        file_content = pkg_resources.resource_string(settings.PACKAGE, coinmarket_filepath)
+        self._coins = {v["symbol"]: v["name"] for v in json.loads(file_content)}
         self._prices = {}
 
     async def get_price(self, symbol):
