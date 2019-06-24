@@ -210,6 +210,7 @@ class ExchangeMarket(Base):
     quoted_vol_timestamp = Column(DateTime)
     vol_usd_timestamp = Column(DateTime)
     quoted_volume_id = Column(String, ForeignKey("coins.symbol"), nullable=False)
+    original_name = Column(String, nullable=False)
 
     first_coin_id = Column(String, ForeignKey("coins.symbol"), nullable=False, index=True)
     second_coin_id = Column(String, ForeignKey("coins.symbol"), nullable=False, index=True)

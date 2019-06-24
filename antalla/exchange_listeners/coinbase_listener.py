@@ -161,7 +161,8 @@ class CoinbaseListener(WebsocketListener):
                 exchange_id=self.exchange.id,
                 first_coin_id=pairs[0],
                 second_coin_id=pairs[1],
-                quoted_vol_timestamp=market["timestamp"]
+                quoted_vol_timestamp=market["timestamp"],
+                original_name=market["market_id"]
             ))
         return [
             actions.InsertAction(coins),
@@ -174,15 +175,12 @@ class CoinbaseListener(WebsocketListener):
             buy_sym_id=pair.split("-")[0],
             sell_sym_id=pair.split("-")[1],
             volume=ticker["volume"],
-            timestamp=ticker["time"]
+            timestamp=ticker["time"],
+            market_id=pair
         )
 
     def _parse_market(self, raw_markets):
-        markets = []
-        for market in raw_markets:
-            markets.append(market["id"])
-        return markets
-
+        return [market["id"] for market in raw_markets]
 
     def _new_order_size(self, timestamp, size, order_id):
         return models.OrderSize(
@@ -242,7 +240,7 @@ class CoinbaseListener(WebsocketListener):
 
     def _format_markets(self):
         self._all_markets = []
-        for market in settings.COINBASE_MARKETS:
+        for market in self.markets:
             self._all_markets.append('-'.join(market.split("_")))
     
     async def _send_message(self, websocket, request, product_ids, channels):

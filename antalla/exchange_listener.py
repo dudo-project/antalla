@@ -13,8 +13,9 @@ class ExchangeListener(BaseFactory):
     def _get_existing_markets(self, markets):
         existing_markets = []
         for market in markets:
-            if self._find_market(market):
-                existing_markets.append(market)
+            exchange_market = self._find_market(market)
+            if exchange_market:
+                existing_markets.append(exchange_market.original_name)
         return existing_markets
 
     def _find_market(self, market):

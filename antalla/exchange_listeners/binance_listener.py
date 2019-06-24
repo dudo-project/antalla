@@ -40,7 +40,7 @@ class BinanceListener(WebsocketListener):
     def _get_ws_url(self):
         self._ws_url = settings.BINANCE_COMBINED_STREAM
         for stream in settings.BINANCE_STREAMS:
-            for pair in settings.BINANCE_MARKETS:
+            for pair in self.markets:
                 self._ws_url = self._ws_url + ''.join(pair.lower().split("_")) + "@" + stream + "/"
         logging.debug("websocket connecting to: %s", self._ws_url)
 
@@ -48,7 +48,7 @@ class BinanceListener(WebsocketListener):
         actions = []
         async with aiohttp.ClientSession() as session:
             self._all_symbols = await self.fetch_all_symbols(session)
-            for pair in settings.BINANCE_MARKETS:
+            for pair in self.markets:
                 uri = settings.BINANCE_API + "/api/v1/depth?symbol=" + ''.join(pair.upper().split("_")) + "&limit=" + str(DEPTH_SNAPSHOT_LIMIT)
                 snapshot = await self._fetch(session, uri)
                 logging.debug("GET orderbook snapshot for '%s': %s", pair, snapshot)
@@ -177,7 +177,8 @@ class BinanceListener(WebsocketListener):
                     exchange_id=self.exchange.id,
                     first_coin_id=pair[0],
                     second_coin_id=pair[1],
-                    quoted_vol_timestamp=datetime.fromtimestamp(time.time())
+                    quoted_vol_timestamp=datetime.fromtimestamp(time.time()),
+                    original_name=market["symbol"]
                 ))
             else:
                 logging.debug("parse markets for '{}' - invalid market format: '{}' is not a pair of markets - IGNORE".format(self.exchange.name, market))  

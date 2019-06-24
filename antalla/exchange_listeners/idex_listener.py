@@ -32,7 +32,7 @@ class IdexListener(WebsocketListener):
     async def _setup_connection(self, websocket):
         handshake_data = dict(version="1.0.0", key=settings.IDEX_API_KEY)
         handshake_res = await self._send_message(websocket, "handshake", handshake_data)
-        subscription_data = dict(topics=settings.IDEX_MARKETS, events=settings.IDEX_EVENTS)
+        subscription_data = dict(topics=self.markets, events=settings.IDEX_EVENTS)
         await self._send_message(websocket, "subscribeToMarkets",
                                  subscription_data, sid=handshake_res["sid"])
 
@@ -142,7 +142,8 @@ class IdexListener(WebsocketListener):
                     exchange_id=self.exchange.id,
                     first_coin_id=market[0],
                     second_coin_id=market[1],
-                    quoted_vol_timestamp=datetime.now()
+                    quoted_vol_timestamp=datetime.now(),
+                    original_name=key
                 ))
                 new_market = models.Market(
                     first_coin_id=market[0],

@@ -8,7 +8,9 @@ from antalla.exchange_listener import ExchangeListener
 class DummyListener(ExchangeListener):
     def _find_market(self, market):
         if market == "ETH_BTC":
-            return True
+            return models.ExchangeMarket(
+                original_name="ETH_BTC"
+            )
         return False
 
 

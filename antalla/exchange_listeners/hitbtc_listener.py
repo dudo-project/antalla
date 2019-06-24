@@ -77,7 +77,8 @@ class HitBTCListener(WebsocketListener):
                     exchange_id=self.exchange.id,
                     first_coin_id=pair[0],
                     second_coin_id=pair[1],
-                    quoted_vol_timestamp=parse_date(market["timestamp"])
+                    quoted_vol_timestamp=parse_date(market["timestamp"]),
+                    original_name=market["symbol"]
                 ))
             else:
                 logging.warning("symbol not found in fetched symbols: %s", market["symbol"])
@@ -161,7 +162,7 @@ class HitBTCListener(WebsocketListener):
     async def _setup_connection(self, websocket):
         async with aiohttp.ClientSession() as session:
             self._all_symbols = await self.fetch_all_symbols(session)
-        for pair in settings.HITBTC_MARKETS:
+        for pair in self.markets:
             market = ''.join(pair.split("_"))
             orderbook_message = await self._subscribe_orderbook(market, websocket)
             self._parse_message(orderbook_message)
