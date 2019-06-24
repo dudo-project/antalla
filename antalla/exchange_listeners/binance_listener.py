@@ -34,7 +34,6 @@ class BinanceListener(WebsocketListener):
         async with websockets.connect(self._ws_url) as websocket: 
             while self.running:
                 data = await websocket.recv()
-                logging.debug("received %s from binance", data)
                 actions = self._parse_message(json.loads(data))
                 self.on_event(actions)
 
@@ -133,6 +132,7 @@ class BinanceListener(WebsocketListener):
             taker=raw_trade["a"],
             price=float(raw_trade["p"]),
             size=float(raw_trade["q"]),
+            id=str(raw_trade["t"]) 
         )
 
     async def fetch_all_symbols(self, session):

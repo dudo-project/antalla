@@ -121,7 +121,7 @@ class OrderSize(BelongsToOrder, Base):
 class Trade(Base):
     __tablename__ = "trades"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(String, primary_key=True)
 
     timestamp = Column(DateTime, nullable=False, index=True)
     trade_type = Column(String)
@@ -139,7 +139,7 @@ class Trade(Base):
     buyer_fee = Column(Float)
     seller_fee = Column(Float)
     gas_fee = Column(Float)
-    exchange_order_id = Column(String, index=True, unique=True)
+    exchange_order_id = Column(String, index=True)
     maker_order_id = Column(String, index=True)
     taker_order_id = Column(String, index=True)
 
@@ -151,7 +151,7 @@ class AggOrder(Base):
     __tablename__ = "aggregate_orders"
 
     id = Column(Integer, primary_key=True)
-
+    sequence_id = Column(String)
     last_update_id = Column(Integer, nullable=False)
     timestamp = Column(DateTime, index=True)
     buy_sym_id = Column(String,ForeignKey("coins.symbol"), nullable=False, index=True)

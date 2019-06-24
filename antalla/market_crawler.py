@@ -45,7 +45,7 @@ class MarketCrawler:
     async def _fetch_prices(self):
         async with aiohttp.ClientSession() as session:
             text = await self._fetch(session, settings.COINMARKETCAP_URL)
-            soup = BeautifulSoup(text)
+            soup = BeautifulSoup(text, features="html.parser")
             logging.debug("fetched HTML for all USD prices: %s", soup)
         tbody = soup.find("table", {"id": "currencies-all"}).tbody
         for row in tbody.find_all("tr"):

@@ -18,6 +18,10 @@ class HitBTCListenerTest(unittest.TestCase):
             self.dummy_exchange = models.Exchange(id=1338, name="dummy")
             self.on_event_mock = MagicMock()
             self.hitbtc_listener = HitBTCListener(self.dummy_exchange, self.on_event_mock)
+            self.hitbtc_listener._all_symbols = [
+                dict(id="ETHBTC", baseCurrency="ETH", quoteCurrency="BTC"),
+                dict(id="LTCBTC", baseCurrency="LTC", quoteCurrency="BTC"),
+                ]
 
     def assertAreAllActions(self, items):
         for item in items:
@@ -110,3 +114,51 @@ class HitBTCListenerTest(unittest.TestCase):
         self.assertEqual(insert_action.items[3].size, 0.245)
         self.assertEqual(insert_action.items[3].timestamp, parse_date("2018-11-19T05:00:28.193Z"))
         
+    def test_parse_raw_trades(self):
+        payload = self.raw_fixture("hitbtc/hitbtc-update-trades.json")
+        payload = json.loads(payload)
+        payload = payload["params"]
+        parsed_actions = self.hitbtc_listener._parse_raw_trades(payload)
+        self.assertAreAllActions(parsed_actions)
+        self.assertEqual(len(parsed_actions), 1)
+        insert_action = parsed_actions[0]
+        self.assertIsInstance(insert_action, actions.InsertAction)
+        self.assertEqual(len(insert_action.items), 1)
+        self.assertIsInstance(insert_action.items[0], models.Trade)
+        self.assertEqual(insert_action.items[0].exchange_id, self.dummy_exchange.id)
+        self.assertEqual(insert_action.items[0].buy_sym_id, "ETH")
+        self.assertEqual(insert_action.items[0].sell_sym_id, "BTC")
+        self.assertEqual(insert_action.items[0].size, 0.183)
+        self.assertEqual(insert_action.items[0].price, 0.054670)
+        self.assertEqual(insert_action.items[0].trade_type, "buy")
+        self.assertEqual(insert_action.items[0].id, 54469813)
+        self.assertEqual(insert_action.items[0].timestamp, parse_date("2017-10-19T16:34:25.041Z"))
+
+    def test_parse_update_orderbook(self):
+        payload = self.raw_fixture("hitbtc/hitbtc-update-orderbook.json")
+        payload = json.loads(payload)
+        payload = payload["params"]
+        parsed_actions = self.hitbtc_listener._parse_updateOrderbook(payload)
+        self.assertAreAllActions(parsed_actions)
+        self.assertEqual(len(parsed_actions), 1)
+        insert_action = parsed_actions[0]
+        self.assertIsInstance(insert_action, actions.InsertAction)
+        self.assertEqual(len(insert_action.items), 3)
+        self.assertIsInstance(insert_action.items[0], models.AggOrder)
+        self.assertEqual(insert_action.items[0].exchange_id, self.dummy_exchange.id)
+        self.assertEqual(insert_action.items[0].buy_sym_id, "ETH")
+        self.assertEqual(insert_action.items[0].sell_sym_id, "BTC")
+        self.assertEqual(insert_action.items[0].order_type, "bid")
+        self.assertEqual(insert_action.items[0].price, 0.054504)
+        self.assertEqual(insert_action.items[0].size, 0)
+        self.assertEqual(insert_action.items[0].sequence_id, "8073830")
+        self.assertEqual(insert_action.items[0].timestamp, parse_date("2018-11-19T05:00:28.700Z"))
+
+        self.assertEqual(insert_action.items[2].exchange_id, self.dummy_exchange.id)
+        self.assertEqual(insert_action.items[2].buy_sym_id, "ETH")
+        self.assertEqual(insert_action.items[2].sell_sym_id, "BTC")
+        self.assertEqual(insert_action.items[2].order_type, "ask")
+        self.assertEqual(insert_action.items[2].price, 0.054591)
+        self.assertEqual(insert_action.items[2].size, 0)
+        self.assertEqual(insert_action.items[2].sequence_id, "8073828")
+        self.assertEqual(insert_action.items[2].timestamp, parse_date("2018-11-19T05:00:28.700Z"))

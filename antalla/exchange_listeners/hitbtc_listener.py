@@ -100,14 +100,22 @@ class HitBTCListener(WebsocketListener):
             return []
 
     def _parse_snapshotOrderbook(self, snapshot):
-        order_info = {
-            "pair": snapshot["symbol"],
-            "timestamp": snapshot["timestamp"],
-            "last_update_id": snapshot["sequence"],              
-        }
-        orders = self._convert_raw_orders(snapshot, "bid", "ask", order_info)
-        logging.debug("parsed %d orders in depth snapshot for pair '%s'", len(orders), snapshot["symbol"])
-        return self._parse_agg_orders(orders)
+        return self._handle_raw_orders(snapshot)
+
+    def _handle_raw_orders(self, raw_orders):
+        market = self._parse_market(raw_orders["symbol"])
+        if market is not None and len(market) == 2:
+            order_info = {
+                "pair": market[0].upper() + market[1].upper(),
+                "timestamp": raw_orders["timestamp"],
+                "last_update_id": raw_orders["sequence"],              
+            }
+            orders = self._convert_raw_orders(raw_orders, "bid", "ask", order_info, raw_orders["sequence"])
+            logging.debug("parsed %d orders in depth snapshot for pair '%s'", len(orders), raw_orders["symbol"])
+            return self._parse_agg_orders(orders)
+        else:
+            logging.warning("unable to parse market '%s' to two symbols", orders["symbol"])
+            return []
 
     def _create_agg_order(self, order_info):
         pair = self._parse_market(order_info["pair"])
@@ -122,11 +130,17 @@ class HitBTCListener(WebsocketListener):
         else:
             logging.warning("no market found for: '%s'", order_info["pair"])
 
-    def _convert_raw_orders(self, orders, bid_key, ask_key, order_info):
+    def _parse_updateOrderbook(self, orders):
+        return self._handle_raw_orders(orders)
+
+    def _convert_raw_orders(self, orders, bid_key, ask_key, order_info, sequence):
         all_orders = []
+        sequence_id = sequence
         for bid in orders[bid_key]:
             new_bid_order = self._create_agg_order(order_info)
             if new_bid_order is not None:
+                new_bid_order.sequence_id = str(sequence_id)
+                sequence_id -= 1
                 new_bid_order.order_type = "bid"
                 new_bid_order.price = float(bid["price"])
                 new_bid_order.size = float(bid["size"])
@@ -134,6 +148,8 @@ class HitBTCListener(WebsocketListener):
         for ask in orders[ask_key]:
             new_ask_order = self._create_agg_order(order_info)
             if new_ask_order is not None:
+                new_ask_order.sequence_id = str(sequence_id)
+                sequence_id -= 1
                 new_ask_order.order_type = "ask"
                 new_ask_order.price = float(ask["price"])
                 new_ask_order.size = float(ask["size"])
@@ -149,7 +165,7 @@ class HitBTCListener(WebsocketListener):
         for pair in settings.HITBTC_MARKETS:
             market = ''.join(pair.split("_"))
             orderbook_message = await self._subscribe_orderbook(market, websocket)
-            #self._parse_message(orderbook_message)
+            self._parse_message(orderbook_message)
             trades_message = await self._subscribe_trades(market, websocket)
             self._parse_message(trades_message)
 
@@ -163,7 +179,9 @@ class HitBTCListener(WebsocketListener):
         response = await websocket.recv()
         logging.debug("< %s", response)
         return json.loads(response)
-        
+    
+    #FIXME: the method above and below should make use of a another method handling the message sending
+
     async def _subscribe_trades(self, market, websocket):
         message = dict(
             method="subscribeTrades",
@@ -174,9 +192,6 @@ class HitBTCListener(WebsocketListener):
         response = await websocket.recv()
         logging.debug("< %s", response)
         return json.loads(response)
-
-    #TODO: implement orderbook updates
-
 
     def _parse_snapshotTrades(self, snapshot):
         return self._parse_raw_trades(snapshot)
@@ -196,5 +211,6 @@ class HitBTCListener(WebsocketListener):
             sell_sym_id= market[1],
             price=float(trade["price"]),
             size=float(trade["quantity"]),
+            id=trade["id"]
             ))
         return [actions.InsertAction(trades)]

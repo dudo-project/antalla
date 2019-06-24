@@ -233,7 +233,8 @@ class CoinbaseListener(WebsocketListener):
             maker_order_id=match["maker_order_id"],
             taker_order_id=match["taker_order_id"],
             price=float(match["price"]),
-            size=float(match["size"])
+            size=float(match["size"]),
+            id=str(match["trade_id"])
         )
 
     async def _setup_connection(self, websocket):
