@@ -7,8 +7,8 @@ import asyncio
 from .exchange_listener import ExchangeListener
 
 class WebsocketListener(ExchangeListener):
-    def __init__(self, exchange, on_event, ws_url):
-        super().__init__(exchange, on_event)
+    def __init__(self, exchange, on_event, markets, ws_url):
+        super().__init__(exchange, on_event, markets)
         self._running = False
         self._ws_url = ws_url
 

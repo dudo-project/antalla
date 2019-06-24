@@ -5,9 +5,21 @@ from .base_factory import BaseFactory
 from . import models
 
 class ExchangeListener(BaseFactory):
-    def __init__(self, exchange, on_event):
+    def __init__(self, exchange, on_event, markets):
         self.exchange = exchange
         self.on_event = on_event
+        self.markets = self._get_existing_markets(markets)
+
+    def _get_existing_markets(self, markets):
+        existing_markets = []
+        for market in markets:
+            if self._find_market(market):
+                existing_markets.append(market)
+        return existing_markets
+
+    def _find_market(self, market):
+        first_coin, second_coin = market.split("_")
+        return models.ExchangeMarket.query.get((first_coin, second_coin, self.exchange.id))
 
     async def listen(self):
         raise NotImplementedError()

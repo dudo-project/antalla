@@ -21,8 +21,8 @@ DEPTH_SNAPSHOT_LIMIT = 1000
 
 @ExchangeListener.register("binance")
 class BinanceListener(WebsocketListener):
-    def __init__(self, exchange, on_event, ws_url=None):
-        super().__init__(exchange, on_event, ws_url)
+    def __init__(self, exchange, on_event, markets=settings.BINANCE_MARKETS, ws_url=None):
+        super().__init__(exchange, on_event, markets, ws_url)
         self.running = False
         self._get_ws_url()
         self._api_url = settings.BINANCE_API

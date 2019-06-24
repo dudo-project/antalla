@@ -16,8 +16,8 @@ from ..websocket_listener import WebsocketListener
 
 @ExchangeListener.register("coinbase")
 class CoinbaseListener(WebsocketListener):
-    def __init__(self, exchange, on_event, ws_url=settings.COINBASE_WS_URL):
-        super().__init__(exchange, on_event, ws_url)
+    def __init__(self, exchange, on_event, markets=settings.COINBASE_MARKETS, ws_url=settings.COINBASE_WS_URL):
+        super().__init__(exchange, on_event, markets, ws_url)
         self._format_markets()
         self.running = False
 

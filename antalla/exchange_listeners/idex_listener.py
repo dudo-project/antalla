@@ -16,8 +16,8 @@ import aiohttp
 
 @ExchangeListener.register("idex")
 class IdexListener(WebsocketListener):
-    def __init__(self, exchange, on_event, ws_url=settings.IDEX_WS_URL):
-        super().__init__(exchange, on_event, ws_url)
+    def __init__(self, exchange, on_event, markets=settings.IDEX_MARKETS, ws_url=settings.IDEX_WS_URL):
+        super().__init__(exchange, on_event, markets, ws_url)
 
     async def _send_message(self, websocket, request, payload, **kwargs):
         data = dict(request=request, payload=json.dumps(payload))
