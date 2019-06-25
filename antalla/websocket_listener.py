@@ -3,8 +3,10 @@ import websockets
 import json
 import logging
 import asyncio
+import sqlalchemy
 
 from .exchange_listener import ExchangeListener
+from .db import session
 
 class WebsocketListener(ExchangeListener):
     def __init__(self, exchange, on_event, markets, ws_url):
@@ -17,6 +19,9 @@ class WebsocketListener(ExchangeListener):
         while self.running:
             try:
                 await self._listen()
+            except sqlalchemy.exc.DBAPIError as e:
+                session.rollback()
+                logging.error("db error in %s: %s", e)
             except Exception as e:
                 logging.error("error in %s: %s", self.exchange, e)
 
