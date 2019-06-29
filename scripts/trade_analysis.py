@@ -63,17 +63,19 @@ def plot_individual_trades(all_trades, ax, exchange):
     
 def parse_market(raw_market, sym_1, sym_2):
     """
-    >>> symbols = ["ETH", "BTC"]
-    >>> raw_market = ["BTCETH"]
-    >>> parse_market(raw_market, symbols)
-    ('BTC', 'ETH') 
+    >>> raw_market = 'BTCETH'
+    >>> parse_market(raw_market, 'ETH', 'BTC')
+    ('BTC', 'ETH')
+    >>> parse_market("QTMBTC", 'QTM', 'BTC')
+    ('QTM', 'BTC')
+    
     """
     if sym_1 not in raw_market or sym_2 not in raw_market:
-        return []
+        return None
     elif raw_market[0:len(sym_1)] == sym_1:
-        return [sym_1, sym_2]
+        return (sym_1, sym_2)
     else:
-        return [sym_2, sym_1] 
+        return (sym_2, sym_1) 
 
 def is_original_market(buy_sym_id, sell_sym_id, exchange):
     query = (
