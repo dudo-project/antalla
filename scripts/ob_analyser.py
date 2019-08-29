@@ -26,7 +26,7 @@ class OrderBookAnalyser:
                     ob_bids.pop(order["price"], None)
                 else:
                     ob_bids[order["price"]] = order["size"]
-            else:
+            elif order["type"] == "ask":
                 if order["size"] == 0:
                     ob_asks.pop(order["price"], None)
                 else:
@@ -43,6 +43,8 @@ class OrderBookAnalyser:
         plt.plot(sell_price, sell_qty, label="Asks")
         plt.xlabel("Price Level (" + sell_sym_id + ")")
         plt.ylabel("Quantity")
+        plt.fill_between(buy_price, buy_qty, alpha=0.3)
+        plt.fill_between(sell_price, sell_qty, alpha=0.3)
         plt.show()
 
     def _get_stacked_orders(self, orders, keys):
@@ -61,12 +63,13 @@ class OrderBookAnalyser:
         return stacked_orders
         
     def _get_ob(self, buy_sym_id, sell_sym_id, exchange):
+        # TODO: specify date from which order book should be constructed or remove old entries from db
         query = (
             "select exchanges.name, aggregate_orders.timestamp, aggregate_orders.last_update_id, aggregate_orders.buy_sym_id," +
             " aggregate_orders.sell_sym_id, aggregate_orders.order_type, aggregate_orders.price, aggregate_orders.size" +
             " from aggregate_orders inner join exchanges on exchanges.id = aggregate_orders.exchange_id" +
             " where name = '"+exchange.lower()+"' and buy_sym_id = '"+buy_sym_id+"' and sell_sym_id = '"+sell_sym_id.upper()+
-            "' order by timestamp asc"
+            "' and timestamp > '2019-04-28' order by timestamp asc"
         )
         return session.execute(query)
     
@@ -76,11 +79,18 @@ class OrderBookAnalyser:
             ob.append(dict(
                 timestamp=order[1],
                 type=order[5],
-                price=order[6],
-                size=order[7]
+                price=float(order[6]),
+                size=float(order[7])
             ))
         return ob
 
 
-oba = OrderBookAnalyser()
-oba.visualise_ob("ETH", "BTC", "binance")
+"""
+The OrderbookAnalyser allows for a visualisation of the current order book (using data after 2019-04-28).
+
+Note: the implementation can still be improved performance-wise. 
+Example:
+    > oba = OrderBookAnalyser()
+    > oba.visualise_ob("ETH", "BTC", "binance")
+"""
+
