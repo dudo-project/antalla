@@ -25,10 +25,11 @@ class HitBTCListener(WebsocketListener):
 
     def _get_uri(self, endpoint):
         return path.join(settings.HITBTC_API, endpoint)
-
+        
     async def fetch_all_symbols(self, session):
         exchange_info = await self._fetch(session, self._get_uri(settings.HITBTC_API_SYMBOLS))
         all_symbols = []
+        logging.debug("hitbtc - markets retrieved - %s", exchange_info)
         for symbol_info in exchange_info:
             all_symbols.append(dict(
                 id=symbol_info["id"],
@@ -41,8 +42,10 @@ class HitBTCListener(WebsocketListener):
         async with aiohttp.ClientSession() as session:
             symbols = await self.fetch_all_symbols(session)
             self._all_symbols = symbols
-            markets = await self._fetch(session, self._get_uri(settings.HITBTC_API_MARKETS))
-            logging.debug("markets retrieved from %s: %s", self.exchange.name, markets)
+            markets_uri = self._get_uri(settings.HITBTC_API_MARKETS)
+            logging.debug("hitbtc - markets uri - %s", markets_uri)
+            markets = await self._fetch(session, markets_uri)
+            logging.debug("hitbtc - markets retrieved: %s", markets)
             actions = self._parse_markets(markets)
             self.on_event(actions)
 
@@ -100,11 +103,12 @@ class HitBTCListener(WebsocketListener):
             return []
 
     def _parse_snapshotOrderbook(self, snapshot):
+        logging.info("snapshot ob: %s", snapshot)
         return self._handle_raw_orders(snapshot)
 
     def _handle_raw_orders(self, raw_orders):
         market = self._parse_market(raw_orders["symbol"])
-        if market is not None and len(market) == 2:
+        if market is not None:
             order_info = {
                 "pair": market[0].upper() + market[1].upper(),
                 "timestamp": raw_orders["timestamp"],
@@ -114,7 +118,7 @@ class HitBTCListener(WebsocketListener):
             logging.debug("parsed %d orders in depth snapshot for pair '%s'", len(orders), raw_orders["symbol"])
             return self._parse_agg_orders(orders)
         else:
-            logging.warning("unable to parse market '%s' to two symbols", orders["symbol"])
+            logging.warning("unable to parse market '%s' to two symbols", raw_orders["symbol"])
             return []
 
     def _create_agg_order(self, order_info):
@@ -161,9 +165,8 @@ class HitBTCListener(WebsocketListener):
 
     async def _setup_connection(self, websocket):
         async with aiohttp.ClientSession() as session:
-            self._all_symbols = await self.fetch_all_symbols(session)
-        for pair in self.markets:
-            market = ''.join(pair.split("_"))
+            self._all_symbols = await self.fetch_all_symbols(session)           
+        for market in self.markets:
             orderbook_message = await self._subscribe_orderbook(market, websocket)
             self._parse_message(orderbook_message)
             trades_message = await self._subscribe_trades(market, websocket)
@@ -176,11 +179,10 @@ class HitBTCListener(WebsocketListener):
         response = await websocket.recv()
         logging.debug("< %s", response)
         return json.loads(response)
-
     async def _subscribe_orderbook(self, market, websocket):
-        params = {"symbol": market.upper()},
-        return await self._send_suscribe_message("subscribeOrderbook", params, websocket)
-
+        params = {"symbol": market.upper()}
+        return await self._send_suscribe_message("subscribeOrderbook", params, websocket) 
+        
     async def _subscribe_trades(self, market, websocket):
         params = {"symbol": market.upper(), "limit": TRADES_LIMIT}
         return await self._send_suscribe_message("subscribeTrades", params, websocket)
