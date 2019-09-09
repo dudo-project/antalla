@@ -143,8 +143,8 @@ class HitBTCListener(WebsocketListener):
         for bid in orders[bid_key]:
             new_bid_order = self._create_agg_order(order_info)
             if new_bid_order is not None:
-                new_bid_order.sequence_id = str(sequence_id)
-                sequence_id -= 1
+                #new_bid_order.sequence_id = str(sequence_id)
+                #sequence_id -= 1
                 new_bid_order.order_type = "bid"
                 new_bid_order.price = float(bid["price"])
                 new_bid_order.size = float(bid["size"])
@@ -152,8 +152,8 @@ class HitBTCListener(WebsocketListener):
         for ask in orders[ask_key]:
             new_ask_order = self._create_agg_order(order_info)
             if new_ask_order is not None:
-                new_ask_order.sequence_id = str(sequence_id)
-                sequence_id -= 1
+                #new_ask_order.sequence_id = str(sequence_id)
+                #sequence_id -= 1
                 new_ask_order.order_type = "ask"
                 new_ask_order.price = float(ask["price"])
                 new_ask_order.size = float(ask["size"])
