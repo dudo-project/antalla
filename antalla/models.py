@@ -175,6 +175,8 @@ class AggOrder(Base):
     __table_args__ = (
         Index("agg_order_exchange_id_sequence_id_idx",
               "exchange_id", "sequence_id", unique=True),
+        Index("latest_orders_index",
+            "order_type", "price", "last_update_id", unique=True)
     )
 
     @classmethod
@@ -237,18 +239,16 @@ class ExchangeMarket(Base):
 
 class OrderBookSnapshot(Base):
     __tablename__ = "order_book_snapshots"
-    
-    id = Column(Integer, primary_key=True)
-    
-    timestamp = Column(DateTime, nullable=False)
-    buy_sym_id = Column(String,ForeignKey("coins.symbol"), nullable=False, index=True)
+        
+    timestamp = Column(DateTime, nullable=False, primary_key=True)
+    buy_sym_id = Column(String,ForeignKey("coins.symbol"), nullable=False, index=True, primary_key=True)
     buy_sym = relationship("Coin", foreign_keys=[buy_sym_id])
-    sell_sym_id = Column(String, ForeignKey("coins.symbol"), nullable=False, index=True)
+    sell_sym_id = Column(String, ForeignKey("coins.symbol"), nullable=False, index=True, primary_key=True)
     sell_sym = relationship("Coin", foreign_keys=[sell_sym_id])
-    exchange_id = Column(Integer, ForeignKey("exchanges.id"), nullable=False, index=True)
+    exchange_id = Column(Integer, ForeignKey("exchanges.id"), nullable=False, index=True, primary_key=True)
     exchange = relationship("Exchange", foreign_keys=[exchange_id])
     spread = Column(Float, nullable=False, index=True)
-    bids_volume_ = Column(Float, nullable=False)
+    bids_volume = Column(Float, nullable=False)
     asks_volume = Column(Float, nullable=False)
     bids_count = Column(Integer, nullable=False)
     asks_count = Column(Integer, nullable=False)
@@ -268,3 +268,13 @@ class OrderBookSnapshot(Base):
     max_ask_qty = Column(Float, nullable=False)
     bid_price_median = Column(Float, nullable=False)
     ask_price_median = Column(Float, nullable=False)
+    bid_price_upper_quartile = Column(Float, nullable=False)
+    ask_lower_quartile = Column(Float, nullable=False)
+    bids_volume_upper_quartile = Column(Float, nullable=False)
+    asks_volume_lower_quartile = Column(Float, nullable=False)
+    bids_count_upper_quartile = Column(Integer, nullable=False)
+    asks_count_lower_quartile = Column(Integer, nullable=False)
+    bids_price_stddev_upper_quartile = Column(Float, nullable=False)
+    asks_price_stddev_lower_quartile = Column(Float, nullable=False)
+    bids_price_mean_upper_quartile = Column(Float, nullable=False)
+    asks_price_mean_lower_quartile = Column(Float, nullable=False)

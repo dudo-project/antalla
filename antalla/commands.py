@@ -1,4 +1,5 @@
 import signal
+import sys
 from os import path
 import json
 import pkg_resources
@@ -10,6 +11,8 @@ from . import db, models, settings
 from .exchange_listener import ExchangeListener
 from .orchestrator import Orchestrator
 from . import market_crawler
+from .ob_snapshot_generator import OBSnapshotGenerator
+
 
 
 def init_db(args):
@@ -138,3 +141,15 @@ def get_usd_price(symbol):
         return 0
     else:
         return coin.price_usd
+
+def snapshot(args):
+    if args["exchange"]:
+        exchanges = args["exchange"]
+    else:
+        exchanges = ExchangeListener.registered()
+    obs_generator = OBSnapshotGenerator(exchanges) 
+    try:
+        obs_generator.run()
+    except KeyboardInterrupt:
+        logging.warning("KeybaordInterrupt - 'obs_generator.run()'")
+        sys.exit()
