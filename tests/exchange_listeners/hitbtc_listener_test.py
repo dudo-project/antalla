@@ -151,7 +151,6 @@ class HitBTCListenerTest(unittest.TestCase):
         self.assertEqual(insert_action.items[0].order_type, "bid")
         self.assertEqual(insert_action.items[0].price, 0.054504)
         self.assertEqual(insert_action.items[0].size, 0)
-        self.assertEqual(insert_action.items[0].sequence_id, "8073830")
         self.assertEqual(insert_action.items[0].timestamp, parse_date("2018-11-19T05:00:28.700Z"))
 
         self.assertEqual(insert_action.items[2].exchange_id, self.dummy_exchange.id)
@@ -160,5 +159,4 @@ class HitBTCListenerTest(unittest.TestCase):
         self.assertEqual(insert_action.items[2].order_type, "ask")
         self.assertEqual(insert_action.items[2].price, 0.054591)
         self.assertEqual(insert_action.items[2].size, 0)
-        self.assertEqual(insert_action.items[2].sequence_id, "8073828")
         self.assertEqual(insert_action.items[2].timestamp, parse_date("2018-11-19T05:00:28.700Z"))

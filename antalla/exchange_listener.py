@@ -19,8 +19,8 @@ class ExchangeListener(BaseFactory):
         return existing_markets
 
     def _find_market(self, market):
-        first_coin, second_coin = market.split("_")
-        return models.ExchangeMarket.query.get((first_coin, second_coin, self.exchange.id))
+        pair = sorted(market.split("_"))
+        return models.ExchangeMarket.query.get((pair[0], pair[1], self.exchange.id))
 
     async def listen(self):
         raise NotImplementedError()
