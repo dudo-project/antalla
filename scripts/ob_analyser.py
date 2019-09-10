@@ -1,3 +1,5 @@
+import time
+import sys
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -43,8 +45,10 @@ class OrderBookAnalyser:
         plt.ylabel("Quantity")
         plt.fill_between(buy_price, buy_qty, alpha=0.3)
         plt.fill_between(sell_price, sell_qty, alpha=0.3)
-        plt.show()
-        #plt.savefig("hitbtc_depth.png")
+        #plt.show()
+        plt.pause(0.05)
+        plt.clf()
+        #plt.savefig("order_book_depth.png")
 
     def _get_stacked_orders(self, orders, keys):
         """ returns a dict containing stacked order quantities
@@ -65,31 +69,41 @@ class OrderBookAnalyser:
         - for visualisation purposes not all orders are retrieved
         - orders are only retrieved if ask/bid prices lie below/above the median price, respectively
         """
-
         query = (
         """
-        select 
-            exchanges.name,
-            timestamp,
-            buy_sym_id,
-            sell_sym_id,
-            order_type,
-            price,
-            size
-        from aggregate_orders inner join exchanges on exchanges.name = '""" + exchange.lower() + "'" +
-        " and buy_sym_id = '" + buy_sym_id.upper() + "' and sell_sym_id = '" + sell_sym_id.upper() + "'" +
-        """
-        and ((aggregate_orders.order_type = 'bid' and aggregate_orders.price >= (
-            select percentile_disc(0.25) within group (order by price)
-            from aggregate_orders
-            where order_type = 'bid'
-            ))
-        or (aggregate_orders.order_type = 'ask' and aggregate_orders.price <= (
-            select percentile_disc(0.5) within group (order by price)
-            from aggregate_orders
-            where order_type = 'ask'
-                ))) order by timestamp asc
-        """
+        with order_book as (
+                  with latest_orders as (
+                      select order_type, price, max(last_update_id) max_update_id
+                      from aggregate_orders
+                      group by aggregate_orders.price, aggregate_orders.order_type)
+                  select aggregate_orders.id,
+                         order_type,
+                         price,
+                         size,
+                         last_update_id,
+                         timestamp,
+                         name,
+                         buy_sym_id,
+                         sell_sym_id
+                  from aggregate_orders
+                           inner join exchanges on aggregate_orders.exchange_id = exchanges.id
+                  where (order_type, price, last_update_id) in (select * from latest_orders)
+                    and size > 0
+                    and buy_sym_id = '""" + buy_sym_id.upper() + "'" +
+                    "and sell_sym_id = '" + sell_sym_id.upper() + "'" + 
+                    "and name = '" + exchange.lower() + """'
+                  order by price asc
+        ) select * from order_book where (order_book.order_type = 'bid' and order_book.price >= (
+            select percentile_disc(0.75) within group (order by order_book.price)
+            from order_book
+                where order_book.order_type = 'bid'
+        )
+            ) or (order_book.order_type = 'ask' and order_book.price <= (
+            select percentile_disc(0.25) within group (order by order_book.price)
+            from order_book
+                where order_book.order_type = 'ask'
+        ))
+    """
         )
         return session.execute(query)
     
@@ -97,10 +111,10 @@ class OrderBookAnalyser:
         ob = []
         for order in list(raw_ob):
             ob.append(dict(
-                timestamp=order[1],
-                type=order[4],
-                price=float(order[5]),
-                size=float(order[6])
+                timestamp=order[5],
+                type=order[1],
+                price=float(order[2]),
+                size=float(order[3])
             ))
         return ob
 
@@ -123,4 +137,9 @@ Example:
 """
 
 oba = OrderBookAnalyser()
-oba.visualise_ob("ETH", "BTC", "hitbtc")
+while True:
+    try:
+        oba.visualise_ob("ETH", "BTC", "hitbtc")
+        #time.sleep(1)
+    except KeyboardInterrupt:
+        sys.exit()
