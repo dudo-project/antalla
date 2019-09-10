@@ -119,16 +119,7 @@ class OrderBookAnalyser:
         return ob
 
 """
-TODO: implement stats tracker for snapshot of order book:
-    -spread
-    -mid price
-    -sum of bids
-    -sum of asks
-    -number of bids
-    -number of asks
-    -normalise in USD (?) 
-
-The OrderbookAnalyser allows for a visualisation of the current order book (using data after 2019-04-28).
+The OrderbookAnalyser allows for a visualisation of the current order book.
 
 Note: the implementation can still be improved performance-wise. 
 Example:
