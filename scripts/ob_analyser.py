@@ -18,8 +18,8 @@ class OrderBookAnalyser:
     def visualise_ob(self, buy_sym_id, sell_sym_id, exchange):
         ob_bids = dict()
         ob_asks = dict()
-        raw_ob = self._get_ob(buy_sym_id, sell_sym_id, exchange)
-        order_history = self._parse_ob(raw_ob)
+        result_proxy_ob = self._get_ob(buy_sym_id, sell_sym_id, exchange)
+        order_history = self._parse_ob(result_proxy_ob)
         print("orderbook size: ", len(order_history))
         for order in order_history:
             if order["type"] == "bid":
@@ -89,9 +89,9 @@ class OrderBookAnalyser:
                            inner join exchanges on aggregate_orders.exchange_id = exchanges.id
                   where (order_type, price, last_update_id) in (select * from latest_orders)
                     and size > 0
-                    and buy_sym_id = '""" + buy_sym_id.upper() + "'" +
-                    "and sell_sym_id = '" + sell_sym_id.upper() + "'" + 
-                    "and name = '" + exchange.lower() + """'
+                    and buy_sym_id = :buy_sym_id
+                    and sell_sym_id = :sell_sym_id
+                    and name = :exchange
                   order by price asc
         ) select * from order_book where (order_book.order_type = 'bid' and order_book.price >= (
             select percentile_disc(0.75) within group (order by order_book.price)
@@ -105,7 +105,7 @@ class OrderBookAnalyser:
         ))
     """
         )
-        return session.execute(query)
+        return session.execute(query, {"buy_sym_id": buy_sym_id.upper(), "sell_sym_id": sell_sym_id.upper(), "exchange": exchange.lower()})
     
     def _parse_ob(self, raw_ob):
         ob = []
