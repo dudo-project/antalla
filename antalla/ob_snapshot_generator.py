@@ -2,7 +2,7 @@
 from datetime import datetime
 import logging
 
-from db import session
+from .db import session
 from . import models
 from . import actions
 
