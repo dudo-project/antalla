@@ -234,3 +234,37 @@ class ExchangeMarket(Base):
 
     def __hash__(self):
         return hash((self.first_coin_id, self.second_coin_id, self.exchange_id))
+
+class OrderBookSnapshot(Base):
+    __tablename__ = "order_book_snapshots"
+    
+    id = Column(Integer, primary_key=True)
+    
+    timestamp = Column(DateTime, nullable=False)
+    buy_sym_id = Column(String,ForeignKey("coins.symbol"), nullable=False, index=True)
+    buy_sym = relationship("Coin", foreign_keys=[buy_sym_id])
+    sell_sym_id = Column(String, ForeignKey("coins.symbol"), nullable=False, index=True)
+    sell_sym = relationship("Coin", foreign_keys=[sell_sym_id])
+    exchange_id = Column(Integer, ForeignKey("exchanges.id"), nullable=False, index=True)
+    exchange = relationship("Exchange", foreign_keys=[exchange_id])
+    spread = Column(Float, nullable=False, index=True)
+    bids_volume_ = Column(Float, nullable=False)
+    asks_volume = Column(Float, nullable=False)
+    bids_count = Column(Integer, nullable=False)
+    asks_count = Column(Integer, nullable=False)
+    bids_price_stddev = Column(Float, nullable=False)
+    asks_price_stddev = Column(Float, nullable=False)
+    bids_price_mean = Column(Float, nullable=False)
+    asks_price_mean = Column(Float, nullable=False)
+    bids_vwap = Column(Float, nullable=False)
+    asks_vwap = Column(Float, nullable=False)
+    min_bid_price = Column(Float, nullable=False)
+    min_ask_price = Column(Float, nullable=False)
+    min_bid_qty = Column(Float, nullable=False)
+    min_ask_qty = Column(Float, nullable=False)
+    max_bid_price = Column(Float, nullable=False)
+    max_ask_price = Column(Float, nullable=False)
+    max_bid_qty = Column(Float, nullable=False)
+    max_ask_qty = Column(Float, nullable=False)
+    bid_price_median = Column(Float, nullable=False)
+    ask_price_median = Column(Float, nullable=False)
