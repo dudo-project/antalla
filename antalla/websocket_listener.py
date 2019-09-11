@@ -42,3 +42,5 @@ class WebsocketListener(ExchangeListener):
     
     def stop(self):
         self.running = False
+        for market in self.markets:
+            self._log_event(market, "disconnect", "all")

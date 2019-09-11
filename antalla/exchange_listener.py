@@ -1,14 +1,21 @@
 import aiohttp
 import json
 import logging
+from datetime import datetime
 from .base_factory import BaseFactory
 from . import models
+from . import actions
+from .db import session 
+
+DEFAULT_COMMIT_INTERVAL = 1
 
 class ExchangeListener(BaseFactory):
     def __init__(self, exchange, on_event, markets):
         self.exchange = exchange
         self.on_event = on_event
         self.markets = self._get_existing_markets(markets)
+        self.event_log = []
+        self.commits = 0
 
     def _get_existing_markets(self, markets):
         existing_markets = []
@@ -74,3 +81,24 @@ class ExchangeListener(BaseFactory):
             if all(sym in all_symbols for sym in symbols):
                 return symbols
         raise Exception("unknown pair {} to parse".format(pair))
+
+    def _log_event(self, market, connection_event, data_collected):
+        pair = self._parse_market(market)
+        event = models.Event(
+            timestamp=datetime.now(),
+            exchange_id=self.exchange.id,
+            buy_sym_id=pair[0], 
+            sell_sym_id=pair[1],
+            connection_event=connection_event,
+            data_collected=data_collected
+        )
+        action = actions.InsertAction([event])
+        action.execute(session)
+        if len(self.event_log) >= DEFAULT_COMMIT_INTERVAL:
+            session.commit()
+            self.commits += 1
+            logging.info("event log commit[{}] - {} - {} event(s) committed to 'events' table".format(self.commits, self.exchange.name, len(self.event_log)))
+            self.event_log.clear()
+        else:
+            self.event_log.append(action)
+

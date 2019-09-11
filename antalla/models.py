@@ -237,6 +237,7 @@ class ExchangeMarket(Base):
     def __hash__(self):
         return hash((self.first_coin_id, self.second_coin_id, self.exchange_id))
 
+
 class OrderBookSnapshot(Base):
     __tablename__ = "order_book_snapshots"
         
@@ -278,3 +279,20 @@ class OrderBookSnapshot(Base):
     asks_price_stddev_lower_quartile = Column(Float, nullable=False)
     bids_price_mean_upper_quartile = Column(Float, nullable=False)
     asks_price_mean_lower_quartile = Column(Float, nullable=False)
+
+
+class Event(Base):
+    __tablename__ = "events"
+
+    id = Column(Integer, primary_key=True)
+
+    timestamp = Column(DateTime, nullable=False)
+    connection_event = Column(String, nullable=False)
+    data_collected = Column(String, nullable=False)
+    buy_sym_id = Column(String,ForeignKey("coins.symbol"), nullable=False, index=True)
+    buy_sym = relationship("Coin", foreign_keys=[buy_sym_id])
+    sell_sym_id = Column(String, ForeignKey("coins.symbol"), nullable=False, index=True)
+    sell_sym = relationship("Coin", foreign_keys=[sell_sym_id])
+    exchange_id = Column(Integer, ForeignKey("exchanges.id"), nullable=False, index=True)
+    exchange = relationship("Exchange")
+    

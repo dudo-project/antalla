@@ -163,9 +163,12 @@ class HitBTCListener(WebsocketListener):
         async with aiohttp.ClientSession() as session:
             self._all_symbols = await self.fetch_all_symbols(session)           
         for market in self.markets:
+            logging.info("market: %s", market)
             orderbook_message = await self._subscribe_orderbook(market, websocket)
+            self._log_event(market, "connect", "agg_order_book")
             self._parse_message(orderbook_message)
             trades_message = await self._subscribe_trades(market, websocket)
+            self._log_event(market, "connect", "trades")
             self._parse_message(trades_message)
 
     async def _send_suscribe_message(self, method, params, websocket):
@@ -175,6 +178,7 @@ class HitBTCListener(WebsocketListener):
         response = await websocket.recv()
         logging.debug("< %s", response)
         return json.loads(response)
+    
     async def _subscribe_orderbook(self, market, websocket):
         params = {"symbol": market.upper()}
         return await self._send_suscribe_message("subscribeOrderbook", params, websocket) 
