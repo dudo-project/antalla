@@ -1,4 +1,3 @@
-
 from datetime import datetime
 from datetime import timedelta
 from collections import defaultdict
@@ -14,20 +13,43 @@ SNAPSHOT_INTERVAL_SECONDS = 1
 DEFAULT_COMMIT_INTERVAL = 100
 
 class OBSnapshotGenerator:
-    def __init__(self, exchanges, timestamp):
+    def __init__(self, exchanges, timestamp, commit_interval=DEFAULT_COMMIT_INTERVAL, snapshot_interval=SNAPSHOT_INTERVAL_SECONDS):
         self.exchanges = exchanges
         self.stop_time = timestamp
+        self.commit_interval = commit_interval
+        self.snapshot_interval = snapshot_interval
+        self.actions_buffer = []
+        self.commit_counter = 0    
 
     def run(self):
         exchange_markets = self._query_exchange_markets()
         parsed_exchange_markets = self._parse_exchange_markets(exchange_markets) 
         for exchange in parsed_exchange_markets:
             for market in parsed_exchange_markets[exchange]:
-                start_time = market[2]
-                order_books = self._query_order_books(exchange, market[0], market[1], start_time)
-                full_ob, quartile_ob = self._parse_order_books()
-                snapshot = self._generate_snapshot(full_ob, quartile_ob)
-                
+                logging.debug("order book snapshot - {} - '{}-{}' - start time: {}".format(exchange.upper(), market["buy_sym_id"], market["sell_sym_id"], market["timestamp"]))
+                while start_time < self.stop_time:
+                    logging.debug("start: {}, end: {}".format(start_time, self.stop_time))
+                    stop_time = datetime.strftime(start_time, '%Y-%m-%d %H:%M:%S.%f')
+                    order_books = self._query_order_books(exchange, market["buy_sym_id"], market["sell_sym_id"], stop_time)
+                    full_ob, quartile_ob = self._parse_order_books(order_books)
+                    if full_ob is None:
+                        start_time += timedelta(seconds=self.snapshot_interval)
+                        continue
+                    metadata = dict(timestamp=start_time, exchange_id=market["exchange_id"], buy_sym_id=market["buy_sym_id"], sell_sym_id=market["sell_sym_id"])
+                    snapshot = self._generate_snapshot(full_ob, quartile_ob, metadata)
+                    action = actions.InsertAction([snapshot])
+                    action.execute(session)
+                    if len(self.actions_buffer) >= self.commit_interval:
+                        session.commit()
+                        self.commit_counter += 1
+                        logging.debug("order book snapshot commit[{}]".format(self.commit_counter))
+                    else:
+                        self.actions_buffer.append(action)
+                    start_time += timedelta(seconds=self.snapshot_interval)
+                    logging.debug("new order book snapshot created - {}".format(start_time))
+        if len(self.actions_buffer) > 0:
+            session.commit()
+        logging.debug("completed order book snapshots - total commits: {}".format(self.commit_counter))
 
     def _query_exchange_markets(self):
         query = (
@@ -37,29 +59,28 @@ class OBSnapshotGenerator:
                          events.sell_sym_id,
                          exchanges.name,
                          min(events.timestamp),
+                         exchanges.id,
                          events.data_collected
                   from events
                            inner join exchanges on events.exchange_id = exchanges.id
-                  group by events.buy_sym_id, events.sell_sym_id, exchanges.name, events.data_collected
+                  group by events.buy_sym_id, events.sell_sym_id, exchanges.name, exchanges.id, events.data_collected
             ) pairs where pairs.data_collected = 'agg_order_book'
             """
         )
         return session.execute(query)
 
+    # TODO: add test!
     def _parse_exchange_markets(self, exchange_markets):
         exchange_markets = list(exchange_markets)
         if len(exchange_markets) == 0:
             return None
         all_markets = defaultdict(list)
         for market in exchange_markets:
-            all_markets[market[2]].append((market[0], market[1], market[2]))
+            #all_markets[market[2]].append((market[0], market[1], market[2], market[3], market[4]))
+            all_markets[market[2]].append(dict(buy_sym_id=market[0], sell_sym_id=market[1], exchange=market[2], timestamp=market[3], exchange_id=market[4]))
         return all_markets
 
     def _query_order_books(self, exchange, buy_sym_id, sell_sym_id, timestamp):
-        #TODO:
-        #- how to get all pairs orders are collected for an exchange  
-        #- for each exchange: get each pair --> for each pair query for latest snapshot --> parse snapshot
-        #- if exchange does not have an aggregated order book --> nothing happens
         query = (
             """
             with order_book as (
@@ -104,13 +125,14 @@ class OBSnapshotGenerator:
         )
         return session.execute(query, {"timestamp": timestamp, "buy_sym_id": buy_sym_id.upper(), "sell_sym_id": sell_sym_id.upper(), "exchange": exchange.lower()})
 
-    # TODO: add tests!
+    # TODO: add test!
     def _parse_order_books(self, order_books):
         full_order_book = []
         quartile_order_book = []
         order_books = list(order_books)
         if len(order_books) == 0:
-            return None
+            logging.debug("empty order book to be parsed")
+            return None, None
         for order in order_books:
             if order[9] == True:
                 # order is in quartile order book
@@ -129,10 +151,15 @@ class OBSnapshotGenerator:
         logging.debug("ob_snapshot_generator - parsed order books: 'full order book' ({} orders), 'quartile order book' ({} orders)". format(len(full_order_book), len(quartile_order_book)))
         return full_order_book, quartile_order_book
         
-    def _generate_snapshot(self, full_ob, quartile_ob):
+    # TODO: add test!
+    def _generate_snapshot(self, full_ob, quartile_ob, metadata):
         full_ob_stats = self._compute_stats(full_ob)
-        quartile_ob_stats= self._compute_stats(quartile_ob)
+        quartile_ob_stats = self._compute_stats(quartile_ob)
         return models.OrderBookSnapshot(
+            exchange_id=metadata["exchange_id"],
+            sell_sym_id=metadata["sell_sym_id"],
+            buy_sym_id=metadata["buy_sym_id"],
+            timestamp=metadata["timestamp"],
             spread=full_ob_stats["spread"],
             bids_volume=full_ob_stats["bids_volume"], 
             asks_volume=full_ob_stats["asks_volume"],
