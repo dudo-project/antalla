@@ -1,4 +1,5 @@
 import aiohttp
+import uuid
 import json
 import logging
 from datetime import datetime
@@ -16,6 +17,7 @@ class ExchangeListener(BaseFactory):
         self.markets = self._get_existing_markets(markets)
         self.event_log = []
         self.commits = 0
+        self._session_id = uuid.uuid4()
 
     def _get_existing_markets(self, markets):
         existing_markets = []
@@ -82,10 +84,15 @@ class ExchangeListener(BaseFactory):
                 return symbols
         raise Exception("unknown pair {} to parse".format(pair))
 
+    @property
+    def _all_symbols(self):
+        raise NotImplementedError()
+
     def _log_event(self, market, connection_event, data_collected):
-        pair = self._parse_market(market)
+        pair = self._parse_market(market, self._all_symbols)
         event = models.Event(
             timestamp=datetime.now(),
+            session_id=self._session_id,
             exchange_id=self.exchange.id,
             buy_sym_id=pair[0], 
             sell_sym_id=pair[1],
@@ -102,3 +109,6 @@ class ExchangeListener(BaseFactory):
         else:
             self.event_log.append(action)
 
+    def _log_disconnection(self):
+        for market in self.markets:
+            self._log_event(market, "disconnect", "all")

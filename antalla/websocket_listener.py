@@ -22,8 +22,10 @@ class WebsocketListener(ExchangeListener):
             except sqlalchemy.exc.DBAPIError as e:
                 session.rollback()
                 logging.error("db error in %s: %s", e)
+                self._log_disconnection()
             except Exception as e:
                 logging.error("error in %s: %s", self.exchange, e)
+                self._log_disconnection()
 
     async def _listen(self):
         async with websockets.connect(self._ws_url) as websocket: 
@@ -42,5 +44,4 @@ class WebsocketListener(ExchangeListener):
     
     def stop(self):
         self.running = False
-        for market in self.markets:
-            self._log_event(market, "disconnect", "all")
+        self._log_disconnection()
