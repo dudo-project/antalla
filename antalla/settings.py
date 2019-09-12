@@ -30,7 +30,14 @@ BINANCE_PRIVATE_API = "api/v3"
 BINANCE_API_MARKETS = "ticker/24hr?"
 BINANCE_API_INFO = "exchangeInfo"
 
-DB_URL = os.environ.get("DB_URL", "postgresql+psycopg2://antalla:antalla@localhost/antalla?client_encoding=utf8")
+ENV = os.environ.get("ENV", "development")
+
+if ENV == "test":
+    DB_URL = os.environ.get("DB_URL", "postgresql+psycopg2://antalla:antalla@localhost/antalla-test?client_encoding=utf8")
+else:
+    DB_URL = os.environ.get("DB_URL", "postgresql+psycopg2://antalla:antalla@localhost/antalla?client_encoding=utf8")
+
+#DB_URL = os.environ.get("DB_URL", "postgresql+psycopg2://antalla:antalla@satoshi.doc.ic.ac.uk/antalla?client_encoding=utf8")
 PACKAGE = "antalla"
 
 COINBASE_WS_URL = "wss://ws-feed.pro.coinbase.com"
@@ -44,9 +51,13 @@ COINBASE_API_TICKER =  "ticker"
 
 COINMARKETCAP_URL = "https://coinmarketcap.com/all/views/all/"
 
-HITBTC_MARKETS = MARKETS
+HITBTC_MARKETS = ["BTC_ETH", "XMR_BTC"]
 HITBTC_WS_URL = "wss://api.hitbtc.com/api/2/ws"
 HITBTC_API = "https://api.hitbtc.com/api/2"
 HITBTC_API_MARKETS = "public/ticker"
 HITBTC_API_SYMBOLS = "public/symbol"
 HITBTC_API_KEY = "hBjmU7CawOCRg248JLloOerbOKg8I8k3"
+
+OKEX_MARKETS = ["BTC_ETH"]
+OKEX_WS_URL ="wss://real.okex.com:10442/ws/v3"
+OKEX_API = "https://www.okex.com/api/"

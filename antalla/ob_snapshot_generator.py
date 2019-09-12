@@ -5,7 +5,7 @@ from collections import defaultdict
 import numpy as np
 import logging
 
-from .db import session
+from . import db
 from . import models
 from . import actions
 
@@ -13,13 +13,17 @@ SNAPSHOT_INTERVAL_SECONDS = 1
 DEFAULT_COMMIT_INTERVAL = 100
 
 class OBSnapshotGenerator:
-    def __init__(self, exchanges, timestamp, commit_interval=DEFAULT_COMMIT_INTERVAL, snapshot_interval=SNAPSHOT_INTERVAL_SECONDS):
+    def __init__(self, exchanges, timestamp,
+                 session=db.session,
+                 commit_interval=DEFAULT_COMMIT_INTERVAL,
+                 snapshot_interval=SNAPSHOT_INTERVAL_SECONDS):
         self.exchanges = exchanges
         self.stop_time = timestamp
         self.commit_interval = commit_interval
         self.snapshot_interval = snapshot_interval
         self.actions_buffer = []
-        self.commit_counter = 0    
+        self.commit_counter = 0  
+        self.session = session  
 
     def _get_times(self, last_update_time, key):
         logging.debug("last time: {}".format(last_update_time))
@@ -61,9 +65,9 @@ class OBSnapshotGenerator:
                     metadata = dict(timestamp=t_current, exchange_id=market["exchange_id"], buy_sym_id=market["buy_sym_id"], sell_sym_id=market["sell_sym_id"])
                     snapshot = self._generate_snapshot(full_ob, quartile_ob, metadata)
                     action = actions.InsertAction([snapshot])
-                    action.execute(session)
+                    action.execute(self.session)
                     if len(self.actions_buffer) >= self.commit_interval:
-                        session.commit()
+                        self.session.commit()
                         self.commit_counter += 1
                         logging.debug(" {}-{} - order book snapshot commit[{}]".format(market["buy_sym_id"], market["sell_sym_id"],self.commit_counter))
                     else:
@@ -76,7 +80,7 @@ class OBSnapshotGenerator:
                         t_start = t_current
                         logging.debug("snapshot window - start time: {} - current time: {} - end time: {}".format(t_start, t_current, t_disconnect))
         if len(self.actions_buffer) > 0:
-            session.commit()
+            self.session.commit()
             self.commit_counter += 1
         logging.debug("completed order book snapshots - total commits: {}".format(self.commit_counter))
 
@@ -96,7 +100,7 @@ class OBSnapshotGenerator:
             group by e.name, buy_sym_id, sell_sym_id, e.id
             """
         )
-        return session.execute(query)
+        return self.session.execute(query)
 
     def _query_latest_snapshot(self, exchange):
         query = (
@@ -108,7 +112,7 @@ class OBSnapshotGenerator:
             group by buy_sym_id, sell_sym_id, exchange_id, e.name;
             """
         )
-        return session.execute(query, {"exchange": exchange.lower()})
+        return self.session.execute(query, {"exchange": exchange.lower()})
 
     def _query_connection_events(self):
         query = (
@@ -121,7 +125,7 @@ class OBSnapshotGenerator:
             order by buy_sym_id, sell_sym_id, timestamp asc
             """
         )
-        return session.execute(query)
+        return self.session.execute(query)
 
     def _get_last_update_time(self, key, updates):
         if key in updates.keys():
@@ -199,7 +203,7 @@ class OBSnapshotGenerator:
             order by timestamp desc
             """
         )
-        return session.execute(query, {"stop_time": stop_time, "start_time": start_time, "buy_sym_id": buy_sym_id.upper(), "sell_sym_id": sell_sym_id.upper(), "exchange": exchange.lower()})
+        return self.session.execute(query, {"stop_time": stop_time, "start_time": start_time, "buy_sym_id": buy_sym_id.upper(), "sell_sym_id": sell_sym_id.upper(), "exchange": exchange.lower()})
 
     # TODO: add test!
     def _parse_order_books(self, order_books):

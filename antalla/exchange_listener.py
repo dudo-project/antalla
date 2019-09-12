@@ -18,6 +18,7 @@ class ExchangeListener(BaseFactory):
         self.event_log = []
         self.commits = 0
         self._session_id = uuid.uuid4()
+        self._all_symbols = None
 
     def _get_existing_markets(self, markets):
         existing_markets = []
@@ -85,11 +86,13 @@ class ExchangeListener(BaseFactory):
         raise Exception("unknown pair {} to parse".format(pair))
 
     @property
-    def _all_symbols(self):
-        raise NotImplementedError()
+    def all_symbols(self):
+        if not self._all_symbols:
+            raise ValueError("_all_symbols is not set")
+        return self._all_symbols
 
     def _log_event(self, market, connection_event, data_collected):
-        pair = self._parse_market(market, self._all_symbols)
+        pair = self._parse_market(market, self.all_symbols)
         event = models.Event(
             timestamp=datetime.now(),
             session_id=self._session_id,

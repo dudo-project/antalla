@@ -17,20 +17,7 @@ from .ob_snapshot_generator import OBSnapshotGenerator
 
 def init_db(args):
     db.Base.metadata.create_all(db.engine)
-    fixtures = [("coins.json", models.Coin, "symbol"),
-                ("exchanges.json", models.Exchange, "name")]
-    for filename, Model, column in fixtures:
-        filepath = path.join("fixtures", filename)
-        entities = pkg_resources.resource_string(settings.PACKAGE, filepath)
-        entities = json.loads(entities)
 
-        for entity in entities:
-            if Model.query.filter_by(**{column: entity[column]}).first():
-                continue
-            model = Model(**entity)
-            db.session.add(model)
-
-        db.session.commit()
 
 def run(args):
     if args["exchange"]:
@@ -67,6 +54,20 @@ async def _markets(args):
         orchestrator.stop()
 
 def init_data(args):
+    fixtures = [("coins.json", models.Coin, "symbol"),
+                ("exchanges.json", models.Exchange, "name")]
+    for filename, Model, column in fixtures:
+        filepath = path.join("fixtures", filename)
+        entities = pkg_resources.resource_string(settings.PACKAGE, filepath)
+        entities = json.loads(entities)
+
+        for entity in entities:
+            if Model.query.filter_by(**{column: entity[column]}).first():
+                continue
+            model = Model(**entity)
+            db.session.add(model)
+
+        db.session.commit()
     try:
         asyncio.get_event_loop().run_until_complete(_init_data(args))
     except KeyboardInterrupt:

@@ -1,8 +1,34 @@
 import unittest
+from datetime import datetime
 
+from antalla import db
+from antalla import models
 from antalla import ob_snapshot_generator
+from tests.fixtures import dummy_db
 
 class ModelsTest(unittest.TestCase):
+    def setUp(self):
+        self.session = db.Session()
+
+    def tearDown(self):
+        self.session.rollback()
+
+    def _insert_data(self):
+        dummy_db.insert_agg_order(self.session)
+        dummy_db.insert_coins(self.session)
+        dummy_db.insert_events(self.session)
+        dummy_db.insert_exchange_markets(self.session)
+        dummy_db.insert_exchanges(self.session)
+        dummy_db.insert_markets(self.session)
+        self.session.flush()
+
+    def test_query_exchange_markets(self):
+        self._insert_data()
+        generator = ob_snapshot_generator.OBSnapshotGenerator("hitbtc", datetime.now(), session=self.session)
+        exchange_markets = generator._query_exchange_markets()
+        parsed_exchange_markets = generator._parse_exchange_markets(exchange_markets)
+        self.assertEqual(parsed_exchange_markets["hitbtc"], [dict(buy_sym_id="ETH", sell_sym_id="BTC", exchange="hitbtc", exchange_id=1)])
+
     def test_compute_stats(self):
         order_book = [{"order_type":"bid", "price": 0.5, "size": 10}, {"order_type":"ask", "price": 1.1, "size": 5},\
         {"order_type":"bid", "price": 0.75, "size": 30}, {"order_type":"bid", "price": 0.8, "size": 5},\
@@ -27,4 +53,5 @@ class ModelsTest(unittest.TestCase):
         self.assertEqual(output["ask_price_median"], 1.05)
         self.assertEqual(output["bid_price_upper_quartile"], 0.5)
         self.assertEqual(output["ask_price_lower_quartile"], 1.1)
-        
+    
+

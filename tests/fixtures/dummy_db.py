@@ -1,6 +1,6 @@
 from antalla import db
 from antalla import models
-from datetime import datetime
+import datetime
 
 def insert_exchanges(session):
     session.add_all([
@@ -150,7 +150,7 @@ def insert_agg_order(session):
         ),
         models.AggOrder(
             last_update_id=1,
-            timestamp=datetime.datetime(2019, 5, 15, 19, 32, 32, 4234224),
+            timestamp=datetime.datetime(2019, 5, 15, 19, 32, 32, 423422),
             buy_sym_id='ETH',
             sell_sym_id='BTC',
             exchange_id=2,
@@ -160,7 +160,7 @@ def insert_agg_order(session):
         ),
         models.AggOrder(
             last_update_id=1,
-            timestamp=datetime.datetime(2019, 5, 15, 19, 32, 32, 4234224),
+            timestamp=datetime.datetime(2019, 5, 15, 19, 32, 32, 423422),
             buy_sym_id='ETH',
             sell_sym_id='BTC',
             exchange_id=2,
@@ -191,7 +191,7 @@ def insert_agg_order(session):
     ])
 
 def insert_exchange_markets(session):
-    session.add_all(
+    session.add_all([
         models.ExchangeMarket(
             quoted_volume=123456,
             first_coin_id='BTC',
@@ -200,61 +200,61 @@ def insert_exchange_markets(session):
             quoted_volume_id='ETH',
             original_name='ETHBTC'
         )
-    )
+    ])
 
 def insert_markets(session):
-    session.add_all(
+    session.add_all([
         models.Market(
             first_coin_id='BTC',
             second_coin_id='ETH'
         )
-    )
+    ])
 
 def insert_events(session):
     session.add_all([
         models.Event(
             session_id='test-001',
-            tiemstamp=datetime.datetime(2019, 5, 15, 19, 30, 0, 0),
+            timestamp=datetime.datetime(2019, 5, 15, 19, 30, 0, 0),
             connection_event='connect',
             data_collected='agg_order_book',
             buy_sym_id='ETH',
-            sell_Sym_id='BTC',
+            sell_sym_id='BTC',
             exchange_id=1
         ),
         models.Event(
             session_id='test-001',
-            tiemstamp=datetime.datetime(2019, 5, 15, 19, 35, 45, 0),
+            timestamp=datetime.datetime(2019, 5, 15, 19, 35, 45, 0),
             connection_event='disconnect',
             data_collected='agg_order_book',
             buy_sym_id='ETH',
-            sell_Sym_id='BTC',
+            sell_sym_id='BTC',
             exchange_id=1
         ),
         models.Event(
             session_id='test-001',
-            tiemstamp=datetime.datetime(2019, 5, 15, 19, 36, 0, 0),
+            timestamp=datetime.datetime(2019, 5, 15, 19, 36, 0, 0),
             connection_event='connect',
             data_collected='agg_order_book',
             buy_sym_id='ETH',
-            sell_Sym_id='BTC',
+            sell_sym_id='BTC',
             exchange_id=1
         ),
         models.Event(
             session_id='test-001',
-            tiemstamp=datetime.datetime(2019, 5, 15, 19, 38, 0, 0),
+            timestamp=datetime.datetime(2019, 5, 15, 19, 38, 0, 0),
             connection_event='disconnect',
             data_collected='agg_order_book',
             buy_sym_id='ETH',
-            sell_Sym_id='BTC',
+            sell_sym_id='BTC',
             exchange_id=1
         ),
         models.Event(
             session_id='test-001',
-            tiemstamp=datetime.datetime(2019, 5, 15, 19, 39, 0, 0),
+            timestamp=datetime.datetime(2019, 5, 15, 19, 39, 0, 0),
             connection_event='connect',
             data_collected='agg_order_book',
             buy_sym_id='ETH',
-            sell_Sym_id='BTC',
+            sell_sym_id='BTC',
             exchange_id=1
         )
     ])
