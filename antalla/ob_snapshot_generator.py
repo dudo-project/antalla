@@ -1,3 +1,4 @@
+import sys
 from datetime import datetime
 from datetime import timedelta
 from collections import defaultdict
@@ -9,7 +10,7 @@ from .db import session
 from . import models
 from . import actions
 
-SNAPSHOT_INTERVAL_SECONDS = 1
+SNAPSHOT_INTERVAL_SECONDS = 60
 DEFAULT_COMMIT_INTERVAL = 100
 
 class OBSnapshotGenerator:
@@ -21,21 +22,33 @@ class OBSnapshotGenerator:
         self.actions_buffer = []
         self.commit_counter = 0    
 
+    # TODO: add test!
     def run(self):
         exchange_markets = self._query_exchange_markets()
-        parsed_exchange_markets = self._parse_exchange_markets(exchange_markets) 
+        parsed_exchange_markets = self._parse_exchange_markets(exchange_markets)  
+        connection_events = self._query_connection_events()
+        self._parse_connection_events(connection_events)
         for exchange in parsed_exchange_markets:
             for market in parsed_exchange_markets[exchange]:
-                logging.debug("order book snapshot - {} - '{}-{}' - start time: {}".format(exchange.upper(), market["buy_sym_id"], market["sell_sym_id"], market["timestamp"]))
-                while start_time < self.stop_time:
-                    logging.debug("start: {}, end: {}".format(start_time, self.stop_time))
-                    stop_time = datetime.strftime(start_time, '%Y-%m-%d %H:%M:%S.%f')
-                    order_books = self._query_order_books(exchange, market["buy_sym_id"], market["sell_sym_id"], stop_time)
+                t_current = self._get_connection_time(datetime.min, "connect", exchange+market["buy_sym_id"]+market["sell_sym_id"])
+                t_disconnect = self._get_connection_time(datetime.min, "disconnect", exchange+market["buy_sym_id"]+market["sell_sym_id"])
+                t_start = t_current
+                logging.debug("order book snapshot - {} - '{}-{}' - start time: {}".format(exchange.upper(), market["buy_sym_id"], market["sell_sym_id"], t_start))
+                logging.debug("snapshot window - start time: {} - current time: {} - end time: {}".format(t_start, t_current, t_disconnect))
+                counter = 0
+                while t_current < self.stop_time:
+                    counter += 1
+                    if counter >= 60:
+                        sys.exit()
+                    start_time = datetime.strftime(t_start, '%Y-%m-%d %H:%M:%S.%f')
+                    stop_time = datetime.strftime(t_current, '%Y-%m-%d %H:%M:%S.%f')
+                    logging.debug("start: {}, end: {}".format(t_start, t_current))
+                    order_books = self._query_order_books(exchange, market["buy_sym_id"], market["sell_sym_id"], start_time, stop_time)
                     full_ob, quartile_ob = self._parse_order_books(order_books)
                     if full_ob is None:
-                        start_time += timedelta(seconds=self.snapshot_interval)
+                        t_current += timedelta(seconds=self.snapshot_interval)
                         continue
-                    metadata = dict(timestamp=start_time, exchange_id=market["exchange_id"], buy_sym_id=market["buy_sym_id"], sell_sym_id=market["sell_sym_id"])
+                    metadata = dict(timestamp=t_start, exchange_id=market["exchange_id"], buy_sym_id=market["buy_sym_id"], sell_sym_id=market["sell_sym_id"])
                     snapshot = self._generate_snapshot(full_ob, quartile_ob, metadata)
                     action = actions.InsertAction([snapshot])
                     action.execute(session)
@@ -45,29 +58,56 @@ class OBSnapshotGenerator:
                         logging.debug("order book snapshot commit[{}]".format(self.commit_counter))
                     else:
                         self.actions_buffer.append(action)
-                    start_time += timedelta(seconds=self.snapshot_interval)
-                    logging.debug("new order book snapshot created - {}".format(start_time))
+                    logging.debug("new order book snapshot created - {}".format(t_current))
+                    t_current += timedelta(seconds=self.snapshot_interval)
+                    if t_current >= t_disconnect:
+                        t_current = self._get_connection_time(t_current - timedelta(seconds=self.snapshot_interval), "connect", exchange+market["buy_sym_id"]+market["sell_sym_id"])
+                        t_disconnect = self._get_connection_time(t_disconnect, "disconnect", exchange+market["buy_sym_id"]+market["sell_sym_id"])
+                        t_start = t_current
+                        logging.debug("snapshot window - start time: {} - current time: {} - end time: {}".format(t_start, t_current, t_disconnect))
         if len(self.actions_buffer) > 0:
             session.commit()
         logging.debug("completed order book snapshots - total commits: {}".format(self.commit_counter))
 
+    def _get_connection_time(self, prev_time, connection_event, key):
+        for e in self.event_log[key]:
+            if e["connection_event"] == connection_event and e["timestamp"] > prev_time:
+                return e["timestamp"]
+        return self.stop_time
+
     def _query_exchange_markets(self):
         query = (
             """
-            select * from (
-                  select events.buy_sym_id,
-                         events.sell_sym_id,
-                         exchanges.name,
-                         min(events.timestamp),
-                         exchanges.id,
-                         events.data_collected
-                  from events
-                           inner join exchanges on events.exchange_id = exchanges.id
-                  group by events.buy_sym_id, events.sell_sym_id, exchanges.name, exchanges.id, events.data_collected
-            ) pairs where pairs.data_collected = 'agg_order_book'
+            select e.name, buy_sym_id, sell_sym_id, e.id
+            from events
+            inner join exchanges e on events.exchange_id = e.id
+            where data_collected = 'agg_order_book'
+            group by e.name, buy_sym_id, sell_sym_id, e.id
             """
         )
         return session.execute(query)
+
+    def _query_connection_events(self):
+        query = (
+            """
+            select events.id, e.name, timestamp, connection_event, data_collected, buy_sym_id, sell_sym_id
+            from events
+            inner join exchanges e on events.exchange_id = e.id
+            where (data_collected = 'agg_order_book'
+            or (connection_event = 'disconnect' and data_collected = 'all'))
+            order by buy_sym_id, sell_sym_id, timestamp asc
+            """
+        )
+        return session.execute(query)
+
+    def _parse_connection_events(self, events):
+        self.event_log = defaultdict(list)
+        for event in list(events):
+            self.event_log[str(event[1])+str(event[5])+str(event[6])].append(dict(
+                timestamp=event[2],
+                id=event[0],
+                connection_event=event[3]
+            ))
 
     # TODO: add test!
     def _parse_exchange_markets(self, exchange_markets):
@@ -76,18 +116,18 @@ class OBSnapshotGenerator:
             return None
         all_markets = defaultdict(list)
         for market in exchange_markets:
-            #all_markets[market[2]].append((market[0], market[1], market[2], market[3], market[4]))
-            all_markets[market[2]].append(dict(buy_sym_id=market[0], sell_sym_id=market[1], exchange=market[2], timestamp=market[3], exchange_id=market[4]))
+            all_markets[market[0]].append(dict(buy_sym_id=market[1], sell_sym_id=market[2], exchange=market[0], exchange_id=market[3]))
         return all_markets
 
-    def _query_order_books(self, exchange, buy_sym_id, sell_sym_id, timestamp):
+    def _query_order_books(self, exchange, buy_sym_id, sell_sym_id, start_time, stop_time):
         query = (
             """
             with order_book as (
             with latest_orders as (
             select order_type, price, max(last_update_id) max_update_id
             from aggregate_orders
-            where timestamp <= :timestamp
+            where timestamp <= :stop_time
+            and timestamp >= :start_time
             group by aggregate_orders.price,
                         aggregate_orders.order_type)
             select aggregate_orders.id,
@@ -106,7 +146,8 @@ class OBSnapshotGenerator:
             and buy_sym_id = :buy_sym_id
             and sell_sym_id = :sell_sym_id
             and name = :exchange
-            and timestamp <= :timestamp
+            and timestamp <= :stop_time
+            and timestamp >= :start_time
             )
             select *, true as is_quartile
             from order_book where (order_book.order_type = 'bid' and order_book.price >= (
@@ -123,7 +164,7 @@ class OBSnapshotGenerator:
             order by timestamp desc
             """
         )
-        return session.execute(query, {"timestamp": timestamp, "buy_sym_id": buy_sym_id.upper(), "sell_sym_id": sell_sym_id.upper(), "exchange": exchange.lower()})
+        return session.execute(query, {"stop_time": stop_time, "start_time": start_time, "buy_sym_id": buy_sym_id.upper(), "sell_sym_id": sell_sym_id.upper(), "exchange": exchange.lower()})
 
     # TODO: add test!
     def _parse_order_books(self, order_books):
