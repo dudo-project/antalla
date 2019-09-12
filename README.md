@@ -8,6 +8,14 @@ Fetches data from various exchanges and stores the orders and trades in an SQL d
 
 The name comes from the Greek ανταλλαγή (antallagí) which meaning "exchange".
 
+## Features
+- [x] Integration with major centralised exchanges (CEX) REST API and Web Socket streams
+- [x] Locally reconstructable and real-time order books
+- [x] Executed trade and aggregated order book data for large CEXs
+- [x] Regular order book snapshots
+- [ ] Simple DB migrations using Python alembic
+- [ ] Extensive unit and integration tests
+
 ## Installation
 
 The project requires Python 3.6 or above.
