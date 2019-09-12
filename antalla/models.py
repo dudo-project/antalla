@@ -280,6 +280,7 @@ class Event(Base):
 
     id = Column(Integer, primary_key=True)
 
+    session_id = Column(String, nullable=False, index=True)
     timestamp = Column(DateTime, nullable=False)
     connection_event = Column(String, nullable=False)
     data_collected = Column(String, nullable=False)
