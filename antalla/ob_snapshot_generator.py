@@ -9,7 +9,7 @@ from . import db
 from . import models
 from . import actions
 
-SNAPSHOT_INTERVAL_SECONDS = 1
+SNAPSHOT_INTERVAL_SECONDS = 60
 DEFAULT_COMMIT_INTERVAL = 100
 
 class OBSnapshotGenerator:
@@ -41,13 +41,20 @@ class OBSnapshotGenerator:
     def _get_connection_window(self, last_update, key):
         connect_time = None
         disconnect_time = self.stop_time
-        last_update = last_update + timedelta(seconds=self.snapshot_interval)
+        if last_update is not None:
+            last_update = last_update + timedelta(seconds=self.snapshot_interval)
         for con in self.event_log[key]:
-            if con["connection_event"] == "connect" and con["timestamp"] <= last_update:
-                connect_time = con["timestamp"]
-            elif con["connection_event"] == "disconnect" and con["timestamp"] > last_update:
-                disconnect_time = con["timestamp"]
-                break
+            if last_update is not None:
+                if con["connection_event"] == "connect" and con["timestamp"] <= last_update:
+                    connect_time = con["timestamp"]
+                elif con["connection_event"] == "disconnect" and con["timestamp"] > last_update:
+                    disconnect_time = con["timestamp"]
+                    break
+            else:
+                if connect_time is None and con["connection_event"] == "connect":
+                    connect_time = con["timestamp"]
+                elif connect_time is not None and con["connection_event"] == "disconnect":
+                    disconnect_time = con["timestamp"]
         return connect_time, disconnect_time
 
     # TODO: add test!
@@ -59,44 +66,53 @@ class OBSnapshotGenerator:
         for exchange in parsed_exchange_markets:
             snapshot_times = self._query_latest_snapshot(exchange)
             parsed_snapshot_times = self._parse_snapshot_times(snapshot_times) 
-            logging.debug(parsed_snapshot_times)
             for market in parsed_exchange_markets[exchange]:
                 market_key = exchange+market["buy_sym_id"]+market["sell_sym_id"]
                 last_update_time = self._get_last_update_time(market_key, parsed_snapshot_times)
-                t_current, t_disconnect = self._get_connection_window(last_update_time, market_key)
-                t_start = t_current
-                logging.debug("order book snapshot - {} - '{}-{}' - start time: {}".format(exchange.upper(), market["buy_sym_id"], market["sell_sym_id"], t_start))
-                logging.debug("snapshot window - start time: {} - current time: {} - end time: {}".format(t_start, t_current, t_disconnect))
-                while t_current < self.stop_time:
-                    start_time = datetime.strftime(t_start, '%Y-%m-%d %H:%M:%S.%f')
-                    stop_time = datetime.strftime(t_current, '%Y-%m-%d %H:%M:%S.%f')
-                    logging.debug("start: {}, end: {}".format(t_start, t_current))
-                    order_books = self._query_order_books(exchange, market["buy_sym_id"], market["sell_sym_id"], start_time, stop_time)
-                    full_ob, quartile_ob = self._parse_order_books(order_books)
-                    if full_ob is None:
-                        t_current += timedelta(seconds=self.snapshot_interval)
-                        continue
-                    metadata = dict(timestamp=t_current, exchange_id=market["exchange_id"], buy_sym_id=market["buy_sym_id"], sell_sym_id=market["sell_sym_id"])
-                    snapshot = self._generate_snapshot(full_ob, quartile_ob, metadata)
-                    action = actions.InsertAction([snapshot])
-                    action.execute(self.session)
-                    if len(self.actions_buffer) >= self.commit_interval:
-                        self.session.commit()
-                        self.commit_counter += 1
-                        logging.debug(" {}-{} - order book snapshot commit[{}]".format(market["buy_sym_id"], market["sell_sym_id"],self.commit_counter))
-                    else:
-                        self.actions_buffer.append(action)
-                    logging.debug("order book snapshot created - {}".format(t_current))
-                    t_current += timedelta(seconds=self.snapshot_interval)
-                    if t_current >= t_disconnect:
-                        t_current = self._get_connection_time(t_current - timedelta(seconds=self.snapshot_interval), "connect", exchange+market["buy_sym_id"]+market["sell_sym_id"])
-                        t_disconnect = self._get_connection_time(t_disconnect, "disconnect", exchange+market["buy_sym_id"]+market["sell_sym_id"])
-                        t_start = t_current
-                        logging.debug("snapshot window - start time: {} - current time: {} - end time: {}".format(t_start, t_current, t_disconnect))
+                logging.debug("last snapshot update: {}".format(last_update_time))
+                connect_time, disconnect_time = self._get_connection_window(last_update_time, market_key)
+                logging.info("order book snapshot - {} - '{}-{}'".format(exchange.upper(), market["buy_sym_id"], market["sell_sym_id"]))
+                logging.debug("snapshot window - start time: {} - end time: {}".format(connect_time, disconnect_time))
+                self._generate_snapshots(connect_time, disconnect_time, last_update_time, market, exchange)
         if len(self.actions_buffer) > 0:
             self.session.commit()
             self.commit_counter += 1
-        logging.debug("completed order book snapshots - total commits: {}".format(self.commit_counter))
+        logging.info("completed order book snapshots - total commits: {}".format(self.commit_counter))
+
+    def _generate_snapshots(self, connect_time, disconnect_time, snapshot_time, market, exchange):
+        market_key = exchange+market["buy_sym_id"]+market["sell_sym_id"]
+        if snapshot_time is not None:
+            snapshot_time += timedelta(seconds=self.snapshot_interval)
+        else:
+            snapshot_time = connect_time + timedelta(seconds=self.snapshot_interval)
+        while snapshot_time < self.stop_time:
+            start_time = datetime.strftime(connect_time, '%Y-%m-%d %H:%M:%S.%f')
+            stop_time = datetime.strftime(snapshot_time, '%Y-%m-%d %H:%M:%S.%f')
+            logging.debug("start: {}, end: {}".format(connect_time, snapshot_time))
+            order_books = self._query_order_books(exchange, market["buy_sym_id"], market["sell_sym_id"], start_time, stop_time)
+            full_ob, quartile_ob = self._parse_order_books(order_books)
+            if full_ob is None:
+                snapshot_time += timedelta(seconds=self.snapshot_interval)
+                continue
+            metadata = dict(timestamp=snapshot_time, exchange_id=market["exchange_id"], buy_sym_id=market["buy_sym_id"], sell_sym_id=market["sell_sym_id"])
+            snapshot = self._generate_snapshot(full_ob, quartile_ob, metadata)
+            action = actions.InsertAction([snapshot])
+            action.execute(self.session)
+            if len(self.actions_buffer) >= self.commit_interval:
+                self.session.commit()
+                self.commit_counter += 1
+                logging.debug(" {}-{} - order book snapshot commit[{}]".format(market["buy_sym_id"], market["sell_sym_id"],self.commit_counter))
+            else:
+                self.actions_buffer.append(action)
+            logging.debug("order book snapshot created - {}".format(snapshot_time))
+            snapshot_time += timedelta(seconds=self.snapshot_interval)
+            if snapshot_time >= disconnect_time:
+                logging.debug("snapshot_time : {}, discon time: {}".format(snapshot_time, disconnect_time))
+                snapshot_time, disconnect_time = self._get_connection_window(snapshot_time, market_key)
+                connect_time = snapshot_time
+                if disconnect_time == self.stop_time:
+                    snapshot_time = self.stop_time
+                logging.debug("snapshot window - start time: {} - end time: {}".format(connect_time, disconnect_time))
 
     def _get_connection_time(self, prev_time, connection_event, key):
         for e in self.event_log[key]:
@@ -145,7 +161,7 @@ class OBSnapshotGenerator:
         if key in updates.keys():
             return updates[key]
         else:
-            return datetime.min
+            return None
 
     def _parse_snapshot_times(self, snapshot_updates):
         update_times = {}
