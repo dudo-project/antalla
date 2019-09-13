@@ -25,25 +25,13 @@ class OBSnapshotGenerator:
         self.commit_counter = 0  
         self.session = session  
 
-    """
-    def _get_connection_window(self, last_update_time, key):
-        logging.debug("last time: {}".format(last_update_time))
-        for e in self.event_log[key]:
-            if e["timestamp"] <= last_update_time:       
-                t_current = last_update_time + timedelta(seconds=self.snapshot_interval)
-                t_disconnect = self._get_connection_time(t_current, "disconnect", key)
-                return t_current, t_disconnect
-        t_current =  self._get_connection_time(datetime.min, "connect", key)    
-        t_disconnect = self._get_connection_time(datetime.min, "disconnect", key)
-        return t_current, t_disconnect
-    """
-
     def _get_connection_window(self, last_update, key):
         connect_time = None
         disconnect_time = self.stop_time
         for con in self.event_log[key]:
             if last_update is not None:
-                if con["connection_event"] == "connect" and con["timestamp"] <= last_update:
+                #if con["connection_event"] == "connect" and con["timestamp"] <= last_update:
+                if con["connection_event"] == "connect":
                     connect_time = con["timestamp"]
                 elif con["connection_event"] == "disconnect" and con["timestamp"] > last_update:
                     disconnect_time = con["timestamp"]
@@ -55,7 +43,6 @@ class OBSnapshotGenerator:
                     disconnect_time = con["timestamp"]
         return connect_time, disconnect_time
 
-    # TODO: add test!
     def run(self):
         exchange_markets = self._query_exchange_markets()
         parsed_exchange_markets = self._parse_exchange_markets(exchange_markets)  
@@ -71,18 +58,25 @@ class OBSnapshotGenerator:
                 connect_time, disconnect_time = self._get_connection_window(last_update_time, market_key)
                 logging.info("order book snapshot - {} - '{}-{}'".format(exchange.upper(), market["buy_sym_id"], market["sell_sym_id"]))
                 logging.debug("snapshot window - start time: {} - end time: {}".format(connect_time, disconnect_time))
-                self._generate_snapshots(connect_time, disconnect_time, last_update_time, market, exchange)
+                self._generate_all_snapshots(connect_time, disconnect_time, last_update_time, market, exchange)
         if len(self.actions_buffer) > 0:
             self.session.commit()
             self.commit_counter += 1
         logging.info("completed order book snapshots - total commits: {}".format(self.commit_counter))
 
-    def _generate_snapshots(self, connect_time, disconnect_time, snapshot_time, market, exchange):
+    def _generate_all_snapshots(self, connect_time, disconnect_time, snapshot_time, market, exchange):
+        """ call the snapshot generator method for order book states following a prespecified interval (seconds).
+        Order book snapshots are only made for time periods where there has been an active connection and orders have been received,
+        i.e., no snapshot is created for a period where there is no connection to an exchange. Order book snapshots are always constructed
+        for the range bteween the last successful exchange connection and the 'snapshot_time', which increases by the interval amount until
+        the next time of a disconnection or the final stopping time is met.
+        """
         market_key = exchange+market["buy_sym_id"]+market["sell_sym_id"]
         if snapshot_time is not None:
             snapshot_time += timedelta(seconds=self.snapshot_interval)
         else:
             snapshot_time = connect_time + timedelta(seconds=self.snapshot_interval)
+        logging.debug("initial times - current snapshot: {} - connect: {} - disconnect: {}".format(snapshot_time, connect_time, disconnect_time))
         while snapshot_time < self.stop_time:
             start_time = datetime.strftime(connect_time, '%Y-%m-%d %H:%M:%S.%f')
             stop_time = datetime.strftime(snapshot_time, '%Y-%m-%d %H:%M:%S.%f')
@@ -109,13 +103,7 @@ class OBSnapshotGenerator:
                 connect_time = snapshot_time
                 if disconnect_time == self.stop_time:
                     snapshot_time = self.stop_time
-                logging.debug("snapshot window - start time: {} - end time: {}".format(connect_time, disconnect_time))
-
-    def _get_connection_time(self, prev_time, connection_event, key):
-        for e in self.event_log[key]:
-            if e["connection_event"] == connection_event and e["timestamp"] > prev_time:
-                return e["timestamp"]
-        return self.stop_time
+                logging.debug("new snapshot window - connect time: {} - disconnect time: {}".format(connect_time, disconnect_time))
 
     def _query_exchange_markets(self):
         query = (
@@ -231,7 +219,6 @@ class OBSnapshotGenerator:
         )
         return self.session.execute(query, {"stop_time": stop_time, "start_time": start_time, "buy_sym_id": buy_sym_id.upper(), "sell_sym_id": sell_sym_id.upper(), "exchange": exchange.lower()})
 
-    # TODO: add test!
     def _parse_order_books(self, order_books):
         full_order_book = []
         quartile_order_book = []
@@ -254,10 +241,9 @@ class OBSnapshotGenerator:
                     price=order[2],
                     size=order[3]
                 ))
-        logging.debug("ob_snapshot_generator - parsed order books: 'full order book' ({} orders), 'quartile order book' ({} orders)". format(len(full_order_book), len(quartile_order_book)))
+        logging.debug("ob_snapshot_generator - parsed order books: 'full order book' ({} orders), 'quartile order book' ({} orders)".format(len(full_order_book), len(quartile_order_book)))
         return full_order_book, quartile_order_book
         
-    # TODO: add test!
     def _generate_snapshot(self, full_ob, quartile_ob, metadata):
         full_ob_stats = self._compute_stats(full_ob)
         quartile_ob_stats = self._compute_stats(quartile_ob)
@@ -298,8 +284,12 @@ class OBSnapshotGenerator:
         asks = list(filter(lambda x: x["order_type"] == "ask", order_book))
         bid_prices = list(map(lambda x: x["price"], bids))
         ask_prices = list(map(lambda x: x["price"], asks))
-        avg_bid_price = float(sum(d['price'] for d in bids)) / len(bids)
-        avg_ask_price = float(sum(d['price'] for d in asks)) / len(asks)
+        avg_bid_price = 0 
+        if len(bids):
+            avg_bid_price = float(sum(d['price'] for d in bids)) / len(bids)
+        avg_ask_price = 0
+        if len(asks):
+            avg_ask_price = float(sum(d['price'] for d in asks)) / len(asks)
         bids_volume = float(sum(d['price']*d['size'] for d in bids))
         asks_volume = float(sum(d['price']*d['size'] for d in asks))
         min_ask_size = max(list(d['size'] if d['price'] == min(ask_prices) else 0 for d in asks))

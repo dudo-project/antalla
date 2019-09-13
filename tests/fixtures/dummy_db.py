@@ -30,7 +30,7 @@ def insert_agg_order(session):
     session.add_all([
         models.AggOrder(
             last_update_id=1,
-            timestamp=datetime.datetime(2019, 5, 15, 19, 30, 0, 363064),
+            timestamp=datetime.datetime(2019, 5, 15, 19, 30, 0, 0),
             buy_sym_id='ETH',
             sell_sym_id='BTC',
             exchange_id=1,
@@ -40,7 +40,7 @@ def insert_agg_order(session):
         ),
         models.AggOrder(
             last_update_id=1,
-            timestamp=datetime.datetime(2019, 5, 15, 19, 30, 0, 363064),
+            timestamp=datetime.datetime(2019, 5, 15, 19, 30, 0, 0),
             buy_sym_id='ETH',
             sell_sym_id='BTC',
             exchange_id=1,
@@ -50,7 +50,7 @@ def insert_agg_order(session):
         ),
         models.AggOrder(
             last_update_id=2,
-            timestamp=datetime.datetime(2019, 5, 15, 19, 31, 30, 372835),
+            timestamp=datetime.datetime(2019, 5, 15, 19, 31, 30, 0),
             buy_sym_id='ETH',
             sell_sym_id='BTC',
             exchange_id=1,
@@ -60,7 +60,7 @@ def insert_agg_order(session):
         ),
         models.AggOrder(
             last_update_id=2,
-            timestamp=datetime.datetime(2019, 5, 15, 19, 31, 30, 372835),
+            timestamp=datetime.datetime(2019, 5, 15, 19, 31, 30, 0),
             buy_sym_id='ETH',
             sell_sym_id='BTC',
             exchange_id=1,
@@ -70,7 +70,7 @@ def insert_agg_order(session):
         ),
         models.AggOrder(
             last_update_id=2,
-            timestamp=datetime.datetime(2019, 5, 15, 19, 31, 30, 372835),
+            timestamp=datetime.datetime(2019, 5, 15, 19, 31, 30, 0),
             buy_sym_id='ETH',
             sell_sym_id='BTC',
             exchange_id=1,
@@ -111,8 +111,8 @@ def insert_agg_order(session):
         models.AggOrder(
             last_update_id=5,
             timestamp=datetime.datetime(2019, 5, 15, 19, 34, 8, 0),
-            buy_sym_id='BTC',
-            sell_sym_id='ETH',
+            buy_sym_id='ETH',
+            sell_sym_id='BTC',
             exchange_id=1,
             order_type='bid',
             price=0.3,
@@ -146,7 +146,7 @@ def insert_agg_order(session):
             exchange_id=1,
             order_type='ask',
             price=0.65,
-            size=6,
+            size=8,
         ),
         models.AggOrder(
             last_update_id=1,
@@ -209,6 +209,56 @@ def insert_markets(session):
             second_coin_id='ETH'
         )
     ])
+
+def insert_instable_connection_events(session):
+    session.add_all([
+        models.Event(
+            session_id='test-001',
+            timestamp=datetime.datetime(2019, 5, 15, 19, 30, 0, 0),
+            connection_event='connect',
+            data_collected='agg_order_book',
+            buy_sym_id='ETH',
+            sell_sym_id='BTC',
+            exchange_id=1
+        ),
+        models.Event(
+            session_id='test-001',
+            timestamp=datetime.datetime(2019, 5, 15, 19, 31, 25, 0),
+            connection_event='disconnect',
+            data_collected='agg_order_book',
+            buy_sym_id='ETH',
+            sell_sym_id='BTC',
+            exchange_id=1
+        ),
+        models.Event(
+            session_id='test-001',
+            timestamp=datetime.datetime(2019, 5, 15, 19, 31, 30, 0),
+            connection_event='connect',
+            data_collected='agg_order_book',
+            buy_sym_id='ETH',
+            sell_sym_id='BTC',
+            exchange_id=1
+        ),
+        models.Event(
+            session_id='test-001',
+            timestamp=datetime.datetime(2019, 5, 15, 19, 32, 40, 0),
+            connection_event='disconnect',
+            data_collected='agg_order_book',
+            buy_sym_id='ETH',
+            sell_sym_id='BTC',
+            exchange_id=1
+        ),
+        models.Event(
+            session_id='test-001',
+            timestamp=datetime.datetime(2019, 5, 15, 19, 32, 50, 0),
+            connection_event='connect',
+            data_collected='agg_order_book',
+            buy_sym_id='ETH',
+            sell_sym_id='BTC',
+            exchange_id=1
+        )
+    ])
+    
 
 def insert_events(session):
     session.add_all([
