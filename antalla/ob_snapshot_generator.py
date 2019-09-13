@@ -41,8 +41,6 @@ class OBSnapshotGenerator:
     def _get_connection_window(self, last_update, key):
         connect_time = None
         disconnect_time = self.stop_time
-        if last_update is not None:
-            last_update = last_update + timedelta(seconds=self.snapshot_interval)
         for con in self.event_log[key]:
             if last_update is not None:
                 if con["connection_event"] == "connect" and con["timestamp"] <= last_update:
@@ -107,7 +105,6 @@ class OBSnapshotGenerator:
             logging.debug("order book snapshot created - {}".format(snapshot_time))
             snapshot_time += timedelta(seconds=self.snapshot_interval)
             if snapshot_time >= disconnect_time:
-                logging.debug("snapshot_time : {}, discon time: {}".format(snapshot_time, disconnect_time))
                 snapshot_time, disconnect_time = self._get_connection_window(snapshot_time, market_key)
                 connect_time = snapshot_time
                 if disconnect_time == self.stop_time:
