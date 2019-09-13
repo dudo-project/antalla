@@ -231,6 +231,24 @@ def insert_events(session):
             exchange_id=1
         ),
         models.Event(
+            session_id='test-002',
+            timestamp=datetime.datetime(2019, 5, 15, 19, 34, 30, 0),
+            connection_event='connect',
+            data_collected='agg_order_book',
+            buy_sym_id='ETH',
+            sell_sym_id='BTC',
+            exchange_id=2
+        ),
+        models.Event(
+            session_id='test-002',
+            timestamp=datetime.datetime(2019, 5, 15, 19, 38, 34, 0),
+            connection_event='disconnect',
+            data_collected='agg_order_book',
+            buy_sym_id='ETH',
+            sell_sym_id='BTC',
+            exchange_id=2
+        ),
+        models.Event(
             session_id='test-001',
             timestamp=datetime.datetime(2019, 5, 15, 19, 36, 0, 0),
             connection_event='connect',

@@ -29,6 +29,76 @@ class ModelsTest(unittest.TestCase):
         parsed_exchange_markets = generator._parse_exchange_markets(exchange_markets)
         self.assertEqual(parsed_exchange_markets["hitbtc"], [dict(buy_sym_id="ETH", sell_sym_id="BTC", exchange="hitbtc", exchange_id=1)])
 
+    def test_query_connection_events(self):
+        self._insert_data()
+        generator = ob_snapshot_generator.OBSnapshotGenerator("hitbtc", datetime.now(), session=self.session)
+        connection_events = generator._query_connection_events()
+        generator._parse_connection_events(connection_events)
+        for ex in generator.event_log.keys():
+            for ev in generator.event_log[ex]:
+                del ev["id"]
+        self.assertEqual(generator.event_log["hitbtcETHBTC"][0], dict(
+                    timestamp=datetime(2019, 5, 15, 19, 30, 0, 0),
+                    connection_event="connect"
+            ))
+        self.assertEqual(generator.event_log["hitbtcETHBTC"][1], dict(
+                    timestamp=datetime(2019, 5, 15, 19, 35, 45, 0),
+                    connection_event="disconnect"
+            ))
+        self.assertEqual(generator.event_log["hitbtcETHBTC"][2], dict(
+                    timestamp=datetime(2019, 5, 15, 19, 36, 0, 0),
+                    connection_event="connect"
+            ))
+        self.assertEqual(generator.event_log["hitbtcETHBTC"][3], dict(
+                    timestamp=datetime(2019, 5, 15, 19, 38, 0, 0),
+                    connection_event="disconnect"
+            ))
+        self.assertEqual(generator.event_log["hitbtcETHBTC"][4], dict(
+                    timestamp=datetime(2019, 5, 15, 19, 39, 0, 0),
+                    connection_event="connect"
+            ))
+        self.assertEqual(generator.event_log["binanceETHBTC"][0], dict(
+                timestamp=datetime(2019, 5, 15, 19, 34, 30, 0),
+                connection_event="connect"
+            ))
+        self.assertEqual(generator.event_log["binanceETHBTC"][1], dict(
+                timestamp=datetime(2019, 5, 15, 19, 38, 34, 0),
+                connection_event="disconnect"
+            ))
+
+    def test_get_connection_time(self):
+        self._insert_data()
+        generator = ob_snapshot_generator.OBSnapshotGenerator("hitbtc", datetime.now(), session=self.session)
+        connection_events = generator._query_connection_events()
+        generator._parse_connection_events(connection_events)
+        connection_time = generator._get_connection_time(datetime(2019, 5, 15, 19, 32, 0, 0), "connect", "hitbtcETHBTC")
+        self.assertEqual(connection_time, datetime(2019, 5, 15, 19, 36, 0, 0))
+        connection_time = generator._get_connection_time(datetime(2019, 5, 15, 19, 30, 0, 0), "disconnect", "hitbtcETHBTC")
+        self.assertEqual(connection_time, datetime(2019, 5, 15, 19, 35, 45, 0))
+        connection_time = generator._get_connection_time(datetime(2019, 5, 15, 19, 37, 0, 0), "disconnect", "hitbtcETHBTC")
+        self.assertEqual(connection_time, datetime(2019, 5, 15, 19, 38, 0, 0))
+
+    def test_get_connection_window(self):
+        self._insert_data()
+        generator = ob_snapshot_generator.OBSnapshotGenerator("hitbtc", datetime.now(), session=self.session)
+        connection_events = generator._query_connection_events()
+        generator._parse_connection_events(connection_events)
+        connect_time, disconnect_time = generator._get_connection_window(datetime(2019, 5, 15, 19, 35, 30, 0), "hitbtcETHBTC")
+        self.assertEqual(connect_time, datetime(2019, 5, 15, 19, 30, 0, 0))
+        self.assertEqual(disconnect_time, datetime(2019, 5, 15, 19, 35, 45, 0))
+        connect_time, disconnect_time = generator._get_connection_window(datetime(2019, 5, 15, 19, 37, 30, 0), "hitbtcETHBTC")
+        self.assertEqual(connect_time, datetime(2019, 5, 15, 19, 36, 0, 0))
+        self.assertEqual(disconnect_time, datetime(2019, 5, 15, 19, 38, 0, 0))
+        connect_time, disconnect_time = generator._get_connection_window(datetime(2019, 5, 15, 19, 39, 0, 0), "hitbtcETHBTC")
+        self.assertEqual(connect_time, datetime(2019, 5, 15, 19, 39, 0, 0))
+        self.assertEqual(disconnect_time, generator.stop_time)
+        connect_time, disconnect_time = generator._get_connection_window(datetime(2019, 5, 15, 19, 45, 30, 0), "hitbtcETHBTC")
+        self.assertEqual(connect_time, datetime(2019, 5, 15, 19, 39, 0, 0))
+        self.assertEqual(disconnect_time, generator.stop_time)
+        connect_time, disconnect_time = generator._get_connection_window(datetime(2019, 5, 15, 19, 34, 44, 0), "binanceETHBTC")
+        self.assertEqual(connect_time, datetime(2019, 5, 15, 19, 34, 30, 0))
+        self.assertEqual(disconnect_time,  datetime(2019, 5, 15, 19, 38, 34, 0))
+
     def test_compute_stats(self):
         order_book = [{"order_type":"bid", "price": 0.5, "size": 10}, {"order_type":"ask", "price": 1.1, "size": 5},\
         {"order_type":"bid", "price": 0.75, "size": 30}, {"order_type":"bid", "price": 0.8, "size": 5},\

@@ -25,7 +25,8 @@ class OBSnapshotGenerator:
         self.commit_counter = 0  
         self.session = session  
 
-    def _get_times(self, last_update_time, key):
+    """
+    def _get_connection_window(self, last_update_time, key):
         logging.debug("last time: {}".format(last_update_time))
         for e in self.event_log[key]:
             if e["timestamp"] <= last_update_time:       
@@ -35,6 +36,19 @@ class OBSnapshotGenerator:
         t_current =  self._get_connection_time(datetime.min, "connect", key)    
         t_disconnect = self._get_connection_time(datetime.min, "disconnect", key)
         return t_current, t_disconnect
+    """
+
+    def _get_connection_window(self, last_update, key):
+        connect_time = None
+        disconnect_time = self.stop_time
+        last_update = last_update + timedelta(seconds=self.snapshot_interval)
+        for con in self.event_log[key]:
+            if con["connection_event"] == "connect" and con["timestamp"] <= last_update:
+                connect_time = con["timestamp"]
+            elif con["connection_event"] == "disconnect" and con["timestamp"] > last_update:
+                disconnect_time = con["timestamp"]
+                break
+        return connect_time, disconnect_time
 
     # TODO: add test!
     def run(self):
@@ -49,7 +63,7 @@ class OBSnapshotGenerator:
             for market in parsed_exchange_markets[exchange]:
                 market_key = exchange+market["buy_sym_id"]+market["sell_sym_id"]
                 last_update_time = self._get_last_update_time(market_key, parsed_snapshot_times)
-                t_current, t_disconnect = self._get_times(last_update_time, market_key)
+                t_current, t_disconnect = self._get_connection_window(last_update_time, market_key)
                 t_start = t_current
                 logging.debug("order book snapshot - {} - '{}-{}' - start time: {}".format(exchange.upper(), market["buy_sym_id"], market["sell_sym_id"], t_start))
                 logging.debug("snapshot window - start time: {} - current time: {} - end time: {}".format(t_start, t_current, t_disconnect))
@@ -148,7 +162,6 @@ class OBSnapshotGenerator:
                 connection_event=event[3]
             ))
 
-    # TODO: add test!
     def _parse_exchange_markets(self, exchange_markets):
         exchange_markets = list(exchange_markets)
         if len(exchange_markets) == 0:
