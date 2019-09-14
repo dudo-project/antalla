@@ -8,6 +8,7 @@ import websockets
 import aiohttp
 import asyncio
 
+from ..db import session
 from .. import settings
 from .. import models
 from .. import actions
@@ -20,6 +21,23 @@ class CoinbaseListener(WebsocketListener):
         super().__init__(exchange, on_event, markets, ws_url)
         self._format_markets()
         self.running = False
+        self.last_update_ids = {}
+        self._get_last_update_ids()
+
+    def _get_last_update_ids(self):
+        """fetches for each market the last update id from db and stores it in dict
+        """
+        market_update_ids = session.execute(
+            """
+            select ex.name, buy_sym_id, sell_sym_id, max(last_update_id)
+            from aggregate_orders
+            inner join exchanges ex on aggregate_orders.exchange_id = ex.id
+            group by buy_sym_id, sell_sym_id, ex.name;
+            """
+        )
+        for market in market_update_ids:
+            last_update_id = market[3] if market[3] is not None else 0
+            self.last_update_ids[market[0]+market[1]+market[2]] = last_update_id
 
     def _parse_message(self, message):
         event, payload = message["type"], message
@@ -39,7 +57,7 @@ class CoinbaseListener(WebsocketListener):
 
     def _parse_snapshot(self, snapshot):
         agg_orders = []
-        buy_sym_id, sell_sym_id = update["product_id"].split("-")
+        buy_sym_id, sell_sym_id = snapshot["product_id"].split("-")
         timestamp = datetime.now()
         order_info = dict(
             timestamp=timestamp,
@@ -47,35 +65,48 @@ class CoinbaseListener(WebsocketListener):
             buy_sym_id=buy_sym_id,
             sell_sym_id=sell_sym_id
         )
-        bids = self._create_orders("bid", order_info, snapshot["bids"])
-        asks = self._create_orders("ask", order_info, snapshot["asks"])
+        #TODO: remove if statement below
+        market_key = self.exchange.name.lower() + buy_sym_id.upper() + sell_sym_id.upper()
+        if market_key not in self.last_update_ids.keys():
+            self.last_update_ids[market_key] = 0
+        bids = self._create_agg_orders("bid", order_info, snapshot["bids"])
+        asks = self._create_agg_orders("ask", order_info, snapshot["asks"])
+        print("bids: ", bids)
         agg_orders.extend(bids)
         agg_orders.extend(asks)
-        logging.debug(" {} - aggregated order book snapshot -  agg orders: {}".format(self.exchange.name, len(agg_orders)))
-        return actions.InsertAction(agg_orders)
+        if len(agg_orders) > 0:
+            self.last_update_ids[market_key] += 1   
+        logging.debug(" {} - aggregated order book snapshot - agg orders: {}".format(self.exchange.name, len(agg_orders)))
+        return [actions.InsertAction(agg_orders)]
 
-    def _create_orders(self, order_type, order_info, orders):
-        orders = []
+    def _create_agg_orders(self, order_type, order_info, orders):
+        parsed_orders = []
+        market_key = self.exchange.name.lower() + order_info["buy_sym_id"].upper() + order_info["sell_sym_id"].upper()
         for order in orders:
-            orders.append(models.AggOrder(
+            parsed_orders.append(models.AggOrder(
                 timestamp=order_info["timestamp"],
                 exchange_id=self.exchange.id,
                 order_type=order_type,
                 price=float(order[0]),
                 size=float(order[1]),
                 buy_sym_id=order_info["buy_sym_id"],
-                sell_sym_id=order_info["sell_sym_id"]
-            ))        
-        return orders
+                sell_sym_id=order_info["sell_sym_id"],
+                last_update_id=self.last_update_ids[market_key]
+            ))      
+        return parsed_orders
 
     # TODO: add check for valid market
     def _parse_l2update(self, update):
         agg_orders = []
         buy_sym_id, sell_sym_id = update["product_id"].split("-")
+        market_key = self.exchange.name.lower() + buy_sym_id.upper() + sell_sym_id.upper()
+        #TODO: remove if statement below
+        if market_key not in self.last_update_ids.keys():
+            self.last_update_ids[market_key] = 0
         timestamp = datetime.now()
         for order in update["changes"]:
+            print("order: ", order)
             order[0] = "bid" if order[0] == "buy" else "ask"
-            #logging.warning("{} - invalid order length to process".format(self.exchange.name)) if len(order) != 3
             agg_orders.append(
                 models.AggOrder(
                     timestamp=timestamp,
@@ -84,11 +115,14 @@ class CoinbaseListener(WebsocketListener):
                     price=float(order[1]),
                     size=float(order[2]),
                     buy_sym_id=buy_sym_id,
-                    sell_sym_id=sell_sym_id
+                    sell_sym_id=sell_sym_id,
+                    last_update_id=self.last_update_ids[market_key]
                 )
             )
-        logging.debug(" {} - aggregated order book update - agg orders: {}".format(self.exchange.name, len(agg_orders)))
-        return actions.InsertAction(agg_orders)
+        if len(agg_orders) > 0:
+            self.last_update_ids[market_key] += 1
+        #logging.debug(" {} - aggregated order book update - agg orders: {}".format(self.exchange.name, len(agg_orders)))
+        return [actions.InsertAction(agg_orders)]
 
     def _convert_raw_order(self, received):
         order = models.Order(

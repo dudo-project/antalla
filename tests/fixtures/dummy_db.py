@@ -11,6 +11,10 @@ def insert_exchanges(session):
         models.Exchange(
             name='binance',
             id=2
+        ),
+        models.Exchange(
+            name='coinbase',
+            id=3
         )
     ])
 
