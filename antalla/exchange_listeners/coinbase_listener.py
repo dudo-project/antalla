@@ -37,6 +37,65 @@ class CoinbaseListener(WebsocketListener):
             inserts.append(actions.InsertAction([size]))
         return inserts
 
+    def _parse_snapshot(self, snapshot):
+        agg_orders = []
+        buy_sym_id, sell_sym_id = update["product_id"].split("-")
+        timestamp = datetime.now()
+        order_info = dict(
+            timestamp=timestamp,
+            exchange_id=self.exchange.id,
+            buy_sym_id=buy_sym_id,
+            sell_sym_id=sell_sym_id
+        )
+        bids = self._create_orders("bid", order_info, snapshot["bids"])
+        asks = self._create_orders("ask", order_info, snapshot["asks"])
+        agg_orders.extend(bids)
+        agg_orders.extend(asks)
+        logging.debug(" {} - aggregated order book snapshot -  agg orders: {}".format(self.exchange.name, len(agg_orders)))
+        return actions.InsertAction(agg_orders)
+
+    def _create_orders(self, order_type, order_info, orders):
+        orders = []
+        for order in orders:
+            orders.append(models.AggOrder(
+                timestamp=order_info["timestamp"],
+                exchange_id=self.exchange.id,
+                order_type=order_type,
+                price=float(order[0]),
+                size=float(order[1]),
+                buy_sym_id=order_info["buy_sym_id"],
+                sell_sym_id=order_info["sell_sym_id"]
+            ))        
+        return orders
+
+    # TODO: add check for valid market
+    def _parse_l2update(self, update):
+        agg_orders = []
+        buy_sym_id, sell_sym_id = update["product_id"].split("-")
+        timestamp = datetime.now()
+        for order in update["changes"]:
+            order[0] = "bid" if order[0] == "buy" else "ask"
+            #logging.warning("{} - invalid order length to process".format(self.exchange.name)) if len(order) != 3
+            agg_orders.append(
+                models.AggOrder(
+                    timestamp=timestamp,
+                    exchange_id=self.exchange.id,
+                    order_type=order[0],
+                    price=float(order[1]),
+                    size=float(order[2]),
+                    buy_sym_id=buy_sym_id,
+                    sell_sym_id=sell_sym_id
+                )
+            )
+        logging.debug(" {} - aggregated order book update - agg orders: {}".format(self.exchange.name, len(agg_orders)))
+        return actions.InsertAction(agg_orders)
+
+
+
+    def _create_agg_orders(self, all_orders):
+
+
+
     def _convert_raw_order(self, received):
         order = models.Order(
             timestamp=parse_date(received["time"]),
