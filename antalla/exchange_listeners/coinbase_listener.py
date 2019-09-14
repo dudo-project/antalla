@@ -90,12 +90,6 @@ class CoinbaseListener(WebsocketListener):
         logging.debug(" {} - aggregated order book update - agg orders: {}".format(self.exchange.name, len(agg_orders)))
         return actions.InsertAction(agg_orders)
 
-
-
-    def _create_agg_orders(self, all_orders):
-
-
-
     def _convert_raw_order(self, received):
         order = models.Order(
             timestamp=parse_date(received["time"]),
