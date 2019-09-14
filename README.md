@@ -1,6 +1,6 @@
 #
 
-<img src="images/logo.svg" width="300">
+<img src="images/logo_2.svg" width="300">
 
 [![CircleCI](https://circleci.com/gh/samwerner/antalla.svg?style=svg&circle-token=117f2cd4908b4eddd036d9b612e347420690efa9)](https://circleci.com/gh/samwerner/antalla)
 
@@ -103,3 +103,8 @@ antalla run
 The list of markets to listen for can be customized through the `MARKET` environment variable, which should be formatted as follow `ETH_AURA,ETH_IDXM`.
 
 [1]: https://docs.sqlalchemy.org/en/latest/dialects/postgresql.html#module-sqlalchemy.dialects.postgresql.psycopg2
+
+
+# Logo Credit
+The antalla logo was generated using [launchaco](https://www.launchaco.com):
+Montserrat-ExtraLight, by Julieta Ulanovsky licensed under Open Font License. Icon by Vilahop
