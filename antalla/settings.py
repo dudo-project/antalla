@@ -41,8 +41,12 @@ else:
 PACKAGE = "antalla"
 
 COINBASE_WS_URL = "wss://ws-feed.pro.coinbase.com"
-COINBASE_MARKETS = MARKETS
-COINBASE_CHANNELS = ["full"]
+
+#COINBASE_MARKETS = MARKETS
+#COINBASE_CHANNELS = ["full"]
+COINBASE_MARKETS = ["USD_BTC"]
+COINBASE_CHANNELS = ["level2", "full"]
+
 COINBASE_API_KEY = os.environ.get("COINBASE_API_KEY")
 COINBASE_API_SECRET = os.environ.get("COINBASE_API_SECRET")
 COINBASE_API = "https://api.pro.coinbase.com"

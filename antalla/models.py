@@ -160,7 +160,7 @@ class AggOrder(Base):
 
     id = Column(Integer, primary_key=True)
     sequence_id = Column(String)
-    last_update_id = Column(Integer, nullable=False)
+    last_update_id = Column(Integer)
     timestamp = Column(DateTime, index=True, nullable=False)
     buy_sym_id = Column(String,ForeignKey("coins.symbol"), nullable=False, index=True)
     buy_sym = relationship("Coin", foreign_keys=[buy_sym_id])
