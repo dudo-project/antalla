@@ -328,6 +328,9 @@ class CoinbaseListener(WebsocketListener):
         )
 
     async def _setup_connection(self, websocket):
+        for market in self._all_markets:
+            self._log_event(market, "connect", "trades")
+            self._log_event(market, "connect", "agg_order_book")
         await self._send_message(websocket, "subscribe", self._all_markets, settings.COINBASE_CHANNELS)         
 
     def _format_markets(self):

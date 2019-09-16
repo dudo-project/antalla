@@ -85,7 +85,7 @@ class ModelsTest(unittest.TestCase):
         generator._generate_all_snapshots(connect_time, disconnect_time, snapshot_time, market, exchange)
         created_snapshots = list(self.session.execute("select count(*) from order_book_snapshots where timestamp >= '2019-05-15 19:34:59.0' and timestamp <= '2019-05-15 19:35:45.0'"))[0]
         self.assertEqual(created_snapshots[0], 42)
-        
+    
     def test_generate_snapshot_2(self):
         self._insert_data()
         generator = ob_snapshot_generator.OBSnapshotGenerator("hitbtc", datetime(2019, 5, 15, 19, 35, 11, 0), session=self.session)
@@ -131,11 +131,11 @@ class ModelsTest(unittest.TestCase):
         created_snapshots = list(self.session.execute("select count(*) from order_book_snapshots"))[0]
         self.assertEqual(created_snapshots[0], 109)
     
-    def test_query_order_books(self):
+    def test_query_order_book(self):
         self._insert_data()
-        generator = ob_snapshot_generator.OBSnapshotGenerator("hitbtc", datetime.now(), session=self.session)
-        ob_result_proxy = generator._query_order_books("hitbtc", "ETH", "BTC", "2019-05-15 19:30:0.0", "2019-05-15 19:35:45.0")
-        full_order_book, quartile_order_book = generator._parse_order_books(ob_result_proxy)
+        generator = ob_snapshot_generator.OBSnapshotGenerator("hitbtc", datetime.now(), 1, session=self.session)
+        ob_result_proxy = generator._query_order_book("hitbtc", "ETH", "BTC", "2019-05-15 19:30:0.0", "2019-05-15 19:35:45.0")
+        full_order_book = generator._parse_order_book(ob_result_proxy)
         self.assertEqual(len(full_order_book), 6)
         bids = 0
         asks = 0
@@ -200,7 +200,5 @@ class ModelsTest(unittest.TestCase):
         self.assertEqual(output["asks_price_mean"], 1.0425)
         self.assertEqual(output["bid_price_median"], 0.775)
         self.assertEqual(output["ask_price_median"], 1.05)
-        self.assertEqual(output["bid_price_upper_quartile"], 0.5)
-        self.assertEqual(output["ask_price_lower_quartile"], 1.1)
-    
+            
 

@@ -148,8 +148,13 @@ def snapshot(args):
         exchanges = args["exchange"]
     else:
         exchanges = ExchangeListener.registered()
+    mid_price_range = float(args["range"][0]) if args["range"] else 0
+    quartile = True if args["quartile"] else False
     stop_time = datetime.now()
-    obs_generator = OBSnapshotGenerator(exchanges, stop_time) 
+    if mid_price_range:
+        obs_generator = OBSnapshotGenerator(exchanges, stop_time, mid_price_range) 
+    else: 
+        obs_generator = OBSnapshotGenerator(exchanges, stop_time) 
     try:
         obs_generator.run()
     except KeyboardInterrupt:

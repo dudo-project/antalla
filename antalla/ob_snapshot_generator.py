@@ -9,22 +9,30 @@ from . import db
 from . import models
 from . import actions
 
-SNAPSHOT_INTERVAL_SECONDS = 60
+SNAPSHOT_INTERVAL_SECONDS = 1
 DEFAULT_COMMIT_INTERVAL = 100
 
 class OBSnapshotGenerator:
     def __init__(self, exchanges, timestamp,
-                 session=db.session,
-                 commit_interval=DEFAULT_COMMIT_INTERVAL,
-                 snapshot_interval=SNAPSHOT_INTERVAL_SECONDS):
+                mid_price_range=0,
+                session=db.session,
+                commit_interval=DEFAULT_COMMIT_INTERVAL,
+                snapshot_interval=SNAPSHOT_INTERVAL_SECONDS):
         self.exchanges = exchanges
         self.stop_time = timestamp
         self.commit_interval = commit_interval
         self.snapshot_interval = snapshot_interval
         self.actions_buffer = []
         self.commit_counter = 0  
-        self.session = session  
-
+        self.session = session
+        self.mid_price_range = mid_price_range
+        
+    def _query_order_book(self, exchange, buy_sym_id, sell_sym_id, start_time, stop_time):
+        if self.mid_price_range:
+            return self._query_order_book_mid_price(exchange, buy_sym_id, sell_sym_id, start_time, stop_time)
+        else:
+            return self._query_order_book_quartile(exchange, buy_sym_id, sell_sym_id, start_time, stop_time)
+    
     def _get_connection_window(self, last_update, key):
         connect_time = None
         disconnect_time = self.stop_time
@@ -81,13 +89,13 @@ class OBSnapshotGenerator:
             start_time = datetime.strftime(connect_time, '%Y-%m-%d %H:%M:%S.%f')
             stop_time = datetime.strftime(snapshot_time, '%Y-%m-%d %H:%M:%S.%f')
             logging.debug("start: {}, end: {}".format(connect_time, snapshot_time))
-            order_books = self._query_order_books(exchange, market["buy_sym_id"], market["sell_sym_id"], start_time, stop_time)
-            full_ob, quartile_ob = self._parse_order_books(order_books)
+            order_book = self._query_order_book(exchange, market["buy_sym_id"], market["sell_sym_id"], start_time, stop_time)
+            full_ob = self._parse_order_book(order_book)
             if full_ob is None:
                 snapshot_time += timedelta(seconds=self.snapshot_interval)
                 continue
             metadata = dict(timestamp=snapshot_time, exchange_id=market["exchange_id"], buy_sym_id=market["buy_sym_id"], sell_sym_id=market["sell_sym_id"])
-            snapshot = self._generate_snapshot(full_ob, quartile_ob, metadata)
+            snapshot = self._generate_snapshot(full_ob, metadata)
             action = actions.InsertAction([snapshot])
             action.execute(self.session)
             if len(self.actions_buffer) >= self.commit_interval:
@@ -120,11 +128,11 @@ class OBSnapshotGenerator:
     def _query_latest_snapshot(self, exchange):
         query = (
             """
-            select max(timestamp), buy_sym_id, sell_sym_id, exchange_id, e.name
+            select max(timestamp), buy_sym_id, sell_sym_id, exchange_id, e.name, mid_price_range, snapshot_type
             from order_book_snapshots
             inner join exchanges e on order_book_snapshots.exchange_id = e.id
             where e.name = :exchange
-            group by buy_sym_id, sell_sym_id, exchange_id, e.name;
+            group by buy_sym_id, sell_sym_id, exchange_id, e.name, mid_price_range, snapshot_type;
             """
         )
         return self.session.execute(query, {"exchange": exchange.lower()})
@@ -143,6 +151,8 @@ class OBSnapshotGenerator:
         return self.session.execute(query)
 
     def _get_last_update_time(self, key, updates):
+        snapshot_type = "mid_price_range" if self.mid_price_range else "quartile"
+        key = key + str(self.mid_price_range) + snapshot_type
         if key in updates.keys():
             return updates[key]
         else:
@@ -151,7 +161,7 @@ class OBSnapshotGenerator:
     def _parse_snapshot_times(self, snapshot_updates):
         update_times = {}
         for update in list(snapshot_updates):
-            update_times[str(update[4])+str(update[1])+str(update[2])] = update[0]
+            update_times[str(update[4])+str(update[1])+str(update[2])+str(update[5])+str(update[6])] = update[0]
         return update_times
 
     def _parse_connection_events(self, events):
@@ -172,7 +182,7 @@ class OBSnapshotGenerator:
             all_markets[market[0]].append(dict(buy_sym_id=market[1], sell_sym_id=market[2], exchange=market[0], exchange_id=market[3]))
         return all_markets
 
-    def _query_order_books(self, exchange, buy_sym_id, sell_sym_id, start_time, stop_time):
+    def _query_order_book_quartile(self, exchange, buy_sym_id, sell_sym_id, start_time, stop_time):
         query = (
             """
             with order_book as (
@@ -202,7 +212,7 @@ class OBSnapshotGenerator:
             and timestamp <= :stop_time
             and timestamp >= :start_time
             )
-            select *, true as is_quartile
+            select *
             from order_book where (order_book.order_type = 'bid' and order_book.price >= (
                 select percentile_disc(0.75) within group (order by order_book.price)
                 from order_book
@@ -212,42 +222,88 @@ class OBSnapshotGenerator:
                 from order_book
                     where order_book.order_type = 'ask'
             ))
-            union all
-            select *, false as is_quartile from order_book
-            order by timestamp desc
             """
         )
         return self.session.execute(query, {"stop_time": stop_time, "start_time": start_time, "buy_sym_id": buy_sym_id.upper(), "sell_sym_id": sell_sym_id.upper(), "exchange": exchange.lower()})
 
-    def _parse_order_books(self, order_books):
+
+    def _query_order_book_mid_price(self, exchange, buy_sym_id, sell_sym_id, start_time, stop_time):
+        query = (
+        """
+        with order_book as (
+            with latest_orders as (
+                select order_type, price, max(last_update_id) max_update_id
+                from aggregate_orders
+                group by aggregate_orders.price, aggregate_orders.order_type)
+            select aggregate_orders.id,
+                order_type,
+                price,
+                size,
+                last_update_id,
+                timestamp,
+                name,
+                buy_sym_id,
+                sell_sym_id
+            from aggregate_orders
+                    inner join exchanges on aggregate_orders.exchange_id = exchanges.id
+            where (order_type, price, last_update_id) in (select * from latest_orders)
+            and size > 0
+            and buy_sym_id = :buy_sym_id
+            and sell_sym_id = :sell_sym_id
+            and name = :exchange
+            order by price asc
+        ),
+            mid_price as (
+                with max_min_prices as (
+                    with max_bid_price as (
+                        select max(price) max_bid
+                        from order_book
+                        where (order_book.order_type = 'bid')
+                    ),
+                        min_ask_price as (
+                            select min(price) min_ask
+                            from order_book
+                            where (order_book.order_type = 'ask')
+                        )
+                    select *
+                    from max_bid_price,
+                        min_ask_price)
+                select ((max_min_prices.min_ask + max_min_prices.max_bid) / 2) mid, max_bid, min_ask
+                from max_min_prices
+            )
+        select *
+        from order_book, mid_price
+        where (order_book.order_type = 'bid' and order_book.price >= (1- :range)* mid_price.mid)
+        or (order_book.order_type = 'ask' and order_book.price <= (1+ :range)* mid_price.mid)
+        order by timestamp desc
+        """
+        )
+        return self.session.execute(query, {"range": self.mid_price_range, "stop_time": stop_time, "start_time": start_time,
+        "buy_sym_id": buy_sym_id.upper(), "sell_sym_id": sell_sym_id.upper(), "exchange": exchange.lower()})
+
+
+    def _parse_order_book(self, order_book):
         full_order_book = []
-        quartile_order_book = []
-        order_books = list(order_books)
-        if len(order_books) == 0:
+        order_book = list(order_book)
+        if len(order_book) == 0:
             logging.debug("empty order book to be parsed")
-            return None, None
-        for order in order_books:
-            if order[9] == True:
-                # order is in quartile order book
-                quartile_order_book.append(dict(
-                    order_type=order[1],
-                    price=order[2],
-                    size=order[3]
-                ))
-            else:
-                # order is in full order book
-                full_order_book.append(dict(
-                    order_type=order[1],
-                    price=order[2],
-                    size=order[3]
-                ))
-        logging.debug("ob_snapshot_generator - parsed order books: 'full order book' ({} orders), 'quartile order book' ({} orders)".format(len(full_order_book), len(quartile_order_book)))
-        return full_order_book, quartile_order_book
+            return None
+        for order in order_book:
+            full_order_book.append(dict(
+                order_type=order[1],
+                price=order[2],
+                size=order[3]
+            ))
+        logging.debug("ob_snapshot_generator - parsed order books: 'full order book' ({} orders)".format(len(full_order_book)))
+        return full_order_book
         
-    def _generate_snapshot(self, full_ob, quartile_ob, metadata):
+    def _generate_snapshot(self, full_ob, metadata):
         full_ob_stats = self._compute_stats(full_ob)
-        quartile_ob_stats = self._compute_stats(quartile_ob)
+        #quartile_ob_stats = self._compute_stats(quartile_ob)
+        snapshot_type = "mid_price_range" if self.mid_price_range else "quartile"
         return models.OrderBookSnapshot(
+            mid_price_range=self.mid_price_range,
+            snapshot_type=snapshot_type,
             exchange_id=metadata["exchange_id"],
             sell_sym_id=metadata["sell_sym_id"],
             buy_sym_id=metadata["buy_sym_id"],
@@ -267,16 +323,16 @@ class OBSnapshotGenerator:
             max_bid_size=full_ob_stats["max_bid_size"], 
             bid_price_median=full_ob_stats["bid_price_median"], 
             ask_price_median=full_ob_stats["ask_price_median"], 
-            bid_price_upper_quartile=quartile_ob_stats["bid_price_upper_quartile"],
-            ask_price_lower_quartile=quartile_ob_stats["ask_price_lower_quartile"],
-            bids_volume_upper_quartile=quartile_ob_stats["bids_volume"],
-            asks_volume_lower_quartile=quartile_ob_stats["asks_volume"],
-            bids_count_upper_quartile=quartile_ob_stats["bids_count"],
-            asks_count_lower_quartile=quartile_ob_stats["asks_count"],
-            bids_price_stddev_upper_quartile=quartile_ob_stats["bids_price_stddev"],
-            asks_price_stddev_lower_quartile=quartile_ob_stats["asks_price_stddev"],
-            bids_price_mean_upper_quartile=quartile_ob_stats["bids_price_mean"],
-            asks_price_mean_lower_quartile=quartile_ob_stats["asks_price_mean"]
+            #bid_price_upper_quartile=quartile_ob_stats["bid_price_upper_quartile"],
+            #ask_price_lower_quartile=quartile_ob_stats["ask_price_lower_quartile"],
+            #bids_volume_upper_quartile=quartile_ob_stats["bids_volume"],
+            #asks_volume_lower_quartile=quartile_ob_stats["asks_volume"],
+            #bids_count_upper_quartile=quartile_ob_stats["bids_count"],
+            #asks_count_lower_quartile=quartile_ob_stats["asks_count"],
+            #bids_price_stddev_upper_quartile=quartile_ob_stats["bids_price_stddev"],
+            #asks_price_stddev_lower_quartile=quartile_ob_stats["asks_price_stddev"],
+            #bids_price_mean_upper_quartile=quartile_ob_stats["bids_price_mean"],
+            #asks_price_mean_lower_quartile=quartile_ob_stats["asks_price_mean"]
         )
 
     def _compute_stats(self, order_book):
@@ -312,6 +368,6 @@ class OBSnapshotGenerator:
             bid_price_median = np.median(bid_prices),
             ask_price_median = np.median(ask_prices),
             # the two fields below are only accurate for already preprocessed quartile orderbooks
-            bid_price_upper_quartile= min(bid_prices),
-            ask_price_lower_quartile=max(ask_prices) 
+            #bid_price_upper_quartile= min(bid_prices),
+            #ask_price_lower_quartile=max(ask_prices) 
         )

@@ -335,6 +335,7 @@ def insert_snapshot(session):
     session.add_all([
         models.OrderBookSnapshot(
             timestamp=datetime.datetime(2019, 5, 15, 19, 37, 0, 0), 
+            snapshot_type="quartile",
             buy_sym_id='ETH',
             sell_sym_id='BTC',
             exchange_id=1,
@@ -353,15 +354,5 @@ def insert_snapshot(session):
             max_bid_size=10,
             bid_price_median=4.8,
             ask_price_median=7.2,
-            bid_price_upper_quartile=4.7,
-            ask_price_lower_quartile=8.2,
-            bids_volume_upper_quartile=9,
-            asks_volume_lower_quartile=14,
-            bids_count_upper_quartile=100,
-            asks_count_lower_quartile=75,
-            bids_price_stddev_upper_quartile=0.3,
-            asks_price_stddev_lower_quartile=0.2,
-            bids_price_mean_upper_quartile= 5.5,
-            asks_price_mean_lower_quartile=6.8 
-        )
-    ])
+            )
+        ])

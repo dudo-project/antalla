@@ -182,7 +182,7 @@ Example:
 oba = OrderBookAnalyser()
 while True:
     try:
-        #oba.visualise_ob("ETH", "BTC", "coinbase")
-        oba.visualise_ob("BTC", "USD", "coinbase")
+        oba.visualise_ob("ETH", "BTC", "hitbtc")
+        #oba.visualise_ob("BTC", "USD", "coinbase")
     except KeyboardInterrupt:
         sys.exit()

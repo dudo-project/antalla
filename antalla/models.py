@@ -242,6 +242,8 @@ class OrderBookSnapshot(Base):
     __tablename__ = "order_book_snapshots"
         
     timestamp = Column(DateTime, nullable=False, primary_key=True)
+    snapshot_type = Column(String, nullable=False, primary_key=True)
+    mid_price_range = Column(Float, nullable=False, primary_key=True)
     buy_sym_id = Column(String,ForeignKey("coins.symbol"), nullable=False, index=True, primary_key=True)
     buy_sym = relationship("Coin", foreign_keys=[buy_sym_id])
     sell_sym_id = Column(String, ForeignKey("coins.symbol"), nullable=False, index=True, primary_key=True)
@@ -263,17 +265,7 @@ class OrderBookSnapshot(Base):
     max_bid_size = Column(Float, nullable=False)
     bid_price_median = Column(Float, nullable=False)
     ask_price_median = Column(Float, nullable=False)
-    bid_price_upper_quartile = Column(Float, nullable=False)
-    ask_price_lower_quartile = Column(Float, nullable=False)
-    bids_volume_upper_quartile = Column(Float, nullable=False)
-    asks_volume_lower_quartile = Column(Float, nullable=False)
-    bids_count_upper_quartile = Column(Integer, nullable=False)
-    asks_count_lower_quartile = Column(Integer, nullable=False)
-    bids_price_stddev_upper_quartile = Column(Float, nullable=False)
-    asks_price_stddev_lower_quartile = Column(Float, nullable=False)
-    bids_price_mean_upper_quartile = Column(Float, nullable=False)
-    asks_price_mean_lower_quartile = Column(Float, nullable=False)
-
+    
 
 class Event(Base):
     __tablename__ = "events"
