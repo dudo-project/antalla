@@ -46,6 +46,7 @@ class CoinbaseListener(WebsocketListener):
             return func(payload)
         return []
     
+    """
     def _parse_received(self, received):
         order, funds, size = self._convert_raw_order(received)
         inserts = [actions.InsertAction([order])]
@@ -54,6 +55,7 @@ class CoinbaseListener(WebsocketListener):
         if size:
             inserts.append(actions.InsertAction([size]))
         return inserts
+    """
 
     def _parse_snapshot(self, snapshot):
         agg_orders = []
@@ -71,7 +73,6 @@ class CoinbaseListener(WebsocketListener):
             self.last_update_ids[market_key] = 0
         bids = self._create_agg_orders("bid", order_info, snapshot["bids"])
         asks = self._create_agg_orders("ask", order_info, snapshot["asks"])
-        print("bids: ", bids)
         agg_orders.extend(bids)
         agg_orders.extend(asks)
         if len(agg_orders) > 0:
@@ -105,7 +106,7 @@ class CoinbaseListener(WebsocketListener):
             self.last_update_ids[market_key] = 0
         timestamp = datetime.now()
         for order in update["changes"]:
-            print("order: ", order)
+            print(order)
             order[0] = "bid" if order[0] == "buy" else "ask"
             agg_orders.append(
                 models.AggOrder(
@@ -121,9 +122,9 @@ class CoinbaseListener(WebsocketListener):
             )
         if len(agg_orders) > 0:
             self.last_update_ids[market_key] += 1
-        #logging.debug(" {} - aggregated order book update - agg orders: {}".format(self.exchange.name, len(agg_orders)))
         return [actions.InsertAction(agg_orders)]
 
+    """
     def _convert_raw_order(self, received):
         order = models.Order(
             timestamp=parse_date(received["time"]),
@@ -149,7 +150,7 @@ class CoinbaseListener(WebsocketListener):
                 received["order_id"]
             )
             return order, None, size
-
+    
     def _parse_open(self, open_order):
         # only for orders that are not fully filled immediately 
         order_size = self._new_order_size(
@@ -161,7 +162,7 @@ class CoinbaseListener(WebsocketListener):
             actions.InsertAction([self._convert_raw_open_order(open_order)]),
             actions.InsertAction([order_size])
         ]
-
+    
     def _convert_raw_open_order(self, open_order):
         return models.Order(
             timestamp=parse_date(open_order["time"]),
@@ -189,6 +190,7 @@ class CoinbaseListener(WebsocketListener):
             {"exchange_order_id": order["order_id"], "exchange_id": self.exchange.id},
             update_fields
             )] 
+    """
 
     def _get_markets_uri(self):
         return (
@@ -269,6 +271,7 @@ class CoinbaseListener(WebsocketListener):
     def _parse_market(self, raw_markets):
         return [market["id"] for market in raw_markets]
 
+    """
     def _new_order_size(self, timestamp, size, order_id):
         return models.OrderSize(
             timestamp=parse_date(timestamp),
@@ -285,6 +288,7 @@ class CoinbaseListener(WebsocketListener):
             funds=float(funds)
         )
 
+    
     def _parse_change(self, update):
         # an order has changed: result of self-trade prevention adjusting order size or available funds
         if "new_size" in update:
@@ -303,6 +307,7 @@ class CoinbaseListener(WebsocketListener):
             # FIXME: raise an exception
             logging.debug("failed to process order: %s", update)
         return []
+    """
 
     def _parse_match(self, match):
         # a trade occurred between two orders 

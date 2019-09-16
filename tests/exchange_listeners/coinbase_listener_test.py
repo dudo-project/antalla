@@ -16,7 +16,7 @@ FIXTURES_PATH = path.join(path.dirname(path.dirname(__file__)), "fixtures")
 
 class CoinbaseListenerTest(unittest.TestCase):
     def setUp(self):
-            self.dummy_exchange = models.Exchange(id=3, name="dummy")
+            self.dummy_exchange = models.Exchange(id=3, name="coinbase")
             self.on_event_mock = MagicMock()
             self.coinbase_listener = CoinbaseListener(self.dummy_exchange, self.on_event_mock)
             self.session = db.Session()
@@ -71,6 +71,7 @@ class CoinbaseListenerTest(unittest.TestCase):
         resultproxy = self.session.execute("select last_update_id, order_type, buy_sym_id, sell_sym_id, exchange_id, price, size from aggregate_orders order by last_update_id asc")
         result = list(resultproxy)
         self.assertTrue(len(result) > 0)
+        # testing for inserted order: ["buy", "2", "5"]
         self.assertEqual(result[0][0], 0)
         self.assertEqual(result[0][1], "bid")
         self.assertEqual(result[0][2], "ETH")
@@ -78,7 +79,7 @@ class CoinbaseListenerTest(unittest.TestCase):
         self.assertEqual(result[0][4], 3)
         self.assertEqual(result[0][5], 2)
         self.assertEqual(result[0][6], 5)
-
+        # testing for inserted order: ["buy", "2", "3"]
         self.assertEqual(result[1][0], 1)
         self.assertEqual(result[1][1], "bid")
         self.assertEqual(result[1][2], "ETH")
@@ -99,6 +100,7 @@ class CoinbaseListenerTest(unittest.TestCase):
         self.session.flush()
         resultproxy = self.session.execute("select last_update_id, order_type, buy_sym_id, sell_sym_id, exchange_id, price, size from aggregate_orders order by last_update_id asc")
         result = list(resultproxy)
+        # testing for inserted order: ["buy", "2.5", "1"]
         self.assertEqual(result[2][0], 2)
         self.assertEqual(result[2][1], "bid")
         self.assertEqual(result[2][2], "ETH")
@@ -142,6 +144,7 @@ class CoinbaseListenerTest(unittest.TestCase):
         resultproxy = self.session.execute("select last_update_id, order_type, buy_sym_id, sell_sym_id, exchange_id, price, size from aggregate_orders order by last_update_id asc, price desc")
         result = list(resultproxy)
         self.assertEqual(len(result), 7)
+        # testing for inserted order: ["sell", "6", "6"]
         self.assertEqual(result[4][0], 4)
         self.assertEqual(result[4][1], "ask")
         self.assertEqual(result[4][2], "ETH")
@@ -149,7 +152,7 @@ class CoinbaseListenerTest(unittest.TestCase):
         self.assertEqual(result[4][4], 3)
         self.assertEqual(result[4][5], 6)
         self.assertEqual(result[4][6], 6)
-
+        # testing for inserted order: ["sell", "5.7", "15"]
         self.assertEqual(result[5][0], 4)
         self.assertEqual(result[5][1], "ask")
         self.assertEqual(result[5][2], "ETH")
@@ -157,7 +160,7 @@ class CoinbaseListenerTest(unittest.TestCase):
         self.assertEqual(result[5][4], 3)
         self.assertEqual(result[5][5], 5.7)
         self.assertEqual(result[5][6], 15)
-
+        # testing for inserted order: ["buy", "3", "0.5"]
         self.assertEqual(result[6][0], 4)
         self.assertEqual(result[6][1], "bid")
         self.assertEqual(result[6][2], "ETH")
@@ -165,7 +168,64 @@ class CoinbaseListenerTest(unittest.TestCase):
         self.assertEqual(result[6][4], 3)
         self.assertEqual(result[6][5], 3)
         self.assertEqual(result[6][6], 0.5)
-
+        # testing for correct return result of current order book state
+        current_order_book = self.session.execute(
+            """
+            with latest_orders as (
+                      select order_type, price, max(last_update_id) max_update_id
+                      from aggregate_orders
+                      group by aggregate_orders.price, aggregate_orders.order_type)
+                  select aggregate_orders.id,
+                         order_type,
+                         price,
+                         size,
+                         last_update_id,
+                         timestamp,
+                         ex.name,
+                         buy_sym_id,
+                         sell_sym_id
+                  from aggregate_orders
+                           inner join exchanges ex on aggregate_orders.exchange_id = ex.id
+                  where (order_type, price, last_update_id) in (select * from latest_orders)
+                    and size > 0
+                    and buy_sym_id = 'ETH'
+                    and sell_sym_id = 'BTC'
+                    and ex.name = 'coinbase'
+                  order by price asc
+            """
+        )
+        all_orders = []
+        for order in list(current_order_book):
+            all_orders.append(dict(
+                order_type=order[1],
+                price=order[2],
+                size=order[3],
+                timestamp=order[5],
+                last_update_id=order[4],
+                exchange=order[6]
+            ))
+        # testing if correct orders are being returned (none with size 0)
+        self.assertEqual(len(all_orders), 5)
+        self.assertEqual(all_orders[0]["size"], 3)
+        self.assertEqual(all_orders[0]["last_update_id"], 1)
+        self.assertEqual(all_orders[0]["price"], 2)
+        
+        self.assertEqual(all_orders[1]["size"], 1)
+        self.assertEqual(all_orders[1]["last_update_id"], 2)
+        self.assertEqual(all_orders[1]["price"], 2.5)
+        
+        self.assertEqual(all_orders[2]["size"], 0.5)
+        self.assertEqual(all_orders[2]["last_update_id"], 4)
+        self.assertEqual(all_orders[2]["price"], 3)
+        
+        self.assertEqual(all_orders[3]["size"], 15)
+        self.assertEqual(all_orders[3]["last_update_id"], 4)
+        self.assertEqual(all_orders[3]["price"], 5.7)
+        
+        self.assertEqual(all_orders[4]["size"], 6)
+        self.assertEqual(all_orders[4]["last_update_id"], 4)
+        self.assertEqual(all_orders[4]["price"], 6)
+        self.assertEqual(all_orders[4]["exchange"], self.dummy_exchange.name)
 
     def test_parse_snapshot(self):
         payload = self.raw_fixture("coinbase/coinbase-snapshot.json")
@@ -316,9 +376,7 @@ class CoinbaseListenerTest(unittest.TestCase):
         self.assertEqual(order.price, 400.23)
         self.assertEqual(order.size, 5.23512)
         self.assertEqual(order.timestamp, parse_date("2014-11-07T08:19:27.028459Z"))
-        #self.assertEqual(order.maker_order_id, "ac928c66-ca53-498f-9c13-a110027a60e8")
-        #self.assertEqual(order.taker_order_id, "132fb6ae-456b-4654-b4e0-d681ac05cea1")
-
+        
     def test_parse_markets(self):
         raw_markets = self.raw_fixture("coinbase/coinbase-markets.json")
         markets = self.coinbase_listener._parse_market(json.loads(raw_markets))
