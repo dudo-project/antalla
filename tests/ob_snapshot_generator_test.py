@@ -201,7 +201,9 @@ class ModelsTest(unittest.TestCase):
         self.assertEqual(output["bid_price_median"], 0.775)
         self.assertEqual(output["ask_price_median"], 1.05)
             
-    def test_run(self):
+    def test_run_mid_price(self):
+        """testing the computation of order book snapshots using a mid price range approach
+        """
         dummy_db.insert_agg_orders_snapshot(self.session)
         dummy_db.insert_coins(self.session)
         dummy_db.insert_events_snapshot(self.session)
@@ -321,6 +323,52 @@ class ModelsTest(unittest.TestCase):
         self.assertAlmostEqual(results[19][8], 4.066666666666666)
         self.assertAlmostEqual(results[19][9], 4.841666666666667)
 
+    def test_run_quartile(self):
+        """testing the computation of order book snapshots using a quartile approach
+        """
+        dummy_db.insert_agg_orders_snapshot(self.session)
+        dummy_db.insert_coins(self.session)
+        dummy_db.insert_events_snapshot(self.session)
+        dummy_db.insert_exchange_markets(self.session)
+        dummy_db.insert_exchanges(self.session)
+        dummy_db.insert_markets(self.session)
+        self.session.flush()
+        interval = 60
+        mid_price_range = 0
+
+        # Check 1
+        generator = ob_snapshot_generator.OBSnapshotGenerator("hitbtc", datetime(2019, 5, 1, 1, 6, 0, 0), 
+                                                                mid_price_range, interval, session=self.session)
+        generator.run()
+        all_snapshots = self.session.execute("select timestamp, spread, bids_count, asks_count, bids_volume, asks_volume, bids_price_stddev, asks_price_stddev, bids_price_mean, asks_price_mean from order_book_snapshots snap inner join exchanges ex on snap.exchange_id = ex.id where ex.name = 'hitbtc' order by timestamp asc")
+        results = list(all_snapshots)
+        self.assertEqual(len(results), 5)
+        self.assertAlmostEqual(results[4][1], 0.1)
+        self.assertEqual(results[4][2], 2)
+        self.assertEqual(results[4][3], 1)
+        self.assertEqual(results[4][4], 97.8)
+        self.assertEqual(results[4][5], 92.0)
+        self.assertAlmostEqual(results[4][6], 0.0499, delta=0.001)
+        self.assertAlmostEqual(results[4][7], 0.0)
+        self.assertAlmostEqual(results[4][8], 4.45)
+        self.assertAlmostEqual(results[4][9], 4.6)
+    
+        # Check 2
+        generator = ob_snapshot_generator.OBSnapshotGenerator("hitbtc", datetime(2019, 5, 1, 1, 11, 0, 0), 
+                                                                mid_price_range, interval, session=self.session)
+        generator.run()
+        all_snapshots = self.session.execute("select timestamp, spread, bids_count, asks_count, bids_volume, asks_volume, bids_price_stddev, asks_price_stddev, bids_price_mean, asks_price_mean from order_book_snapshots snap inner join exchanges ex on snap.exchange_id = ex.id where ex.name = 'hitbtc' order by timestamp asc")
+        results = list(all_snapshots)
+        self.assertEqual(len(results), 10)
+        self.assertAlmostEqual(results[9][1], 0.2)
+        self.assertEqual(results[9][2], 2)
+        self.assertEqual(results[9][3], 2)
+        self.assertEqual(results[9][4], 87.2)
+        self.assertEqual(results[9][5], 195.4)
+        self.assertAlmostEqual(results[9][6], 0.05, delta=0.001)
+        self.assertAlmostEqual(results[9][7], 0.05, delta=0.001)
+        self.assertAlmostEqual(results[9][8], 4.35)
+        self.assertAlmostEqual(results[9][9], 4.65)
 
     def parse_snapshot(self, snapshot):
         all_snapshots = []
