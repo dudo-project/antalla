@@ -18,7 +18,8 @@ IDEX_API = "https://api.idex.market"
 IDEX_API_MARKETS = "return24Volume"
 IDEX_MARKETS = MARKETS
 
-BINANCE_MARKETS = MARKETS
+#BINANCE_MARKETS = MARKETS
+BINANCE_MARKETS = ["BTC_ETH"]
 BINANCE_STREAMS = ["depth", "trade"]
 BINANCE_SINGLE_STREAM = "wss://stream.binance.com:9443/ws/"
 BINANCE_COMBINED_STREAM = "wss://stream.binance.com:9443/stream?streams="
@@ -44,7 +45,7 @@ COINBASE_WS_URL = "wss://ws-feed.pro.coinbase.com"
 
 #COINBASE_MARKETS = MARKETS
 #COINBASE_CHANNELS = ["full"]
-COINBASE_MARKETS = ["USD_BTC"]
+COINBASE_MARKETS = ["ETH_BTC"]
 COINBASE_CHANNELS = ["level2", "full"]
 
 COINBASE_API_KEY = os.environ.get("COINBASE_API_KEY")

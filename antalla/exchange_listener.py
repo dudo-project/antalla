@@ -2,6 +2,7 @@ import aiohttp
 import uuid
 import json
 import logging
+import re
 from datetime import datetime
 from .base_factory import BaseFactory
 from . import models
@@ -57,24 +58,24 @@ class ExchangeListener(BaseFactory):
     def _parse_markets(self, markets):
         raise NotImplementedError()
 
-    def _parse_market(self, pair, all_symbols):
+    def _parse_market_to_symbols(self, pair, all_symbols):
         """
         returns the individual coin symbols from a pair string of any possible length
 
         >>> from types import SimpleNamespace
         >>> symbols = ["BTC", "ETH", "WAVE", "USD"]
         >>> dummy_self = SimpleNamespace(all_symbols=symbols)
-        >>> ExchangeListener._parse_market(dummy_self, "BTC_ETH", symbols)
+        >>> ExchangeListener._parse_market_to_symbols(dummy_self, "BTC_ETH", symbols)
         ('BTC', 'ETH')
-        >>> ExchangeListener._parse_market(dummy_self, "BTCETH", symbols)
+        >>> ExchangeListener._parse_market_to_symbols(dummy_self, "BTCETH", symbols)
         ('BTC', 'ETH')
-        >>> ExchangeListener._parse_market(dummy_self, "WAVEETH", symbols)
+        >>> ExchangeListener._parse_market_to_symbols(dummy_self, "WAVEETH", symbols)
         ('WAVE', 'ETH')
-        >>> ExchangeListener._parse_market(dummy_self, "USDWAVE", symbols)
+        >>> ExchangeListener._parse_market_to_symbols(dummy_self, "USDWAVE", symbols)
         ('USD', 'WAVE')
         """   
         split_at = lambda string, n: (string[:n], string[n:])
-        symbols = pair.split("_")
+        symbols = re.split("[_-]", pair)
         if len(symbols) == 2:
             return tuple(symbols)
         if len(pair) % 2 == 0:
@@ -92,7 +93,7 @@ class ExchangeListener(BaseFactory):
         return self._all_symbols
 
     def _log_event(self, market, connection_event, data_collected):
-        pair = self._parse_market(market, self.all_symbols)
+        pair = self._parse_market_to_symbols(market, self.all_symbols)
         event = models.Event(
             timestamp=datetime.now(),
             session_id=self._session_id,

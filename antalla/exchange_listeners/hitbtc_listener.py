@@ -49,7 +49,7 @@ class HitBTCListener(WebsocketListener):
             actions = self._parse_markets(markets)
             self.on_event(actions)
 
-    def _parse_market(self, market, all_symbols):
+    def _parse_market_to_symbols(self, market, all_symbols):
         for m in all_symbols:
             if m["id"] == market.upper():
                 return (m["baseCurrency"], m["quoteCurrency"])
@@ -60,7 +60,7 @@ class HitBTCListener(WebsocketListener):
         add_exchange_markets = []
         add_coins = []
         for market in markets:
-            pair = self._parse_market(market["symbol"], self._all_symbols)
+            pair = self._parse_market_to_symbols(market["symbol"], self._all_symbols)
             if pair is not None:
                 pair = list(pair)
                 add_coins.extend([
@@ -107,7 +107,7 @@ class HitBTCListener(WebsocketListener):
         return self._handle_raw_orders(snapshot)
 
     def _handle_raw_orders(self, raw_orders):
-        market = self._parse_market(raw_orders["symbol"], self._all_symbols)
+        market = self._parse_market_to_symbols(raw_orders["symbol"], self._all_symbols)
         if market is not None:
             order_info = {
                 "pair": market[0].upper() + market[1].upper(),
@@ -122,7 +122,7 @@ class HitBTCListener(WebsocketListener):
             return []
 
     def _create_agg_order(self, order_info):
-        pair = self._parse_market(order_info["pair"], self._all_symbols)
+        pair = self._parse_market_to_symbols(order_info["pair"], self._all_symbols)
         if pair is not None:
             return models.AggOrder(
                 timestamp=parse_date(order_info["timestamp"]),
@@ -194,7 +194,7 @@ class HitBTCListener(WebsocketListener):
         return self._parse_raw_trades(trades)
 
     def _parse_raw_trades(self, snapshot):
-        market = self._parse_market(snapshot["symbol"], self._all_symbols)
+        market = self._parse_market_to_symbols(snapshot["symbol"], self._all_symbols)
         trades = []
         for trade in snapshot["data"]:
             trades.append(models.Trade(

@@ -19,6 +19,7 @@ from ..websocket_listener import WebsocketListener
 class CoinbaseListener(WebsocketListener):
     def __init__(self, exchange, on_event, markets=settings.COINBASE_MARKETS, ws_url=settings.COINBASE_WS_URL):
         super().__init__(exchange, on_event, markets, ws_url)
+        self._all_symbols = []
         self._format_markets()
         self.running = False
         self.last_update_ids = {}
@@ -45,17 +46,6 @@ class CoinbaseListener(WebsocketListener):
         if func:
             return func(payload)
         return []
-    
-    """
-    def _parse_received(self, received):
-        order, funds, size = self._convert_raw_order(received)
-        inserts = [actions.InsertAction([order])]
-        if funds:
-            inserts.append(actions.InsertAction([funds]))
-        if size:
-            inserts.append(actions.InsertAction([size]))
-        return inserts
-    """
 
     def _parse_snapshot(self, snapshot):
         agg_orders = []
@@ -271,44 +261,6 @@ class CoinbaseListener(WebsocketListener):
     def _parse_market(self, raw_markets):
         return [market["id"] for market in raw_markets]
 
-    """
-    def _new_order_size(self, timestamp, size, order_id):
-        return models.OrderSize(
-            timestamp=parse_date(timestamp),
-            exchange_id=self.exchange.id,
-            exchange_order_id=order_id,
-            size=float(size)
-        )
-
-    def _new_market_order_funds(self, timestamp, funds, order_id):
-        return models.MarketOrderFunds(
-            timestamp=parse_date(timestamp),
-            exchange_id=self.exchange.id,
-            exchange_order_id=order_id,
-            funds=float(funds)
-        )
-
-    
-    def _parse_change(self, update):
-        # an order has changed: result of self-trade prevention adjusting order size or available funds
-        if "new_size" in update:
-            return [actions.InsertAction([self._new_order_size(
-                update["time"],
-                update["new_size"],
-                update["order_id"]
-            )])]
-        elif "new_funds" in update:
-            return [actions.InsertAction([self._new_market_order_funds(
-                update["time"],
-                update["new_funds"],
-                update["order_id"]
-            )])]
-        else:
-            # FIXME: raise an exception
-            logging.debug("failed to process order: %s", update)
-        return []
-    """
-
     def _parse_match(self, match):
         # a trade occurred between two orders 
         return [actions.InsertAction([self._convert_raw_match(match)])]
@@ -337,6 +289,7 @@ class CoinbaseListener(WebsocketListener):
         self._all_markets = []
         for market in self.markets:
             self._all_markets.append('-'.join(market.split("_")))
+            self._all_symbols.extend(market.split("_"))
     
     async def _send_message(self, websocket, request, product_ids, channels):
         data = dict(type=request, product_ids=product_ids, channels=channels)

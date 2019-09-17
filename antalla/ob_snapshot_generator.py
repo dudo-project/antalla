@@ -14,7 +14,7 @@ DEFAULT_COMMIT_INTERVAL = 100
 
 class OBSnapshotGenerator:
     def __init__(self, exchanges, timestamp,
-                mid_price_range=0,
+                mid_price_range=None,
                 snapshot_interval=SNAPSHOT_INTERVAL_SECONDS,
                 session=db.session,
                 commit_interval=DEFAULT_COMMIT_INTERVAL):
@@ -26,14 +26,12 @@ class OBSnapshotGenerator:
         self.commit_counter = 0  
         self.session = session
         self.mid_price_range = mid_price_range
-        
-    def _query_order_book(self, exchange, buy_sym_id, sell_sym_id, start_time, stop_time):
-        logging.debug("QUERY - order book - {} - '{}-{}' - start: {} - stop: {}".format(exchange, buy_sym_id, sell_sym_id, start_time, stop_time))
         if self.mid_price_range:
-            return self._query_order_book_mid_price(exchange, buy_sym_id, sell_sym_id, start_time, stop_time)
+            self._query_order_book = self._query_order_book_mid_price
         else:
-            return self._query_order_book_quartile(exchange, buy_sym_id, sell_sym_id, start_time, stop_time)
-    
+            self.mid_price_range = 0
+            self._query_order_book = self._query_order_book_quartile
+
     def _get_connection_window(self, last_update, key):
         connect_time = None
         disconnect_time = self.stop_time

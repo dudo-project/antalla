@@ -29,7 +29,7 @@ init_data.add_argument("--exchange", "-e", nargs="*", choices=ExchangeListener.r
 
 snapshots_parser = subparsers.add_parser("snapshot")
 snapshots_parser.add_argument("--exchange", nargs="*", choices=ExchangeListener.registered())
-snapshots_parser.add_argument("--range", nargs=1, type=float, help="sets price range for orders to be included in snapshot, expressed in a 2 decimal percentage value")
+snapshots_parser.add_argument("--range", type=float, help="sets price range for orders to be included in snapshot, expressed in a 2 decimal percentage value")
 snapshots_parser.add_argument("--quartile", action='store_true', help="includes orders ranging from upper quartile bids to lower quartile asks")
 
 def run():
