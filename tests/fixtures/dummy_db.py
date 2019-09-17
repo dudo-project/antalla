@@ -194,6 +194,168 @@ def insert_agg_order(session):
         ) 
     ])
 
+def insert_agg_orders_snapshot(session):
+    session.add_all([
+        models.AggOrder(
+            last_update_id=1,
+            timestamp=datetime.datetime(2019, 5, 1, 1, 0, 0, 0),
+            buy_sym_id='ETH',
+            sell_sym_id='BTC',
+            exchange_id=1,
+            order_type='bid',
+            price=4.5,
+            size=10),
+        models.AggOrder(
+            last_update_id=2,
+            timestamp=datetime.datetime(2019, 5, 1, 1, 1, 0, 0),
+            buy_sym_id='ETH',
+            sell_sym_id='BTC',
+            exchange_id=1,
+            order_type='ask',
+            price=4.6,
+            size=20),
+        models.AggOrder(
+            last_update_id=3,
+            timestamp=datetime.datetime(2019, 5, 1, 1, 2, 0, 0),
+            buy_sym_id='ETH',
+            sell_sym_id='BTC',
+            exchange_id=1,
+            order_type='bid',
+            price=4.4,
+            size=12),
+        models.AggOrder(
+            last_update_id=3,
+            timestamp=datetime.datetime(2019, 5, 1, 1, 2, 0, 0),
+            buy_sym_id='ETH',
+            sell_sym_id='BTC',
+            exchange_id=1,
+            order_type='ask',
+            price=4.7,
+            size=22),
+        models.AggOrder(
+            last_update_id=3,
+            timestamp=datetime.datetime(2019, 5, 1, 1, 2, 0, 0),
+            buy_sym_id='ETH',
+            sell_sym_id='BTC',
+            exchange_id=1,
+            order_type='bid',
+            price=4.3,
+            size=8),
+        models.AggOrder(
+            last_update_id=4,
+            timestamp=datetime.datetime(2019, 5, 1, 1, 4, 0, 0),
+            buy_sym_id='ETH',
+            sell_sym_id='BTC',
+            exchange_id=1,
+            order_type='ask',
+            price=4.8,
+            size=6),
+        models.AggOrder(
+            last_update_id=4,
+            timestamp=datetime.datetime(2019, 5, 1, 1, 4, 0, 0),
+            buy_sym_id='ETH',
+            sell_sym_id='BTC',
+            exchange_id=1,
+            order_type='bid',
+            price=4.2,
+            size=10),
+        models.AggOrder(
+            last_update_id=5,
+            timestamp=datetime.datetime(2019, 5, 1, 1, 5, 0, 0),
+            buy_sym_id='ETH',
+            sell_sym_id='BTC',
+            exchange_id=1,
+            order_type='ask',
+            price=4.9,
+            size=5),
+        models.AggOrder(
+            last_update_id=5,
+            timestamp=datetime.datetime(2019, 5, 1, 1, 5, 0, 0),
+            buy_sym_id='ETH',
+            sell_sym_id='BTC',
+            exchange_id=1,
+            order_type='bid',
+            price=3.8,
+            size=8),
+        models.AggOrder(
+            last_update_id=6,
+            timestamp=datetime.datetime(2019, 5, 1, 1, 6, 0, 0),
+            buy_sym_id='ETH',
+            sell_sym_id='BTC',
+            exchange_id=1,
+            order_type='ask',
+            price=5.2,
+            size=4),
+        models.AggOrder(
+            last_update_id=6,
+            timestamp=datetime.datetime(2019, 5, 1, 1, 6, 0, 0),
+            buy_sym_id='ETH',
+            sell_sym_id='BTC',
+            exchange_id=1,
+            order_type='bid',
+            price=3.7,
+            size=6),
+        models.AggOrder(
+            last_update_id=7,
+            timestamp=datetime.datetime(2019, 5, 1, 1, 8, 0, 0),
+            buy_sym_id='ETH',
+            sell_sym_id='BTC',
+            exchange_id=1,
+            order_type='ask',
+            price=5.5,
+            size=22),
+        models.AggOrder(
+            last_update_id=7,
+            timestamp=datetime.datetime(2019, 5, 1, 1, 8, 0, 0),
+            buy_sym_id='ETH',
+            sell_sym_id='BTC',
+            exchange_id=1,
+            order_type='bid',
+            price=3.2,
+            size=6),
+        models.AggOrder(
+            last_update_id=8,
+            timestamp=datetime.datetime(2019, 5, 1, 1, 9, 0, 0),
+            buy_sym_id='ETH',
+            sell_sym_id='BTC',
+            exchange_id=1,
+            order_type='bid',
+            price=4.5,
+            size=0),
+        models.AggOrder(
+            last_update_id=9,
+            timestamp=datetime.datetime(2019, 5, 1, 1, 10, 0, 0),
+            buy_sym_id='ETH',
+            sell_sym_id='BTC',
+            exchange_id=1,
+            order_type='bid',
+            price=4.0,
+            size=5),
+        models.AggOrder(
+            last_update_id=9,
+            timestamp=datetime.datetime(2019, 5, 1, 1, 10, 0, 0),
+            buy_sym_id='ETH',
+            sell_sym_id='BTC',
+            exchange_id=1,
+            order_type='ask',
+            price=4.85,
+            size=10)
+    ])
+
+def insert_events_snapshot(session):
+    session.add_all([
+        models.Event(
+            session_id='test-001',
+            timestamp=datetime.datetime(2019, 5, 1, 1, 0, 0, 0),
+            connection_event='connect',
+            data_collected='agg_order_book',
+            buy_sym_id='ETH',
+            sell_sym_id='BTC',
+            exchange_id=1
+        )
+    ])
+
+
 def insert_exchange_markets(session):
     session.add_all([
         models.ExchangeMarket(

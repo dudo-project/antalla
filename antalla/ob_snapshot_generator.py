@@ -15,9 +15,9 @@ DEFAULT_COMMIT_INTERVAL = 100
 class OBSnapshotGenerator:
     def __init__(self, exchanges, timestamp,
                 mid_price_range=0,
+                snapshot_interval=SNAPSHOT_INTERVAL_SECONDS,
                 session=db.session,
-                commit_interval=DEFAULT_COMMIT_INTERVAL,
-                snapshot_interval=SNAPSHOT_INTERVAL_SECONDS):
+                commit_interval=DEFAULT_COMMIT_INTERVAL):
         self.exchanges = exchanges
         self.stop_time = timestamp
         self.commit_interval = commit_interval
@@ -28,6 +28,7 @@ class OBSnapshotGenerator:
         self.mid_price_range = mid_price_range
         
     def _query_order_book(self, exchange, buy_sym_id, sell_sym_id, start_time, stop_time):
+        logging.debug("QUERY - order book - {} - '{}-{}' - start: {} - stop: {}".format(exchange, buy_sym_id, sell_sym_id, start_time, stop_time))
         if self.mid_price_range:
             return self._query_order_book_mid_price(exchange, buy_sym_id, sell_sym_id, start_time, stop_time)
         else:
@@ -183,6 +184,7 @@ class OBSnapshotGenerator:
         return all_markets
 
     def _query_order_book_quartile(self, exchange, buy_sym_id, sell_sym_id, start_time, stop_time):
+        logging.debug("QUERY - quartile - order book")
         query = (
             """
             with order_book as (
@@ -228,12 +230,15 @@ class OBSnapshotGenerator:
 
 
     def _query_order_book_mid_price(self, exchange, buy_sym_id, sell_sym_id, start_time, stop_time):
+        logging.debug("QUERY - mid price - order book")
         query = (
         """
         with order_book as (
             with latest_orders as (
                 select order_type, price, max(last_update_id) max_update_id
                 from aggregate_orders
+                where timestamp >= :start_time
+                and timestamp <= :stop_time
                 group by aggregate_orders.price, aggregate_orders.order_type)
             select aggregate_orders.id,
                 order_type,
@@ -251,6 +256,8 @@ class OBSnapshotGenerator:
             and buy_sym_id = :buy_sym_id
             and sell_sym_id = :sell_sym_id
             and name = :exchange
+            and timestamp >= :start_time
+            and timestamp <= :stop_time
             order by price asc
         ),
             mid_price as (
@@ -285,6 +292,7 @@ class OBSnapshotGenerator:
     def _parse_order_book(self, order_book):
         full_order_book = []
         order_book = list(order_book)
+        logging.debug("ORDER BOOK: {}".format(order_book))
         if len(order_book) == 0:
             logging.debug("empty order book to be parsed")
             return None
