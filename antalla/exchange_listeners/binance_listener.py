@@ -103,7 +103,7 @@ class BinanceListener(WebsocketListener):
     def _get_uri(self, endpoint):
         return path.join(settings.BINANCE_API, settings.BINANCE_PUBLIC_API, endpoint)
 
-    def _create_agg_order(self, order_info):
+    def _create_agg_order(self, order_info, order_type, price, size):
         pair = self._parse_market_to_symbols(order_info["pair"], self._all_symbols)
         return models.AggOrder(
             timestamp=datetime.fromtimestamp(order_info["timestamp"] / 1000),
@@ -111,21 +111,20 @@ class BinanceListener(WebsocketListener):
             buy_sym_id=pair[0],
             sell_sym_id=pair[1],
             exchange_id=self.exchange.id, 
+            order_type=order_type,
+            price=price,
+            size=size,
         )
 
     def _convert_raw_orders(self, orders, bid_key, ask_key, order_info):
         all_orders = []
         for bid in orders[bid_key]:
-            new_bid_order = self._create_agg_order(order_info)
-            new_bid_order.order_type = "bid"
-            new_bid_order.price = float(bid[0])
-            new_bid_order.size = float(bid[1])
+            new_bid_order = self._create_agg_order(
+                order_info, "bid", float(bid[0]), float(bid[1]))
             all_orders.append(new_bid_order)
         for ask in orders[ask_key]:
-            new_ask_order = self._create_agg_order(order_info)
-            new_ask_order.order_type = "ask"
-            new_ask_order.price = float(ask[0])
-            new_ask_order.size = float(ask[1])
+            new_ask_order = self._create_agg_order(
+                order_info, "ask", float(ask[0]), float(ask[1]))
             all_orders.append(new_ask_order)       
         return all_orders
 

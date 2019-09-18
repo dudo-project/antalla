@@ -191,7 +191,7 @@ class AggOrder(Base):
         return ["order_type", "price", "last_update_id", "exchange_id"]
 
     def __repr__(self):
-        return f"AggOrder(id={self.id})"
+        return f"AggOrder(id={self.hash_id})"
 
 class Market(Base):
     __tablename__ = "markets"
