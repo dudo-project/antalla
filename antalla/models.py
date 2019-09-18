@@ -1,3 +1,4 @@
+import hashlib
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float
 from sqlalchemy import PrimaryKeyConstraint, UniqueConstraint, ForeignKeyConstraint, Index
 from sqlalchemy.orm import relationship
@@ -158,7 +159,16 @@ class Trade(Base):
 class AggOrder(Base):
     __tablename__ = "aggregate_orders"
 
-    id = Column(Integer, primary_key=True)
+    def pk_hash(self):
+        pk = f"{self.last_update_id}{self.exchange_id}{self.order_type}{self.price}".encode("utf-8")
+        hash_obj = hashlib.sha256(pk)
+        return hash_obj.hexdigest()
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.hash_id = self.pk_hash()
+
+    hash_id = Column(String, primary_key=True)
     last_update_id = Column(Integer)
     timestamp = Column(DateTime, index=True, nullable=False)
     buy_sym_id = Column(String,ForeignKey("coins.symbol"), nullable=False, index=True)
@@ -182,7 +192,6 @@ class AggOrder(Base):
 
     def __repr__(self):
         return f"AggOrder(id={self.id})"
-
 
 class Market(Base):
     __tablename__ = "markets"

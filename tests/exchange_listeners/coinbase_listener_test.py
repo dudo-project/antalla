@@ -49,6 +49,7 @@ class CoinbaseListenerTest(unittest.TestCase):
         print(self.coinbase_listener.last_update_ids)
         self.assertEqual(self.coinbase_listener.last_update_ids["coinbaseETHBTC"], 2)
 
+
     def test_parse_l2update_transaction(self):
         self._insert_data()
         update_1 = {
@@ -184,8 +185,7 @@ class CoinbaseListenerTest(unittest.TestCase):
                       select order_type, price, max(last_update_id) max_update_id, exchange_id
                       from aggregate_orders
                       group by aggregate_orders.price, aggregate_orders.order_type, aggregate_orders.exchange_id)
-                  select aggregate_orders.id,
-                         order_type,
+                  select order_type,
                          price,
                          size,
                          last_update_id,
@@ -206,12 +206,12 @@ class CoinbaseListenerTest(unittest.TestCase):
         all_orders = []
         for order in list(current_order_book):
             all_orders.append(dict(
-                order_type=order[1],
-                price=order[2],
-                size=order[3],
-                timestamp=order[5],
-                last_update_id=order[4],
-                exchange=order[6]
+                order_type=order[0],
+                price=order[1],
+                size=order[2],
+                timestamp=order[4],
+                last_update_id=order[3],
+                exchange=order[5]
             ))
         # testing if correct orders are being returned (none with size 0)
         self.assertEqual(len(all_orders), 5)

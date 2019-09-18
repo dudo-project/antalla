@@ -194,8 +194,7 @@ class OBSnapshotGenerator:
             group by aggregate_orders.price,
                         aggregate_orders.order_type, 
                         aggregate_orders.exchange_id)
-            select aggregate_orders.id,
-                order_type,
+            select order_type,
                 price,
                 size,
                 last_update_id,
@@ -239,8 +238,7 @@ class OBSnapshotGenerator:
                 where timestamp >= :start_time
                 and timestamp <= :stop_time
                 group by aggregate_orders.price, aggregate_orders.order_type, aggregate_orders.exchange_id)
-            select aggregate_orders.id,
-                order_type,
+            select order_type,
                 price,
                 size,
                 last_update_id,
@@ -297,9 +295,9 @@ class OBSnapshotGenerator:
             return None
         for order in order_book:
             full_order_book.append(dict(
-                order_type=order[1],
-                price=order[2],
-                size=order[3]
+                order_type=order[0],
+                price=order[1],
+                size=order[2]
             ))
         logging.debug("ob_snapshot_generator - parsed order books: 'full order book' ({} orders)".format(len(full_order_book)))
         return full_order_book

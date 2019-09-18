@@ -1,5 +1,6 @@
 import unittest
-
+import hashlib
+from datetime import datetime
 
 from antalla import models
 
@@ -30,6 +31,4 @@ class ModelsTest(unittest.TestCase):
         trade = models.Trade(exchange_trade_id=1)
         self.assertEqual(str(trade), "Trade(id=1)")
 
-    def test_agg_order_repr(self):
-        agg_order = models.AggOrder(id=1)
-        self.assertEqual(str(agg_order), "AggOrder(id=1)")
+    #def test_agg_order_repr(self):
