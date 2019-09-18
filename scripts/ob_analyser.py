@@ -72,8 +72,7 @@ class OrderBookAnalyser:
                       select order_type, price, max(last_update_id) max_update_id
                       from aggregate_orders
                       group by aggregate_orders.price, aggregate_orders.order_type)
-                  select aggregate_orders.id,
-                         order_type,
+                  select order_type,
                          price,
                          size,
                          last_update_id,
@@ -115,8 +114,7 @@ class OrderBookAnalyser:
                 select order_type, price, max(last_update_id) max_update_id, exchange_id
                 from aggregate_orders ag
                 group by ag.price, ag.order_type, ag.exchange_id)
-            select aggregate_orders.id,
-                order_type,
+            select order_type,
                 price,
                 size,
                 last_update_id,
@@ -163,10 +161,10 @@ class OrderBookAnalyser:
         ob = []
         for order in list(raw_ob):
             ob.append(dict(
-                timestamp=order[5],
-                type=order[1],
-                price=float(order[2]),
-                size=float(order[3])
+                timestamp=order[4],
+                type=order[0],
+                price=float(order[1]),
+                size=float(order[2])
             ))
         return ob
 
@@ -184,7 +182,7 @@ while True:
     try:
         #oba.visualise_ob("ETH", "BTC", "hitbtc")
         #oba.visualise_ob("BTC", "USD", "coinbase")
-        #oba.visualise_ob("ETH", "BTC", "coinbase")
-        oba.visualise_ob("ETH", "BTC", "binance")
+        oba.visualise_ob("ETH", "BTC", "coinbase")
+        #oba.visualise_ob("ETH", "BTC", "binance")
     except KeyboardInterrupt:
         sys.exit()

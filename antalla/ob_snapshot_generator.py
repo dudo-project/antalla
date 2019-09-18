@@ -371,8 +371,5 @@ class OBSnapshotGenerator:
             bids_price_mean = avg_bid_price,
             asks_price_mean = avg_ask_price,
             bid_price_median = np.median(bid_prices),
-            ask_price_median = np.median(ask_prices),
-            # the two fields below are only accurate for already preprocessed quartile orderbooks
-            #bid_price_upper_quartile= min(bid_prices),
-            #ask_price_lower_quartile=max(ask_prices) 
+            ask_price_median = np.median(ask_prices)
         )
