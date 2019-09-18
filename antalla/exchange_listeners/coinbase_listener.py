@@ -96,7 +96,6 @@ class CoinbaseListener(WebsocketListener):
             self.last_update_ids[market_key] = 0
         timestamp = datetime.now()
         for order in update["changes"]:
-            print(order)
             order[0] = "bid" if order[0] == "buy" else "ask"
             agg_orders.append(
                 models.AggOrder(
@@ -110,7 +109,7 @@ class CoinbaseListener(WebsocketListener):
                     last_update_id=self.last_update_ids[market_key]
                 )
             )
-        if len(agg_orders) > 0:
+        if agg_orders:
             self.last_update_ids[market_key] += 1
         return [actions.InsertAction(agg_orders)]
 

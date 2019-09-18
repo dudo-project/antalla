@@ -139,7 +139,6 @@ class HitBTCListener(WebsocketListener):
 
     def _convert_raw_orders(self, orders, bid_key, ask_key, order_info, sequence):
         all_orders = []
-        sequence_id = sequence
         for bid in orders[bid_key]:
             new_bid_order = self._create_agg_order(order_info)
             if new_bid_order is not None:

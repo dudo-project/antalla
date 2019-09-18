@@ -159,7 +159,6 @@ class AggOrder(Base):
     __tablename__ = "aggregate_orders"
 
     id = Column(Integer, primary_key=True)
-    sequence_id = Column(String)
     last_update_id = Column(Integer)
     timestamp = Column(DateTime, index=True, nullable=False)
     buy_sym_id = Column(String,ForeignKey("coins.symbol"), nullable=False, index=True)
@@ -173,15 +172,13 @@ class AggOrder(Base):
     size = Column(Float, nullable=False)
 
     __table_args__ = (
-        Index("agg_order_exchange_id_sequence_id_idx",
-              "exchange_id", "sequence_id", unique=True),
         Index("latest_orders_index",
-            "order_type", "price", "last_update_id", unique=True)
+            "order_type", "price", "last_update_id", "exchange_id", unique=True),
     )
 
     @classmethod
     def index_elements(cls):
-        return ["sequence_id", "exchange_id"]
+        return ["order_type", "price", "last_update_id", "exchange_id"]
 
     def __repr__(self):
         return f"AggOrder(id={self.id})"
