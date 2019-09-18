@@ -8,7 +8,8 @@ import time
 
 from dateutil.parser import parse as parse_date
 import websockets
-import aiohttp 
+import aiohttp
+import asyncio 
 
 from .. import settings
 from .. import models
@@ -28,12 +29,18 @@ class BinanceListener(WebsocketListener):
         self._api_url = settings.BINANCE_API
         self._all_symbols = []
 
+    # TODO: refactor _listen() method(?)
     async def _listen(self):
         initial_actions = await self._setup_listener()
         self.on_event(initial_actions)
         async with websockets.connect(self._ws_url) as websocket: 
+            self._connected=True
+            self.log_connections()
             while self.running:
-                data = await websocket.recv()
+                try:
+                    data = await asyncio.wait_for(websocket.recv(), timeout=1.0)
+                except asyncio.TimeoutError:
+                    continue
                 actions = self._parse_message(json.loads(data))
                 self.on_event(actions)
 
@@ -43,6 +50,22 @@ class BinanceListener(WebsocketListener):
             for pair in self.markets:
                 self._ws_url = self._ws_url + ''.join(pair.lower().split("_")) + "@" + stream + "/"
         logging.debug("websocket connecting to: %s", self._ws_url)
+
+    def log_connections(self):
+        for stream in settings.BINANCE_STREAMS:
+            for pair in self.markets:
+                collected_data = self._get_event_data_collected(stream)
+                self._log_event(pair, "connect", collected_data)
+                
+
+    def _get_event_data_collected(self, data_type):
+        if data_type == "trade":
+            return "trades"
+        elif data_type == "depth":
+            return "agg_order_book"
+        else:
+            logging.debug("unknown event type for 'data collected' - {}".format(data_type))
+            return "Unknown"
 
     async def _setup_listener(self):
         actions = []
