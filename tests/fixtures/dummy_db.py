@@ -191,7 +191,27 @@ def insert_agg_order(session):
             order_type='ask',
             price=0.6,
             size=4,
-        ) 
+        ),
+        models.AggOrder(
+            last_update_id=1,
+            timestamp=datetime.datetime(2019, 5, 15, 19, 35, 0, 0),
+            buy_sym_id='ETH',
+            sell_sym_id='BTC',
+            exchange_id=3,
+            order_type='bid',
+            price=0.35,
+            size=7,
+        ),
+        models.AggOrder(
+            last_update_id=2,
+            timestamp=datetime.datetime(2019, 5, 15, 19, 36, 0, 0),
+            buy_sym_id='ETH',
+            sell_sym_id='BTC',
+            exchange_id=3,
+            order_type='ask',
+            price=0.6,
+            size=4,
+        )  
     ])
 
 def insert_agg_orders_snapshot(session):

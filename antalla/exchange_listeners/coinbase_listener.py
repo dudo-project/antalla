@@ -22,23 +22,28 @@ class CoinbaseListener(WebsocketListener):
         self._all_symbols = []
         self._format_markets()
         self.running = False
-        self.last_update_ids = {}
-        self._get_last_update_ids()
+        self.session = session
+        self.last_update_ids = self._get_last_update_ids()
+        
 
     def _get_last_update_ids(self):
         """fetches for each market the last update id from db and stores it in dict
         """
-        market_update_ids = session.execute(
+        last_update_ids = {}
+        market_update_ids = self.session.execute(
             """
-            select ex.name, buy_sym_id, sell_sym_id, max(last_update_id)
+            select ex.name exchange, buy_sym_id, sell_sym_id, max(last_update_id) max_update_id
             from aggregate_orders
-            inner join exchanges ex on aggregate_orders.exchange_id = ex.id
+            inner join exchanges ex on aggregate_orders.exchange_id = ex.id where ex.name = 'coinbase'
             group by buy_sym_id, sell_sym_id, ex.name;
             """
         )
-        for market in market_update_ids:
-            last_update_id = market[3] if market[3] is not None else 0
-            self.last_update_ids[market[0]+market[1]+market[2]] = last_update_id
+        for market in list(market_update_ids):
+            last_update_id = market["max_update_id"] if market["max_update_id"] is not None else 0
+            key = str(market["exchange"])+str(market["buy_sym_id"])+str(market["sell_sym_id"])
+            logging.debug("KEY: {}, UPDATE_ID: {}".format(key, last_update_id))
+            last_update_ids[key] = last_update_id
+        return last_update_ids
 
     def _parse_message(self, message):
         event, payload = message["type"], message

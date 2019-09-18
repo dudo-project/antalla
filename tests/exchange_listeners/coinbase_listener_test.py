@@ -18,10 +18,11 @@ class CoinbaseListenerTest(unittest.TestCase):
     def setUp(self):
             self.dummy_exchange = models.Exchange(id=3, name="coinbase")
             self.on_event_mock = MagicMock()
-            self.coinbase_listener = CoinbaseListener(self.dummy_exchange, self.on_event_mock)
             self.session = db.Session()
+            self.coinbase_listener = CoinbaseListener(self.dummy_exchange, self.on_event_mock)
+            self.coinbase_listener.session = self.session
             self.session.commit = lambda: None
-
+            
     def tearDown(self):
         self.session.rollback()
 
@@ -39,6 +40,14 @@ class CoinbaseListenerTest(unittest.TestCase):
     def raw_fixture(self, fixture_name):
         with open(path.join(FIXTURES_PATH, fixture_name)) as f:
             return f.read()
+
+    def test_get_last_update_id(self):
+        self._insert_data()
+        dummy_db.insert_agg_order(self.session)
+        self.session.flush()
+        self.coinbase_listener.last_update_ids = self.coinbase_listener._get_last_update_ids()
+        print(self.coinbase_listener.last_update_ids)
+        self.assertEqual(self.coinbase_listener.last_update_ids["coinbaseETHBTC"], 2)
 
     def test_parse_l2update_transaction(self):
         self._insert_data()
@@ -172,9 +181,9 @@ class CoinbaseListenerTest(unittest.TestCase):
         current_order_book = self.session.execute(
             """
             with latest_orders as (
-                      select order_type, price, max(last_update_id) max_update_id
+                      select order_type, price, max(last_update_id) max_update_id, exchange_id
                       from aggregate_orders
-                      group by aggregate_orders.price, aggregate_orders.order_type)
+                      group by aggregate_orders.price, aggregate_orders.order_type, aggregate_orders.exchange_id)
                   select aggregate_orders.id,
                          order_type,
                          price,
@@ -186,7 +195,7 @@ class CoinbaseListenerTest(unittest.TestCase):
                          sell_sym_id
                   from aggregate_orders
                            inner join exchanges ex on aggregate_orders.exchange_id = ex.id
-                  where (order_type, price, last_update_id) in (select * from latest_orders)
+                  where (order_type, price, last_update_id, exchange_id) in (select * from latest_orders)
                     and size > 0
                     and buy_sym_id = 'ETH'
                     and sell_sym_id = 'BTC'
@@ -314,13 +323,3 @@ class CoinbaseListenerTest(unittest.TestCase):
         self.assertEqual(insert_actions_exchange_markets[0].items[0].quoted_volume_id, "REP")
         self.assertEqual(insert_actions_exchange_markets[0].items[0].quoted_volume, 60486.28451826)
         self.assertEqual(insert_actions_exchange_markets[0].items[0].exchange_id, self.dummy_exchange.id)
-
-    """
-    def test_parse_done_cancel(self):
-        payload = self.raw_fixture("coinbase/coinbase-done-canceled.json")
-        parsed_actions = self.coinbase_listener._parse_done(json.loads(payload))
-        self.assertAreAllActions(parsed_actions)
-        self.assertEqual(len(parsed_actions), 1)
-        update_action = parsed_actions[0]
-        self.assertIsInstance(update_action, actions.UpdateAction)
-    """ 
