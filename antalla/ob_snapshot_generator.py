@@ -187,12 +187,13 @@ class OBSnapshotGenerator:
             """
             with order_book as (
             with latest_orders as (
-            select order_type, price, max(last_update_id) max_update_id
+            select order_type, price, max(last_update_id) max_update_id, exchange_id
             from aggregate_orders
             where timestamp <= :stop_time
             and timestamp >= :start_time
             group by aggregate_orders.price,
-                        aggregate_orders.order_type)
+                        aggregate_orders.order_type, 
+                        aggregate_orders.exchange_id)
             select aggregate_orders.id,
                 order_type,
                 price,
@@ -204,7 +205,7 @@ class OBSnapshotGenerator:
                 sell_sym_id
             from aggregate_orders
                     inner join exchanges on aggregate_orders.exchange_id = exchanges.id
-            where (order_type, price, last_update_id) in (select * from latest_orders)
+            where (order_type, price, last_update_id, exchange_id) in (select * from latest_orders)
             and size > 0
             and buy_sym_id = :buy_sym_id
             and sell_sym_id = :sell_sym_id
@@ -233,11 +234,11 @@ class OBSnapshotGenerator:
         """
         with order_book as (
             with latest_orders as (
-                select order_type, price, max(last_update_id) max_update_id
+                select order_type, price, max(last_update_id) max_update_id, exchange_id
                 from aggregate_orders
                 where timestamp >= :start_time
                 and timestamp <= :stop_time
-                group by aggregate_orders.price, aggregate_orders.order_type)
+                group by aggregate_orders.price, aggregate_orders.order_type, aggregate_orders.exchange_id)
             select aggregate_orders.id,
                 order_type,
                 price,
@@ -249,7 +250,7 @@ class OBSnapshotGenerator:
                 sell_sym_id
             from aggregate_orders
                     inner join exchanges on aggregate_orders.exchange_id = exchanges.id
-            where (order_type, price, last_update_id) in (select * from latest_orders)
+            where (order_type, price, last_update_id, exchange_id) in (select * from latest_orders)
             and size > 0
             and buy_sym_id = :buy_sym_id
             and sell_sym_id = :sell_sym_id

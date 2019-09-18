@@ -112,9 +112,9 @@ class OrderBookAnalyser:
         """
         with order_book as (
             with latest_orders as (
-                select order_type, price, max(last_update_id) max_update_id
-                from aggregate_orders
-                group by aggregate_orders.price, aggregate_orders.order_type)
+                select order_type, price, max(last_update_id) max_update_id, exchange_id
+                from aggregate_orders ag
+                group by ag.price, ag.order_type, ag.exchange_id)
             select aggregate_orders.id,
                 order_type,
                 price,
@@ -126,7 +126,7 @@ class OrderBookAnalyser:
                 sell_sym_id
             from aggregate_orders
                     inner join exchanges on aggregate_orders.exchange_id = exchanges.id
-            where (order_type, price, last_update_id) in (select * from latest_orders)
+            where (order_type, price, last_update_id, exchange_id) in (select * from latest_orders)
             and size > 0
             and buy_sym_id = :buy_sym_id
             and sell_sym_id = :sell_sym_id
@@ -182,7 +182,9 @@ Example:
 oba = OrderBookAnalyser()
 while True:
     try:
-        oba.visualise_ob("ETH", "BTC", "hitbtc")
+        #oba.visualise_ob("ETH", "BTC", "hitbtc")
         #oba.visualise_ob("BTC", "USD", "coinbase")
+        #oba.visualise_ob("ETH", "BTC", "coinbase")
+        oba.visualise_ob("ETH", "BTC", "binance")
     except KeyboardInterrupt:
         sys.exit()
