@@ -121,7 +121,7 @@ class HitBTCListener(WebsocketListener):
             logging.warning("unable to parse market '%s' to two symbols", raw_orders["symbol"])
             return []
 
-    def _create_agg_order(self, order_info):
+    def _create_agg_order(self, order_info, order_type, price, size):
         pair = self._parse_market_to_symbols(order_info["pair"], self._all_symbols)
         if pair is not None:
             return models.AggOrder(
@@ -129,7 +129,10 @@ class HitBTCListener(WebsocketListener):
                 last_update_id=order_info["last_update_id"],
                 buy_sym_id=pair[0],
                 sell_sym_id=pair[1],
-                exchange_id=self.exchange.id, 
+                exchange_id=self.exchange.id,
+                order_type=order_type,
+                price=price,
+                size=size 
             )
         else:
             logging.warning("no market found for: '%s'", order_info["pair"])
@@ -140,18 +143,14 @@ class HitBTCListener(WebsocketListener):
     def _convert_raw_orders(self, orders, bid_key, ask_key, order_info, sequence):
         all_orders = []
         for bid in orders[bid_key]:
-            new_bid_order = self._create_agg_order(order_info)
+            new_bid_order = self._create_agg_order(
+                order_info, "bid", float(bid["price"]), float(bid["size"]))
             if new_bid_order is not None:
-                new_bid_order.order_type = "bid"
-                new_bid_order.price = float(bid["price"])
-                new_bid_order.size = float(bid["size"])
                 all_orders.append(new_bid_order)
         for ask in orders[ask_key]:
-            new_ask_order = self._create_agg_order(order_info)
+            new_ask_order = self._create_agg_order(
+                order_info, "ask", float(ask["price"]), float(ask["size"]))
             if new_ask_order is not None:
-                new_ask_order.order_type = "ask"
-                new_ask_order.price = float(ask["price"])
-                new_ask_order.size = float(ask["size"])
                 all_orders.append(new_ask_order)       
         return all_orders
 
