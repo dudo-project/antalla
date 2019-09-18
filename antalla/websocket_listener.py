@@ -30,8 +30,12 @@ class WebsocketListener(ExchangeListener):
     async def _listen(self):
         async with websockets.connect(self._ws_url) as websocket: 
             await self._setup_connection(websocket)
+            self._connected = True
             while self.running:
-                data = await websocket.recv()
+                try:
+                    data = await asyncio.wait_for(websocket.recv(), timeout=1.0)
+                except asyncio.TimeoutError:
+                    continue
                 logging.debug("received %s from %s", data, self.exchange)
                 actions = self._parse_message(json.loads(data))
                 self.on_event(actions)

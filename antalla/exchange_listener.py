@@ -13,6 +13,7 @@ DEFAULT_COMMIT_INTERVAL = 1
 
 class ExchangeListener(BaseFactory):
     def __init__(self, exchange, on_event, markets):
+        self._connected = False
         self.exchange = exchange
         self.on_event = on_event
         self.markets = self._get_existing_markets(markets)
@@ -114,5 +115,8 @@ class ExchangeListener(BaseFactory):
             self.event_log.append(action)
 
     def _log_disconnection(self):
+        if not self._connected:
+            return
         for market in self.markets:
             self._log_event(market, "disconnect", "all")
+        self._connected = False
