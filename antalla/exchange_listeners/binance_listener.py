@@ -29,20 +29,10 @@ class BinanceListener(WebsocketListener):
         self._api_url = settings.BINANCE_API
         self._all_symbols = []
 
-    # TODO: refactor _listen() method(?)
     async def _listen(self):
         initial_actions = await self._setup_listener()
         self.on_event(initial_actions)
-        async with websockets.connect(self._ws_url) as websocket: 
-            self._connected=True
-            self.log_connections()
-            while self.running:
-                try:
-                    data = await asyncio.wait_for(websocket.recv(), timeout=1.0)
-                except asyncio.TimeoutError:
-                    continue
-                actions = self._parse_message(json.loads(data))
-                self.on_event(actions)
+        await super()._listen()
 
     def _get_ws_url(self):
         self._ws_url = settings.BINANCE_COMBINED_STREAM
@@ -51,7 +41,7 @@ class BinanceListener(WebsocketListener):
                 self._ws_url = self._ws_url + ''.join(pair.lower().split("_")) + "@" + stream + "/"
         logging.debug("websocket connecting to: %s", self._ws_url)
 
-    def log_connections(self):
+    async def _setup_connection(self, websocket):
         for stream in settings.BINANCE_STREAMS:
             for pair in self.markets:
                 collected_data = self._get_event_data_collected(stream)
