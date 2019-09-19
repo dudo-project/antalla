@@ -11,9 +11,10 @@ setup(
         "aiohttp==3.5.4",
         "beautifulsoup4==4.7.1",
         "numpy==1.16.3",
-        "pandas==0.24.2",
-        "seaborn==0.9.0",
     ],
+    extras_require={
+        "plots": ["pandas==0.24.2", "seaborn==0.9.0"],
+    },
     zip_safe=False,
     scripts=["./bin/antalla"],
     package_data={
