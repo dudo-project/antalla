@@ -17,9 +17,9 @@ services:
     <<: *antalla_config
     command: ["run", "--exchange", "hitbtc"]
 
-  idex:
-    <<: *antalla_config
-    command: ["run", "--exchange", "idex"]
+  # idex:
+  #   <<: *antalla_config
+  #   command: ["run", "--exchange", "idex"]
 
   binance:
     <<: *antalla_config
