@@ -18,6 +18,14 @@ import aiohttp
 class IdexListener(WebsocketListener):
     def __init__(self, exchange, on_event, markets=settings.IDEX_MARKETS, ws_url=settings.IDEX_WS_URL):
         super().__init__(exchange, on_event, markets, ws_url)
+        self._all_symbols = []
+        self._parse_all_symbols()
+
+    def _parse_all_symbols(self):
+        for market in self.markets:
+            first_market, second_market = market.split("_")
+            self._all_symbols.append(first_market)
+            self._all_symbols.append(first_market)
 
     async def _send_message(self, websocket, request, payload, **kwargs):
         data = dict(request=request, payload=json.dumps(payload))
@@ -35,6 +43,21 @@ class IdexListener(WebsocketListener):
         subscription_data = dict(topics=self.markets, events=settings.IDEX_EVENTS)
         await self._send_message(websocket, "subscribeToMarkets",
                                  subscription_data, sid=handshake_res["sid"])
+        for event in settings.IDEX_EVENTS:
+            for market in self.markets:
+                data_collected = self._get_event_data_collected(event)
+                self._log_event(market, "connect", data_collected)
+
+    def _get_event_data_collected(self, data_type):
+        if data_type == "market_orders":
+            return "orders"
+        elif data_type == "market_trades":
+            return "trades"
+        elif data_type == "market_cancels":
+            return "order_cancels"
+        else:
+            logging.debug(" {} - unknown event type for 'data collected' - {}".format(self.exchange.name, data_type))
+            return "Unknown"
 
     def _parse_message(self, message):
         event, payload = message["event"], json.loads(message["payload"])
