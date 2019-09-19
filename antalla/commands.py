@@ -1,4 +1,5 @@
 import signal
+import sys
 from os import path
 import json
 import pkg_resources
@@ -10,24 +11,13 @@ from . import db, models, settings
 from .exchange_listener import ExchangeListener
 from .orchestrator import Orchestrator
 from . import market_crawler
+from .ob_snapshot_generator import OBSnapshotGenerator
+
 
 
 def init_db(args):
     db.Base.metadata.create_all(db.engine)
-    fixtures = [("coins.json", models.Coin, "symbol"),
-                ("exchanges.json", models.Exchange, "name")]
-    for filename, Model, column in fixtures:
-        filepath = path.join("fixtures", filename)
-        entities = pkg_resources.resource_string(settings.PACKAGE, filepath)
-        entities = json.loads(entities)
 
-        for entity in entities:
-            if Model.query.filter_by(**{column: entity[column]}).first():
-                continue
-            model = Model(**entity)
-            db.session.add(model)
-
-        db.session.commit()
 
 def run(args):
     if args["exchange"]:
@@ -64,6 +54,20 @@ async def _markets(args):
         orchestrator.stop()
 
 def init_data(args):
+    fixtures = [("coins.json", models.Coin, "symbol"),
+                ("exchanges.json", models.Exchange, "name")]
+    for filename, Model, column in fixtures:
+        filepath = path.join("fixtures", filename)
+        entities = pkg_resources.resource_string(settings.PACKAGE, filepath)
+        entities = json.loads(entities)
+
+        for entity in entities:
+            if Model.query.filter_by(**{column: entity[column]}).first():
+                continue
+            model = Model(**entity)
+            db.session.add(model)
+
+        db.session.commit()
     try:
         asyncio.get_event_loop().run_until_complete(_init_data(args))
     except KeyboardInterrupt:
@@ -138,3 +142,16 @@ def get_usd_price(symbol):
         return 0
     else:
         return coin.price_usd
+
+def snapshot(args):
+    if args["exchange"]:
+        exchanges = args["exchange"]
+    else:
+        exchanges = ExchangeListener.registered()
+    stop_time = datetime.now()
+    obs_generator = OBSnapshotGenerator(exchanges, stop_time, args["range"]) 
+    try:
+        obs_generator.run()
+    except KeyboardInterrupt:
+        logging.warning("KeybaordInterrupt - 'obs_generator.run()'")
+        sys.exit()

@@ -27,6 +27,11 @@ norm_volume.add_argument("--exchange", "-e", nargs="*", choices=ExchangeListener
 init_data = subparsers.add_parser("init-data", help="fetches exchange markets, traded volume and prices in USD")
 init_data.add_argument("--exchange", "-e", nargs="*", choices=ExchangeListener.registered()) 
 
+snapshots_parser = subparsers.add_parser("snapshot")
+snapshots_parser.add_argument("--exchange", nargs="*", choices=ExchangeListener.registered())
+snapshots_parser.add_argument("--range", type=float, help="sets price range for orders to be included in snapshot, expressed in a 2 decimal percentage value")
+snapshots_parser.add_argument("--quartile", action='store_true', help="includes orders ranging from upper quartile bids to lower quartile asks")
+
 def run():
     args = vars(parser.parse_args())
 

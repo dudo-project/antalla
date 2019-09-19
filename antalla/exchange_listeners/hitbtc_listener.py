@@ -49,8 +49,8 @@ class HitBTCListener(WebsocketListener):
             actions = self._parse_markets(markets)
             self.on_event(actions)
 
-    def _parse_market(self, market):
-        for m in self._all_symbols:
+    def _parse_market_to_symbols(self, market, all_symbols):
+        for m in all_symbols:
             if m["id"] == market.upper():
                 return (m["baseCurrency"], m["quoteCurrency"])
         return None
@@ -60,7 +60,7 @@ class HitBTCListener(WebsocketListener):
         add_exchange_markets = []
         add_coins = []
         for market in markets:
-            pair = self._parse_market(market["symbol"])
+            pair = self._parse_market_to_symbols(market["symbol"], self._all_symbols)
             if pair is not None:
                 pair = list(pair)
                 add_coins.extend([
@@ -107,7 +107,7 @@ class HitBTCListener(WebsocketListener):
         return self._handle_raw_orders(snapshot)
 
     def _handle_raw_orders(self, raw_orders):
-        market = self._parse_market(raw_orders["symbol"])
+        market = self._parse_market_to_symbols(raw_orders["symbol"], self._all_symbols)
         if market is not None:
             order_info = {
                 "pair": market[0].upper() + market[1].upper(),
@@ -121,15 +121,18 @@ class HitBTCListener(WebsocketListener):
             logging.warning("unable to parse market '%s' to two symbols", raw_orders["symbol"])
             return []
 
-    def _create_agg_order(self, order_info):
-        pair = self._parse_market(order_info["pair"])
+    def _create_agg_order(self, order_info, order_type, price, size):
+        pair = self._parse_market_to_symbols(order_info["pair"], self._all_symbols)
         if pair is not None:
             return models.AggOrder(
                 timestamp=parse_date(order_info["timestamp"]),
                 last_update_id=order_info["last_update_id"],
                 buy_sym_id=pair[0],
                 sell_sym_id=pair[1],
-                exchange_id=self.exchange.id, 
+                exchange_id=self.exchange.id,
+                order_type=order_type,
+                price=price,
+                size=size 
             )
         else:
             logging.warning("no market found for: '%s'", order_info["pair"])
@@ -139,20 +142,15 @@ class HitBTCListener(WebsocketListener):
 
     def _convert_raw_orders(self, orders, bid_key, ask_key, order_info, sequence):
         all_orders = []
-        sequence_id = sequence
         for bid in orders[bid_key]:
-            new_bid_order = self._create_agg_order(order_info)
+            new_bid_order = self._create_agg_order(
+                order_info, "bid", float(bid["price"]), float(bid["size"]))
             if new_bid_order is not None:
-                new_bid_order.order_type = "bid"
-                new_bid_order.price = float(bid["price"])
-                new_bid_order.size = float(bid["size"])
                 all_orders.append(new_bid_order)
         for ask in orders[ask_key]:
-            new_ask_order = self._create_agg_order(order_info)
+            new_ask_order = self._create_agg_order(
+                order_info, "ask", float(ask["price"]), float(ask["size"]))
             if new_ask_order is not None:
-                new_ask_order.order_type = "ask"
-                new_ask_order.price = float(ask["price"])
-                new_ask_order.size = float(ask["size"])
                 all_orders.append(new_ask_order)       
         return all_orders
 
@@ -163,9 +161,12 @@ class HitBTCListener(WebsocketListener):
         async with aiohttp.ClientSession() as session:
             self._all_symbols = await self.fetch_all_symbols(session)           
         for market in self.markets:
+            logging.info("market: %s", market)
             orderbook_message = await self._subscribe_orderbook(market, websocket)
+            self._log_event(market, "connect", "agg_order_book")
             self._parse_message(orderbook_message)
             trades_message = await self._subscribe_trades(market, websocket)
+            self._log_event(market, "connect", "trades")
             self._parse_message(trades_message)
 
     async def _send_suscribe_message(self, method, params, websocket):
@@ -175,6 +176,7 @@ class HitBTCListener(WebsocketListener):
         response = await websocket.recv()
         logging.debug("< %s", response)
         return json.loads(response)
+    
     async def _subscribe_orderbook(self, market, websocket):
         params = {"symbol": market.upper()}
         return await self._send_suscribe_message("subscribeOrderbook", params, websocket) 
@@ -190,7 +192,7 @@ class HitBTCListener(WebsocketListener):
         return self._parse_raw_trades(trades)
 
     def _parse_raw_trades(self, snapshot):
-        market = self._parse_market(snapshot["symbol"])
+        market = self._parse_market_to_symbols(snapshot["symbol"], self._all_symbols)
         trades = []
         for trade in snapshot["data"]:
             trades.append(models.Trade(

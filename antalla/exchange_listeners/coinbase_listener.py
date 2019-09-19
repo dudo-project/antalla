@@ -8,6 +8,7 @@ import websockets
 import aiohttp
 import asyncio
 
+from ..db import session
 from .. import settings
 from .. import models
 from .. import actions
@@ -18,8 +19,31 @@ from ..websocket_listener import WebsocketListener
 class CoinbaseListener(WebsocketListener):
     def __init__(self, exchange, on_event, markets=settings.COINBASE_MARKETS, ws_url=settings.COINBASE_WS_URL):
         super().__init__(exchange, on_event, markets, ws_url)
+        self._all_symbols = []
         self._format_markets()
         self.running = False
+        self.session = session
+        self.last_update_ids = self._get_last_update_ids()
+        
+
+    def _get_last_update_ids(self):
+        """fetches for each market the last update id from db and stores it in dict
+        """
+        last_update_ids = {}
+        market_update_ids = self.session.execute(
+            """
+            select ex.name exchange, buy_sym_id, sell_sym_id, max(last_update_id) max_update_id
+            from aggregate_orders
+            inner join exchanges ex on aggregate_orders.exchange_id = ex.id where ex.name = 'coinbase'
+            group by buy_sym_id, sell_sym_id, ex.name;
+            """
+        )
+        for market in list(market_update_ids):
+            last_update_id = market["max_update_id"] if market["max_update_id"] is not None else 0
+            key = str(market["exchange"])+str(market["buy_sym_id"])+str(market["sell_sym_id"])
+            logging.debug("KEY: {}, UPDATE_ID: {}".format(key, last_update_id))
+            last_update_ids[key] = last_update_id
+        return last_update_ids
 
     def _parse_message(self, message):
         event, payload = message["type"], message
@@ -27,81 +51,72 @@ class CoinbaseListener(WebsocketListener):
         if func:
             return func(payload)
         return []
-    
-    def _parse_received(self, received):
-        order, funds, size = self._convert_raw_order(received)
-        inserts = [actions.InsertAction([order])]
-        if funds:
-            inserts.append(actions.InsertAction([funds]))
-        if size:
-            inserts.append(actions.InsertAction([size]))
-        return inserts
 
-    def _convert_raw_order(self, received):
-        order = models.Order(
-            timestamp=parse_date(received["time"]),
-            buy_sym_id=received["product_id"].split("-")[0],
-            sell_sym_id=received["product_id"].split("-")[1],
-            exchange_order_id=received["order_id"],
+    def _parse_snapshot(self, snapshot):
+        agg_orders = []
+        buy_sym_id, sell_sym_id = snapshot["product_id"].split("-")
+        timestamp = datetime.now()
+        order_info = dict(
+            timestamp=timestamp,
             exchange_id=self.exchange.id,
-            side=received["side"],
-            order_type=received["order_type"]
+            buy_sym_id=buy_sym_id,
+            sell_sym_id=sell_sym_id
         )
-        if "funds" in received:
-            funds = self._new_market_order_funds(
-                received["time"], 
-                received["funds"],
-                received["order_id"]
-            )
-            return order, funds, None
-        else:
-            order.price = float(received["price"])
-            size = self._new_order_size(
-                received["time"],
-                received["size"],
-                received["order_id"]
-            )
-            return order, None, size
+        #TODO: remove if statement below
+        market_key = self.exchange.name.lower() + buy_sym_id.upper() + sell_sym_id.upper()
+        if market_key not in self.last_update_ids.keys():
+            self.last_update_ids[market_key] = 0
+        bids = self._create_agg_orders("bid", order_info, snapshot["bids"])
+        asks = self._create_agg_orders("ask", order_info, snapshot["asks"])
+        agg_orders.extend(bids)
+        agg_orders.extend(asks)
+        if len(agg_orders) > 0:
+            self.last_update_ids[market_key] += 1   
+        logging.debug(" {} - aggregated order book snapshot - agg orders: {}".format(self.exchange.name, len(agg_orders)))
+        return [actions.InsertAction(agg_orders)]
 
-    def _parse_open(self, open_order):
-        # only for orders that are not fully filled immediately 
-        order_size = self._new_order_size(
-                open_order["time"],
-                open_order["remaining_size"],
-                open_order["order_id"]
-            )
-        return [
-            actions.InsertAction([self._convert_raw_open_order(open_order)]),
-            actions.InsertAction([order_size])
-        ]
+    def _create_agg_orders(self, order_type, order_info, orders):
+        parsed_orders = []
+        market_key = self.exchange.name.lower() + order_info["buy_sym_id"].upper() + order_info["sell_sym_id"].upper()
+        for order in orders:
+            parsed_orders.append(models.AggOrder(
+                timestamp=order_info["timestamp"],
+                exchange_id=self.exchange.id,
+                order_type=order_type,
+                price=float(order[0]),
+                size=float(order[1]),
+                buy_sym_id=order_info["buy_sym_id"],
+                sell_sym_id=order_info["sell_sym_id"],
+                last_update_id=self.last_update_ids[market_key]
+            ))      
+        return parsed_orders
 
-    def _convert_raw_open_order(self, open_order):
-        return models.Order(
-            timestamp=parse_date(open_order["time"]),
-            buy_sym_id=open_order["product_id"].split("-")[0],
-            sell_sym_id=open_order["product_id"].split("-")[1],
-            exchange_order_id=open_order["order_id"],
-            side=open_order["side"],
-            price=float(open_order["price"]),
-            exchange_id=self.exchange.id,
-        )
-        
-    def _parse_done(self, order):
-        # order is no longer on the order book; message sent for fully filled or cancelled orders
-        # market orders will not have remaining_size or price field as they are never in order book
-        update_fields = {}
-        update_fields["remaining_size"] = order["remaining_size"]
-        if order["reason"] == "filled":
-            update_fields["filled_at"] = parse_date(order["time"])
-        elif order["reason"] == "canceled":
-            update_fields["cancelled_at"] = parse_date(order["time"])
-        else:
-            logging.error("failed to process order: %s", order)
-        return [actions.UpdateAction(
-            models.Order, 
-            {"exchange_order_id": order["order_id"], "exchange_id": self.exchange.id},
-            update_fields
-            )] 
+    # TODO: add check for valid market
+    def _parse_l2update(self, update):
+        agg_orders = []
+        buy_sym_id, sell_sym_id = update["product_id"].split("-")
+        market_key = self.exchange.name.lower() + buy_sym_id.upper() + sell_sym_id.upper()
+        #TODO: remove if statement below
+        if market_key not in self.last_update_ids.keys():
+            self.last_update_ids[market_key] = 0
+        timestamp = datetime.now()
+        for order in update["changes"]:
+            order[0] = "bid" if order[0] == "buy" else "ask"
+            agg_orders.append(
+                models.AggOrder(
+                    timestamp=timestamp,
+                    exchange_id=self.exchange.id,
+                    order_type=order[0],
+                    price=float(order[1]),
+                    size=float(order[2]),
+                    buy_sym_id=buy_sym_id,
+                    sell_sym_id=sell_sym_id,
+                    last_update_id=self.last_update_ids[market_key]
+                )
+            )
+        if agg_orders:
+            self.last_update_ids[market_key] += 1
+        return [actions.InsertAction(agg_orders)]
 
     def _get_markets_uri(self):
         return (
@@ -182,41 +197,6 @@ class CoinbaseListener(WebsocketListener):
     def _parse_market(self, raw_markets):
         return [market["id"] for market in raw_markets]
 
-    def _new_order_size(self, timestamp, size, order_id):
-        return models.OrderSize(
-            timestamp=parse_date(timestamp),
-            exchange_id=self.exchange.id,
-            exchange_order_id=order_id,
-            size=float(size)
-        )
-
-    def _new_market_order_funds(self, timestamp, funds, order_id):
-        return models.MarketOrderFunds(
-            timestamp=parse_date(timestamp),
-            exchange_id=self.exchange.id,
-            exchange_order_id=order_id,
-            funds=float(funds)
-        )
-
-    def _parse_change(self, update):
-        # an order has changed: result of self-trade prevention adjusting order size or available funds
-        if "new_size" in update:
-            return [actions.InsertAction([self._new_order_size(
-                update["time"],
-                update["new_size"],
-                update["order_id"]
-            )])]
-        elif "new_funds" in update:
-            return [actions.InsertAction([self._new_market_order_funds(
-                update["time"],
-                update["new_funds"],
-                update["order_id"]
-            )])]
-        else:
-            # FIXME: raise an exception
-            logging.debug("failed to process order: %s", update)
-        return []
-
     def _parse_match(self, match):
         # a trade occurred between two orders 
         return [actions.InsertAction([self._convert_raw_match(match)])]
@@ -236,12 +216,16 @@ class CoinbaseListener(WebsocketListener):
         )
 
     async def _setup_connection(self, websocket):
+        for market in self._all_markets:
+            self._log_event(market, "connect", "trades")
+            self._log_event(market, "connect", "agg_order_book")
         await self._send_message(websocket, "subscribe", self._all_markets, settings.COINBASE_CHANNELS)         
 
     def _format_markets(self):
         self._all_markets = []
         for market in self.markets:
             self._all_markets.append('-'.join(market.split("_")))
+            self._all_symbols.extend(market.split("_"))
     
     async def _send_message(self, websocket, request, product_ids, channels):
         data = dict(type=request, product_ids=product_ids, channels=channels)

@@ -8,6 +8,14 @@ Fetches data from various exchanges and stores the orders and trades in an SQL d
 
 The name comes from the Greek ανταλλαγή (antallagí) which meaning "exchange".
 
+## Features
+- [x] Integration with major centralised exchanges (CEX) REST API and Web Socket streams
+- [x] Locally reconstructable and real-time order books
+- [x] Executed trade and aggregated order book data for large CEXs
+- [x] Regular order book snapshots
+- [ ] Simple DB migrations using Python alembic
+- [ ] Extensive unit and integration tests
+
 ## Installation
 
 The project requires Python 3.6 or above.
@@ -101,6 +109,38 @@ antalla run
 ```
 
 The list of markets to listen for can be customized through the `MARKET` environment variable, which should be formatted as follow `ETH_AURA,ETH_IDXM`.
+
+### Orderbook Snapshot Analysis
+
+By setting the subparser argument
+
+```
+antalla snapshot
+```
+
+a snapshot of each order book state will be computed and stored in the order_book_snapshots table in the db. The interval between the snapshots is set to the default value of 1 second. By setting the `--exchange` flag snapshots only for a set of specified exchanges will be generated.
+
+Note: snapshots are only generated for periods where there has been aggregated order book data collected and no connection loss has occurred. Hence, for each period between a connection and disconnection for an exchange listener, snapshots will be generated according to the set snapshot interval.
+
+Each snapshot contains relevant metrics for the current state of the order book at the time taken. These metrics include:
+* bid-ask spread
+* bids count
+* asks count
+* bids volume
+* asks volume
+* bid price (mean)
+* ask price (mean)
+* bid price (median)
+* ask price (median)
+* bid price (stddev)
+* ask price (stddev)
+* price and size of highest bid
+* price and size of lowest ask 
+* bid price (upper quartile)
+* ask price (lower quartile)
+
+In addition, a snapshot contains the same metrics for the range between the upper quartile bid price and lower quartile ask price.
+
 
 [1]: https://docs.sqlalchemy.org/en/latest/dialects/postgresql.html#module-sqlalchemy.dialects.postgresql.psycopg2
 

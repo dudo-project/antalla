@@ -132,3 +132,5 @@ dmypy.json
 *.db
 .vscode/
 .noseids
+
+*.png

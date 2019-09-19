@@ -18,7 +18,7 @@ class OrderBookAnalyser:
     def visualise_ob(self, buy_sym_id, sell_sym_id, exchange):
         ob_bids = dict()
         ob_asks = dict()
-        result_proxy_ob = self._get_ob(buy_sym_id, sell_sym_id, exchange)
+        result_proxy_ob = self._get_ob_mid_price(buy_sym_id, sell_sym_id, exchange)
         order_history = self._parse_ob(result_proxy_ob)
         print("orderbook size: ", len(order_history))
         for order in order_history:
@@ -64,11 +64,7 @@ class OrderBookAnalyser:
             stacked_orders[pl] = stacked_qty
         return stacked_orders
         
-    def _get_ob(self, buy_sym_id, sell_sym_id, exchange):
-        """ queries the database for the latest orderbook for the given pair
-        - for visualisation purposes not all orders are retrieved
-        - orders are only retrieved if ask/bid prices lie below/above the median price, respectively
-        """
+    def _get_ob_quartiles(self, buy_sym_id, sell_sym_id, exchange):
         query = (
         """
         with order_book as (
@@ -76,8 +72,7 @@ class OrderBookAnalyser:
                       select order_type, price, max(last_update_id) max_update_id
                       from aggregate_orders
                       group by aggregate_orders.price, aggregate_orders.order_type)
-                  select aggregate_orders.id,
-                         order_type,
+                  select order_type,
                          price,
                          size,
                          last_update_id,
@@ -103,7 +98,62 @@ class OrderBookAnalyser:
             from order_book
                 where order_book.order_type = 'ask'
         ))
-    """
+        """
+        )
+        return session.execute(query, {"buy_sym_id": buy_sym_id.upper(), "sell_sym_id": sell_sym_id.upper(), "exchange": exchange.lower()})
+
+    def _get_ob_mid_price(self, buy_sym_id, sell_sym_id, exchange):
+        """ queries the database for the latest orderbook for the given pair
+        - for visualisation purposes not all orders are retrieved
+        - orders are only retrieved if ask/bid prices lie below/above the median price, respectively
+        """
+        query = (
+        """
+        with order_book as (
+            with latest_orders as (
+                select order_type, price, max(last_update_id) max_update_id, exchange_id
+                from aggregate_orders ag
+                group by ag.price, ag.order_type, ag.exchange_id)
+            select order_type,
+                price,
+                size,
+                last_update_id,
+                timestamp,
+                name,
+                buy_sym_id,
+                sell_sym_id
+            from aggregate_orders
+                    inner join exchanges on aggregate_orders.exchange_id = exchanges.id
+            where (order_type, price, last_update_id, exchange_id) in (select * from latest_orders)
+            and size > 0
+            and buy_sym_id = :buy_sym_id
+            and sell_sym_id = :sell_sym_id
+            and name = :exchange
+            order by price asc
+        ),
+            mid_price as (
+                with max_min_prices as (
+                    with max_bid_price as (
+                        select max(price) max_bid
+                        from order_book
+                        where (order_book.order_type = 'bid')
+                    ),
+                        min_ask_price as (
+                            select min(price) min_ask
+                            from order_book
+                            where (order_book.order_type = 'ask')
+                        )
+                    select *
+                    from max_bid_price,
+                        min_ask_price)
+                select ((max_min_prices.min_ask + max_min_prices.max_bid) / 2) mid, max_bid, min_ask
+                from max_min_prices
+            )
+        select *
+        from order_book, mid_price
+        where (order_book.order_type = 'bid' and order_book.price >= 0.99 * mid_price.mid)
+        or (order_book.order_type = 'ask' and order_book.price <= 1.01 * mid_price.mid);
+        """
         )
         return session.execute(query, {"buy_sym_id": buy_sym_id.upper(), "sell_sym_id": sell_sym_id.upper(), "exchange": exchange.lower()})
     
@@ -111,10 +161,10 @@ class OrderBookAnalyser:
         ob = []
         for order in list(raw_ob):
             ob.append(dict(
-                timestamp=order[5],
-                type=order[1],
-                price=float(order[2]),
-                size=float(order[3])
+                timestamp=order[4],
+                type=order[0],
+                price=float(order[1]),
+                size=float(order[2])
             ))
         return ob
 
@@ -130,7 +180,9 @@ Example:
 oba = OrderBookAnalyser()
 while True:
     try:
-        oba.visualise_ob("ETH", "BTC", "hitbtc")
-        #time.sleep(1)
+        #oba.visualise_ob("ETH", "BTC", "hitbtc")
+        #oba.visualise_ob("BTC", "USD", "coinbase")
+        oba.visualise_ob("ETH", "BTC", "coinbase")
+        #oba.visualise_ob("ETH", "BTC", "binance")
     except KeyboardInterrupt:
         sys.exit()

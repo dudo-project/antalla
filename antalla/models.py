@@ -1,3 +1,4 @@
+import hashlib
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float
 from sqlalchemy import PrimaryKeyConstraint, UniqueConstraint, ForeignKeyConstraint, Index
 from sqlalchemy.orm import relationship
@@ -158,9 +159,17 @@ class Trade(Base):
 class AggOrder(Base):
     __tablename__ = "aggregate_orders"
 
-    id = Column(Integer, primary_key=True)
-    sequence_id = Column(String)
-    last_update_id = Column(Integer, nullable=False)
+    def pk_hash(self):
+        pk = f"{self.last_update_id}{self.exchange_id}{self.order_type}{self.price}".encode("utf-8")
+        hash_obj = hashlib.sha256(pk)
+        return hash_obj.hexdigest()
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.hash_id = self.pk_hash()
+
+    hash_id = Column(String, primary_key=True)
+    last_update_id = Column(Integer)
     timestamp = Column(DateTime, index=True, nullable=False)
     buy_sym_id = Column(String,ForeignKey("coins.symbol"), nullable=False, index=True)
     buy_sym = relationship("Coin", foreign_keys=[buy_sym_id])
@@ -173,17 +182,16 @@ class AggOrder(Base):
     size = Column(Float, nullable=False)
 
     __table_args__ = (
-        Index("agg_order_exchange_id_sequence_id_idx",
-              "exchange_id", "sequence_id", unique=True),
+        Index("latest_orders_index",
+            "order_type", "price", "last_update_id", "exchange_id", unique=True),
     )
 
     @classmethod
     def index_elements(cls):
-        return ["sequence_id", "exchange_id"]
+        return ["order_type", "price", "last_update_id", "exchange_id"]
 
     def __repr__(self):
-        return f"AggOrder(id={self.id})"
-
+        return f"AggOrder(id={self.hash_id})"
 
 class Market(Base):
     __tablename__ = "markets"
@@ -234,3 +242,50 @@ class ExchangeMarket(Base):
 
     def __hash__(self):
         return hash((self.first_coin_id, self.second_coin_id, self.exchange_id))
+
+
+class OrderBookSnapshot(Base):
+    __tablename__ = "order_book_snapshots"
+        
+    timestamp = Column(DateTime, nullable=False, primary_key=True)
+    snapshot_type = Column(String, nullable=False, primary_key=True)
+    mid_price_range = Column(Float, nullable=False, primary_key=True)
+    buy_sym_id = Column(String,ForeignKey("coins.symbol"), nullable=False, index=True, primary_key=True)
+    buy_sym = relationship("Coin", foreign_keys=[buy_sym_id])
+    sell_sym_id = Column(String, ForeignKey("coins.symbol"), nullable=False, index=True, primary_key=True)
+    sell_sym = relationship("Coin", foreign_keys=[sell_sym_id])
+    exchange_id = Column(Integer, ForeignKey("exchanges.id"), nullable=False, index=True, primary_key=True)
+    exchange = relationship("Exchange", foreign_keys=[exchange_id])
+    spread = Column(Float, nullable=False, index=True)
+    bids_volume = Column(Float, nullable=False)
+    asks_volume = Column(Float, nullable=False)
+    bids_count = Column(Integer, nullable=False)
+    asks_count = Column(Integer, nullable=False)
+    bids_price_stddev = Column(Float, nullable=False)
+    asks_price_stddev = Column(Float, nullable=False)
+    bids_price_mean = Column(Float, nullable=False)
+    asks_price_mean = Column(Float, nullable=False)
+    min_ask_price = Column(Float, nullable=False)
+    min_ask_size = Column(Float, nullable=False)
+    max_bid_price = Column(Float, nullable=False)
+    max_bid_size = Column(Float, nullable=False)
+    bid_price_median = Column(Float, nullable=False)
+    ask_price_median = Column(Float, nullable=False)
+    
+
+class Event(Base):
+    __tablename__ = "events"
+
+    id = Column(Integer, primary_key=True)
+
+    session_id = Column(String, nullable=False, index=True)
+    timestamp = Column(DateTime, nullable=False)
+    connection_event = Column(String, nullable=False)
+    data_collected = Column(String, nullable=False)
+    buy_sym_id = Column(String,ForeignKey("coins.symbol"), nullable=False, index=True)
+    buy_sym = relationship("Coin", foreign_keys=[buy_sym_id])
+    sell_sym_id = Column(String, ForeignKey("coins.symbol"), nullable=False, index=True)
+    sell_sym = relationship("Coin", foreign_keys=[sell_sym_id])
+    exchange_id = Column(Integer, ForeignKey("exchanges.id"), nullable=False, index=True)
+    exchange = relationship("Exchange")
+    

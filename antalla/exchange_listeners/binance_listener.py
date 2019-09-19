@@ -8,7 +8,8 @@ import time
 
 from dateutil.parser import parse as parse_date
 import websockets
-import aiohttp 
+import aiohttp
+import asyncio 
 
 from .. import settings
 from .. import models
@@ -31,11 +32,7 @@ class BinanceListener(WebsocketListener):
     async def _listen(self):
         initial_actions = await self._setup_listener()
         self.on_event(initial_actions)
-        async with websockets.connect(self._ws_url) as websocket: 
-            while self.running:
-                data = await websocket.recv()
-                actions = self._parse_message(json.loads(data))
-                self.on_event(actions)
+        await super()._listen()
 
     def _get_ws_url(self):
         self._ws_url = settings.BINANCE_COMBINED_STREAM
@@ -43,6 +40,22 @@ class BinanceListener(WebsocketListener):
             for pair in self.markets:
                 self._ws_url = self._ws_url + ''.join(pair.lower().split("_")) + "@" + stream + "/"
         logging.debug("websocket connecting to: %s", self._ws_url)
+
+    async def _setup_connection(self, websocket):
+        for stream in settings.BINANCE_STREAMS:
+            for pair in self.markets:
+                collected_data = self._get_event_data_collected(stream)
+                self._log_event(pair, "connect", collected_data)
+                
+
+    def _get_event_data_collected(self, data_type):
+        if data_type == "trade":
+            return "trades"
+        elif data_type == "depth":
+            return "agg_order_book"
+        else:
+            logging.debug("unknown event type for 'data collected' - {}".format(data_type))
+            return "Unknown"
 
     async def _setup_listener(self):
         actions = []
@@ -73,36 +86,35 @@ class BinanceListener(WebsocketListener):
             "last_update_id": update["u"],
         }
         orders = self._convert_raw_orders(update, "b", "a", order_info)
-        pair = self._parse_market(update["s"], self._all_symbols)
+        pair = self._parse_market_to_symbols(update["s"], self._all_symbols)
         logging.debug("parsed %d orders in 'depth update' for pair '%s'", len(orders), ''.join(pair))
         return self._parse_agg_orders(orders)
 
     def _get_uri(self, endpoint):
         return path.join(settings.BINANCE_API, settings.BINANCE_PUBLIC_API, endpoint)
 
-    def _create_agg_order(self, order_info):
-        pair = self._parse_market(order_info["pair"], self._all_symbols)
+    def _create_agg_order(self, order_info, order_type, price, size):
+        pair = self._parse_market_to_symbols(order_info["pair"], self._all_symbols)
         return models.AggOrder(
             timestamp=datetime.fromtimestamp(order_info["timestamp"] / 1000),
             last_update_id=order_info["last_update_id"],
             buy_sym_id=pair[0],
             sell_sym_id=pair[1],
             exchange_id=self.exchange.id, 
+            order_type=order_type,
+            price=price,
+            size=size,
         )
 
     def _convert_raw_orders(self, orders, bid_key, ask_key, order_info):
         all_orders = []
         for bid in orders[bid_key]:
-            new_bid_order = self._create_agg_order(order_info)
-            new_bid_order.order_type = "bid"
-            new_bid_order.price = float(bid[0])
-            new_bid_order.size = float(bid[1])
+            new_bid_order = self._create_agg_order(
+                order_info, "bid", float(bid[0]), float(bid[1]))
             all_orders.append(new_bid_order)
         for ask in orders[ask_key]:
-            new_ask_order = self._create_agg_order(order_info)
-            new_ask_order.order_type = "ask"
-            new_ask_order.price = float(ask[0])
-            new_ask_order.size = float(ask[1])
+            new_ask_order = self._create_agg_order(
+                order_info, "ask", float(ask[0]), float(ask[1]))
             all_orders.append(new_ask_order)       
         return all_orders
 
@@ -118,7 +130,7 @@ class BinanceListener(WebsocketListener):
 
     def _parse_trade(self, trade):
         # 'trade["s"]' = e.g. "BNBBTC"
-        trade_symbols = self._parse_market(trade["s"], self._all_symbols)
+        trade_symbols = self._parse_market_to_symbols(trade["s"], self._all_symbols)
         trade = self._convert_raw_trade(trade, trade_symbols[0], trade_symbols[1])
         return [actions.InsertAction([trade])] 
         
@@ -157,7 +169,7 @@ class BinanceListener(WebsocketListener):
         exchange_markets = []
         coins = []
         for market in markets:
-            pair = self._parse_market(market["symbol"], self._all_symbols)
+            pair = self._parse_market_to_symbols(market["symbol"], self._all_symbols)
             if len(pair) == 2:
                 coins.extend([
                     models.Coin(symbol=pair[0]),
