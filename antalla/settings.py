@@ -2,12 +2,15 @@ import os
 
 
 MARKETS = [
-    "ETH_USDC",
+    "BTC_USD",
+    "ETH_USD",
     "BTC_ETH",
     "BTC_EOS",
-    "ETH_TUSD",
-    "BAT_ETH",
-    "TUSD_USDC",
+    "ETH_USDT",
+    "BTC_BCH",
+    "BTC_BSV",
+    "BTC_BTG",
+    "BTC_BNB",
 ]
 
 
@@ -18,8 +21,7 @@ IDEX_API = "https://api.idex.market"
 IDEX_API_MARKETS = "return24Volume"
 IDEX_MARKETS = MARKETS
 
-#BINANCE_MARKETS = MARKETS
-BINANCE_MARKETS = ["BTC_ETH"]
+BINANCE_MARKETS = MARKETS
 BINANCE_STREAMS = ["depth", "trade"]
 BINANCE_SINGLE_STREAM = "wss://stream.binance.com:9443/ws/"
 BINANCE_COMBINED_STREAM = "wss://stream.binance.com:9443/stream?streams="
@@ -43,9 +45,8 @@ PACKAGE = "antalla"
 
 COINBASE_WS_URL = "wss://ws-feed.pro.coinbase.com"
 
-#COINBASE_MARKETS = MARKETS
+COINBASE_MARKETS = MARKETS
 #COINBASE_CHANNELS = ["full"]
-COINBASE_MARKETS = ["ETH_BTC"]
 COINBASE_CHANNELS = ["level2", "full"]
 
 COINBASE_API_KEY = os.environ.get("COINBASE_API_KEY")
@@ -56,13 +57,13 @@ COINBASE_API_TICKER =  "ticker"
 
 COINMARKETCAP_URL = "https://coinmarketcap.com/all/views/all/"
 
-HITBTC_MARKETS = ["BTC_ETH", "XMR_BTC"]
+HITBTC_MARKETS = MARKETS
 HITBTC_WS_URL = "wss://api.hitbtc.com/api/2/ws"
 HITBTC_API = "https://api.hitbtc.com/api/2"
 HITBTC_API_MARKETS = "public/ticker"
 HITBTC_API_SYMBOLS = "public/symbol"
 HITBTC_API_KEY = "hBjmU7CawOCRg248JLloOerbOKg8I8k3"
 
-OKEX_MARKETS = ["BTC_ETH"]
+OKEX_MARKETS = MARKETS
 OKEX_WS_URL ="wss://real.okex.com:10442/ws/v3"
 OKEX_API = "https://www.okex.com/api/"
