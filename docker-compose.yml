@@ -1,13 +1,40 @@
-version: '3'
-services:
-  antalla:
-    build: .
-    command: ["run"]
-    container_name: antalla-dev
+version: '3.4'
+
+x-anchors:
+  antalla_config: &antalla_config
+    image: samwerner/antalla
     env_file:
       - config/antalla.env
+    depends_on:
+      - db
 
-networks:
-  default:
-    external:
-      name: postgres_default
+services:
+  coinbase:
+    <<: *antalla_config
+    command: ["run", "--exchange", "coinbase"]
+
+  hitbtc:
+    <<: *antalla_config
+    command: ["run", "--exchange", "hitbtc"]
+
+  idex:
+    <<: *antalla_config
+    command: ["run", "--exchange", "idex"]
+
+  binance:
+    <<: *antalla_config
+    command: ["run", "--exchange", "binance"]
+
+  db:
+    container_name: antalla-postgres-11_1
+    image: postgres:11.1
+    shm_size: '8gb'
+    environment:
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_USER: antalla
+      POSTGRES_PASSWORD: j30uowinnXyoemT
+      POSTGRES_DB: antalla
+    volumes:
+      - /mnt/quantum/antalla/postgres:/var/lib/postgresql/data/pgdata
+    ports:
+      - "5442:5432"
