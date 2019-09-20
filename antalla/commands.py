@@ -1,12 +1,13 @@
 import signal
-import sys
 from os import path
 import json
 import pkg_resources
 import asyncio
 import logging
 from datetime import datetime
+import re
 
+from .ob_analyser import OrderBookAnalyser
 from . import db, models, settings
 from .exchange_listener import ExchangeListener
 from .orchestrator import Orchestrator
@@ -154,4 +155,22 @@ def snapshot(args):
         obs_generator.run()
     except KeyboardInterrupt:
         logging.warning("KeybaordInterrupt - 'obs_generator.run()'")
-        sys.exit()
+
+def plot_order_book(args):
+    if args["exchange"] and args["market"]:
+        exchange = args["exchange"]
+        market = args["market"]
+    elif not args["exchange"]:
+        logging.info("No exchange specified")
+        return 0
+    else:
+        logging.info("No market specified")
+        return 0
+    pair = re.split("[_-]", market)
+    oba = OrderBookAnalyser(pair[0], pair[1], exchange)
+    while oba.running:
+        try:
+            oba.visualise_ob()
+        except KeyboardInterrupt:
+            logging.warning("KeybaordInterrupt - plotting order book for '{}'".format(args["market"]))
+            oba.running = False

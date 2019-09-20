@@ -3,6 +3,7 @@ import logging
 
 from . import commands
 from .exchange_listener import ExchangeListener
+from . import settings
 
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
@@ -31,6 +32,10 @@ snapshots_parser = subparsers.add_parser("snapshot")
 snapshots_parser.add_argument("--exchange", nargs="*", choices=ExchangeListener.registered())
 snapshots_parser.add_argument("--range", type=float, help="sets price range for orders to be included in snapshot, expressed in a 2 decimal percentage value")
 snapshots_parser.add_argument("--quartile", action='store_true', help="includes orders ranging from upper quartile bids to lower quartile asks")
+
+plot_order_book_parser = subparsers.add_parser("plot-order-book")
+plot_order_book_parser.add_argument("--exchange", choices=ExchangeListener.registered())
+plot_order_book_parser.add_argument("--market", choices=settings.MARKETS)
 
 def run():
     args = vars(parser.parse_args())
