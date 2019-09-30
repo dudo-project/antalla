@@ -8,8 +8,8 @@ from scipy.stats import norm
 from matplotlib.dates import DateFormatter 
 from matplotlib.ticker import PercentFormatter
 from matplotlib.ticker import ScalarFormatter
+import matplotlib.ticker as ticker
 from collections import defaultdict
-import logging
 
 from datetime import datetime
 from antalla.db import session
@@ -27,7 +27,7 @@ class Visualiser:
             """, {"exchange": exchange, "buy_sym_id": buy_sym_id, "sell_sym_id": sell_sym_id}
         )
 
-    def plot_trade_size_cdf(self, exchange, buy_sym_id, sell_sym_id):
+    def plot_single_trade_size_cdf(self, exchange, buy_sym_id, sell_sym_id):
         # plot trade size cdf for one pair of given exchange
         result = self._get_all_trades(exchange, buy_sym_id, sell_sym_id)
         trades = []
@@ -41,11 +41,16 @@ class Visualiser:
             ))
         trade_sizes = list(map(lambda x: x["size"], trades))
 
+        x = np.sort(trade_sizes)
+        y = np.arange(len(x))/float(len(x))
+       
         f, ax = plt.subplots(figsize=(8, 8))
-        plt.title("Trade Size CDF: "+ exchange + " (" + buy_sym_id + "-" + sell_sym_id + ")")
-        ax = sns.kdeplot(trade_sizes, cumulative=True)
+        plt.title("Trade Size Empirical CDF: "+ exchange + " (" + buy_sym_id + "-" + sell_sym_id + ")")
+        #ax = sns.kdeplot(trade_sizes, cumulative=True)
+        ax.plot(x, y)
         ax.set_xlabel("Trade size ("+buy_sym_id+")")
         ax.set_ylabel("Percentage of trades")
+        ax.set_xscale("log")
         plt.show()
 
     def _get_all_associated_markets(self, exchange, symbol):
@@ -83,7 +88,7 @@ class Visualiser:
                     sell_sym_id=sell_sym_id    
                 ))
         f, ax = plt.subplots(figsize=(8, 8))
-        plt.title("Trade Size CDF: "+ exchange + " (" + symbol + ")")
+        plt.title("Trade Size Emperical CDF (" + symbol + ")")
         for exchange in exchanges:
             all_trades = []
             for market in exchange_markets[exchange]:
@@ -93,15 +98,20 @@ class Visualiser:
                     continue
                 market_trades = self._normalise_trade_size(market_trades, symbol)
                 all_trades.extend(market_trades)
-            ax = sns.kdeplot(all_trades, cumulative=True, label=exchange)        
-        #ax.set_xscale('log')
+            #ax = sns.kdeplot(all_trades, cumulative=True, label=exchange)        
+            x = np.sort(all_trades)
+            y = np.arange(len(x))/float(len(x))
+            line, = ax.plot(x,y, label=exchange)
+            line.set_label(exchange)
+        ax.set_xscale('log')
         for axis in [ax.xaxis, ax.yaxis]:
-            axis.set_major_formatter(ScalarFormatter())
+            axis.set_major_formatter(ticker.FuncFormatter(lambda y, _: '{:g}'.format(y)))
+        ax.legend()
         ax.set_xlabel("Trade size ("+symbol+")")
         ax.set_ylabel("Percentage of trades")
         plt.show()
 
 visualiser = Visualiser()
-#visualiser.plot_trade_size_cdf("binance", "ETH", "BTC")
+#visualiser.plot_single_trade_size_cdf("binance", "ETH", "BTC")
 exchanges = ["binance", "hitbtc", "coinbase"]
-visualiser.plot_trade_size_cdf(exchanges, "ETH")
+visualiser.plot_trade_size_cdf(exchanges, "BTC")
