@@ -139,7 +139,23 @@ Each snapshot contains relevant metrics for the current state of the order book 
 * bid price (upper quartile)
 * ask price (lower quartile)
 
-In addition, a snapshot contains the same metrics for the range between the upper quartile bid price and lower quartile ask price.
+
+### Visualisations
+
+antalla comes with several built-in functionality for generating different plots.
+
+
+#### Order Book Plots
+
+For generating real-time order book plots, use the command:
+
+```
+antalla plot-order-book --exchange <exchange> --market <market_pair>
+```
+
+Note: the `--exchange` and `--market` flags are required. Hence, visualising one market's order book requires one single process.
+
+The plots are generated, plotting all buy and sell orders that lie in a range of +-1% of the order book mid price. Alternatively one can configure the `OrderBookAnalyser` defined in `ob_analyser.py` to use a method (`_get_ob_quartiles`) plotting all bids which lie in the upper quartile of the total bids and all asks which lie within the lower quartile of the total asks.
 
 
 [1]: https://docs.sqlalchemy.org/en/latest/dialects/postgresql.html#module-sqlalchemy.dialects.postgresql.psycopg2
