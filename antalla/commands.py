@@ -25,7 +25,12 @@ def run(args):
         exchange = args["exchange"]
     else:
         exchange = ExchangeListener.registered()
-    orchestrator = Orchestrator(exchange, event_type=args["event_type"])
+
+    markets = {}
+    if args["markets_file"]:
+        with open(args["markets_file"]) as f:
+            markets = json.load(f)
+    orchestrator = Orchestrator(exchange, event_type=args["event_type"], markets=markets)
     def handler(_signum, _frame):
         orchestrator.stop()
     signal.signal(signal.SIGINT, handler)

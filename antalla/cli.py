@@ -18,6 +18,7 @@ run_parser = subparsers.add_parser("run")
 run_parser.add_argument("--exchange", nargs="*", choices=ExchangeListener.registered())
 run_parser.add_argument("--event-type", choices=["trade", "depth"],
                         help="which event type to listen to; defaults to all events")
+run_parser.add_argument("--markets-file", help="file to use to select the markets for each exchange")
 
 markets = subparsers.add_parser("markets")
 markets.add_argument("--exchange", "-e", nargs="*", choices=ExchangeListener.registered())
