@@ -5,36 +5,51 @@ x-anchors:
     image: samwerner/antalla
     env_file:
       - config/antalla.env
-    depends_on:
-      - db
 
 services:
   coinbase:
     <<: *antalla_config
-    command: ["run", "--exchange", "coinbase"]
+    command:
+      - run
+      - --exchange
+      - coinbase
+      - --event-type
+      - trade
+      - --markets-files
+      - data/btc_markets/btc-markets.json
+      - data/eth_markets/eth-markets.json
 
   hitbtc:
     <<: *antalla_config
-    command: ["run", "--exchange", "hitbtc"]
+    command:
+      - run
+      - --exchange
+      - hitbtc
+      - --event-type
+      - trade
+      - --markets-files
+      - data/btc_markets/btc-markets.json
+      - data/eth_markets/eth-markets.json
 
-  # idex:
-  #   <<: *antalla_config
-  #   command: ["run", "--exchange", "idex"]
+  idex:
+    <<: *antalla_config
+    command:
+      - run
+      - --exchange
+      - idex
+      - --event-type
+      - trade
+      - --markets-files
+      - data/eth_markets/eth-markets.json
 
   binance:
     <<: *antalla_config
-    command: ["run", "--exchange", "binance"]
-
-  db:
-    container_name: antalla-postgres-11_1
-    image: postgres:11.1
-    shm_size: '8gb'
-    environment:
-      PGDATA: /var/lib/postgresql/data/pgdata
-      POSTGRES_USER: antalla
-      POSTGRES_PASSWORD: j30uowinnXyoemT
-      POSTGRES_DB: antalla
-    volumes:
-      - /mnt/quantum/antalla/postgres:/var/lib/postgresql/data/pgdata
-    ports:
-      - "5442:5432"
+    command:
+      - run
+      - --exchange
+      - binance
+      - --event-type
+      - trade
+      - --markets-files
+      - data/btc_markets/btc-markets.json
+      - data/eth_markets/eth-markets.json
