@@ -29,10 +29,11 @@ class IdexListener(WebsocketListener):
                  session=db.session,
                  markets=settings.IDEX_MARKETS,
                  ws_url=settings.IDEX_WS_URL,
+                 event_type=None,
                  max_markets=MAX_MARKETS):
         self.max_markets = max_markets
         self.session = session
-        super().__init__(exchange, on_event, markets, ws_url)
+        super().__init__(exchange, on_event, markets, ws_url, event_type)
         self._all_symbols = []
         self._parse_all_symbols()
 
@@ -66,10 +67,13 @@ class IdexListener(WebsocketListener):
         logging.debug("< %s", response)
         return json.loads(response)
 
+    def _get_events(self):
+        return self._compute_events(self.event_type, settings.IDEX_EVENTS)
+
     async def _setup_connection(self, websocket):
         handshake_data = dict(version="1.0.0", key=settings.IDEX_API_KEY)
         handshake_res = await self._send_message(websocket, "handshake", handshake_data)
-        subscription_data = dict(topics=self.markets, events=settings.IDEX_EVENTS)
+        subscription_data = dict(topics=self.markets, events=self._get_events())
         await self._send_message(websocket, "subscribeToMarkets",
                                  subscription_data, sid=handshake_res["sid"])
         for event in settings.IDEX_EVENTS:

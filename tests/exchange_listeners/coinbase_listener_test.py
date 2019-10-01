@@ -39,6 +39,13 @@ class CoinbaseListenerTest(TransactionalTestCase):
         with open(path.join(FIXTURES_PATH, fixture_name)) as f:
             return f.read()
 
+    def test_get_events(self):
+        self.assertEqual(set(self.coinbase_listener._get_events()), set(["full", "level2"]))
+        self.coinbase_listener.event_type = "trade"
+        self.assertEqual(self.coinbase_listener._get_events(), ["full"])
+        self.coinbase_listener.event_type = "depth"
+        self.assertEqual(self.coinbase_listener._get_events(), ["level2"])
+
     def test_get_last_update_id(self):
         self._insert_data()
         dummy_db.insert_agg_order(self.session)

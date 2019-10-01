@@ -19,8 +19,13 @@ TRADES_LIMIT = 1000
 
 @ExchangeListener.register("hitbtc")
 class HitBTCListener(WebsocketListener):
-    def __init__(self, exchange, on_event, markets=settings.HITBTC_MARKETS, ws_url=settings.HITBTC_WS_URL):
-        super().__init__(exchange, on_event, markets, ws_url)
+    def __init__(self,
+                 exchange,
+                 on_event,
+                 markets=settings.HITBTC_MARKETS,
+                 ws_url=settings.HITBTC_WS_URL,
+                 event_type=None):
+        super().__init__(exchange, on_event, markets, ws_url, event_type=event_type)
         self._all_symbols = []
 
     def _get_uri(self, endpoint):
@@ -162,12 +167,14 @@ class HitBTCListener(WebsocketListener):
             self._all_symbols = await self.fetch_all_symbols(session)           
         for market in self.markets:
             logging.info("market: %s", market)
-            orderbook_message = await self._subscribe_orderbook(market, websocket)
-            self._log_event(market, "connect", "agg_order_book")
-            self._parse_message(orderbook_message)
-            trades_message = await self._subscribe_trades(market, websocket)
-            self._log_event(market, "connect", "trades")
-            self._parse_message(trades_message)
+            if self.event_type is None or self.event_type == "depth":
+                orderbook_message = await self._subscribe_orderbook(market, websocket)
+                self._log_event(market, "connect", "agg_order_book")
+                self._parse_message(orderbook_message)
+            if self.event_type is None or self.event_type == "trade":
+                trades_message = await self._subscribe_trades(market, websocket)
+                self._log_event(market, "connect", "trades")
+                self._parse_message(trades_message)
 
     async def _send_suscribe_message(self, method, params, websocket):
         message = dict(method=method, id=settings.HITBTC_API_KEY)

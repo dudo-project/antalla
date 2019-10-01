@@ -16,6 +16,8 @@ init_db_parser = subparsers.add_parser("init-db")
 
 run_parser = subparsers.add_parser("run")
 run_parser.add_argument("--exchange", nargs="*", choices=ExchangeListener.registered())
+run_parser.add_argument("--event-type", choices=["trade", "depth"],
+                        help="which event type to listen to; defaults to all events")
 
 markets = subparsers.add_parser("markets")
 markets.add_argument("--exchange", "-e", nargs="*", choices=ExchangeListener.registered())

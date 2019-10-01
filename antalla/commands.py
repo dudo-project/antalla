@@ -25,7 +25,7 @@ def run(args):
         exchange = args["exchange"]
     else:
         exchange = ExchangeListener.registered()
-    orchestrator = Orchestrator(exchange)
+    orchestrator = Orchestrator(exchange, event_type=args["event_type"])
     def handler(_signum, _frame):
         orchestrator.stop()
     signal.signal(signal.SIGINT, handler)

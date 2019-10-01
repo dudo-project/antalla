@@ -22,8 +22,13 @@ DEPTH_SNAPSHOT_LIMIT = 1000
 
 @ExchangeListener.register("binance")
 class BinanceListener(WebsocketListener):
-    def __init__(self, exchange, on_event, markets=settings.BINANCE_MARKETS, ws_url=None):
-        super().__init__(exchange, on_event, markets, ws_url)
+    def __init__(self,
+                 exchange,
+                 on_event,
+                 markets=settings.BINANCE_MARKETS,
+                 ws_url=None,
+                 event_type=None):
+        super().__init__(exchange, on_event, markets, ws_url, event_type=event_type)
         self.running = False
         self._get_ws_url()
         self._api_url = settings.BINANCE_API
@@ -41,8 +46,13 @@ class BinanceListener(WebsocketListener):
                 self._ws_url = self._ws_url + ''.join(pair.lower().split("_")) + "@" + stream + "/"
         logging.debug("websocket connecting to: %s", self._ws_url)
 
+    def _get_events(self):
+        if self.event_type is None:
+            return settings.BINANCE_STREAMS
+        return [self.event_type]
+
     async def _setup_connection(self, websocket):
-        for stream in settings.BINANCE_STREAMS:
+        for stream in self._get_events():
             for pair in self.markets:
                 collected_data = self._get_event_data_collected(stream)
                 self._log_event(pair, "connect", collected_data)

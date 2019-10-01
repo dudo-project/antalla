@@ -17,8 +17,13 @@ from ..websocket_listener import WebsocketListener
 
 @ExchangeListener.register("coinbase")
 class CoinbaseListener(WebsocketListener):
-    def __init__(self, exchange, on_event, markets=settings.COINBASE_MARKETS, ws_url=settings.COINBASE_WS_URL):
-        super().__init__(exchange, on_event, markets, ws_url)
+    def __init__(self,
+                 exchange,
+                 on_event,
+                 markets=settings.COINBASE_MARKETS,
+                 ws_url=settings.COINBASE_WS_URL,
+                 event_type=None):
+        super().__init__(exchange, on_event, markets, ws_url, event_type=event_type)
         self._all_symbols = []
         self._format_markets()
         self.running = False
@@ -215,11 +220,14 @@ class CoinbaseListener(WebsocketListener):
             exchange_trade_id=str(match["trade_id"])
         )
 
+    def _get_events(self):
+        return self._compute_events(self.event_type, settings.COINBASE_CHANNELS)
+
     async def _setup_connection(self, websocket):
         for market in self._all_markets:
             self._log_event(market, "connect", "trades")
             self._log_event(market, "connect", "agg_order_book")
-        await self._send_message(websocket, "subscribe", self._all_markets, settings.COINBASE_CHANNELS)         
+        await self._send_message(websocket, "subscribe", self._all_markets, self._get_events())
 
     def _format_markets(self):
         self._all_markets = []

@@ -45,6 +45,14 @@ class IdexListenerTest(TransactionalTestCase):
         expected_markets = ["ETH_FTM", "ETH_LTO", "ETH_FSN"]
         self.assertEqual(idex_listener.markets, expected_markets)
 
+    def test_get_events(self):
+        expected = set(["market_trades", "market_orders", "market_cancels"])
+        self.assertEqual(set(self.idex_listener._get_events()), expected)
+        self.idex_listener.event_type = "trade"
+        self.assertEqual(self.idex_listener._get_events(), ["market_trades"])
+        self.idex_listener.event_type = "depth"
+        self.assertEqual(self.idex_listener._get_events(), ["market_orders", "market_cancels"])
+
     def test_parse_market_orders(self):
         payload = self.raw_fixture("idex/idex-order.json")
         message = dict(event="market_orders", payload=payload)

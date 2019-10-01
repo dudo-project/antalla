@@ -11,10 +11,14 @@ MARKETS = [
     "BTC_BSV",
     "BTC_BTG",
     "BTC_BNB",
+    "ETH_FTM",
 ]
 
 
-IDEX_EVENTS = ["market_orders", "market_cancels", "market_trades"]
+IDEX_EVENTS = {
+    "trade": ["market_trades"],
+    "depth": ["market_orders", "market_cancels"],
+}
 IDEX_API_KEY = "17paIsICur8sA0OBqG6dH5G1rmrHNMwt4oNk4iX9"
 IDEX_WS_URL = "wss://datastream.idex.market"
 IDEX_API = "https://api.idex.market"
@@ -47,7 +51,10 @@ COINBASE_WS_URL = "wss://ws-feed.pro.coinbase.com"
 
 COINBASE_MARKETS = MARKETS
 #COINBASE_CHANNELS = ["full"]
-COINBASE_CHANNELS = ["level2", "full"]
+COINBASE_CHANNELS = {
+    "depth": ["level2"],
+    "trade": ["full"],
+}
 
 COINBASE_API_KEY = os.environ.get("COINBASE_API_KEY")
 COINBASE_API_SECRET = os.environ.get("COINBASE_API_SECRET")

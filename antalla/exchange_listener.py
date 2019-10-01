@@ -12,9 +12,10 @@ from .db import session
 DEFAULT_COMMIT_INTERVAL = 1
 
 class ExchangeListener(BaseFactory):
-    def __init__(self, exchange, on_event, markets):
+    def __init__(self, exchange, on_event, markets, event_type=None):
         self._connected = False
         self.exchange = exchange
+        self.event_type = event_type
         self.on_event = on_event
         self.markets = self._get_existing_markets(markets)
         self.event_log = []
@@ -113,6 +114,11 @@ class ExchangeListener(BaseFactory):
             self.event_log.clear()
         else:
             self.event_log.append(action)
+
+    def _compute_events(self, event_type, events):
+        if event_type is None:
+            return [evt for events_list in events.values() for evt in events_list]
+        return events[event_type]
 
     def _log_disconnection(self):
         if not self._connected:

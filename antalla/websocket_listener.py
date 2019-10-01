@@ -9,8 +9,8 @@ from .exchange_listener import ExchangeListener
 from .db import session
 
 class WebsocketListener(ExchangeListener):
-    def __init__(self, exchange, on_event, markets, ws_url):
-        super().__init__(exchange, on_event, markets)
+    def __init__(self, exchange, on_event, markets, ws_url, event_type=None):
+        super().__init__(exchange, on_event, markets, event_type=event_type)
         self._running = False
         self._ws_url = ws_url
 
