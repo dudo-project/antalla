@@ -22,15 +22,16 @@ def init_db(args):
 
 def run(args):
     if args["exchange"]:
-        exchange = args["exchange"]
+        exchange_name = args["exchange"]
     else:
-        exchange = ExchangeListener.registered()
+        exchange_name = ExchangeListener.registered()
 
     markets = {}
-    if args["markets_file"]:
-        with open(args["markets_file"]) as f:
-            markets = json.load(f)
-    orchestrator = Orchestrator(exchange, event_type=args["event_type"], markets=markets)
+    for market_file in args["markets_files"]:
+        with open(market_file) as f:
+            for exchange, exchange_markets in json.load(f).items():
+                markets.setdefault(exchange, []).extend(exchange_markets)
+    orchestrator = Orchestrator(exchange_name, event_type=args["event_type"], markets=markets)
     def handler(_signum, _frame):
         orchestrator.stop()
     signal.signal(signal.SIGINT, handler)
