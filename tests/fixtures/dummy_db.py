@@ -27,7 +27,12 @@ def insert_coins(session):
         models.Coin(
             symbol='ETH',
             name='ether'
-        )
+        ),
+        models.Coin(symbol="FTM"),
+        models.Coin(symbol="LTO"),
+        models.Coin(symbol="FSN"),
+        models.Coin(symbol="FXC"),
+        models.Coin(symbol="WHEN"),
     ])
 
 def insert_agg_order(session):
@@ -379,12 +384,58 @@ def insert_events_snapshot(session):
 def insert_exchange_markets(session):
     session.add_all([
         models.ExchangeMarket(
+            exchange_id=1,
+            quoted_volume_id="FTM",
+            first_coin_id="ETH",
+            second_coin_id="FTM",
+            volume_usd=420932.9544108437,
+            quoted_volume=9151,
+            original_name="ETH_FTM"
+        ),
+        models.ExchangeMarket(
+            exchange_id=1,
+            quoted_volume_id="FSN",
+            first_coin_id="ETH",
+            second_coin_id="FSN",
+            volume_usd=341783.6705438961,
+            quoted_volume=1852,
+            original_name="ETH_FSN"
+        ),
+        models.ExchangeMarket(
+            exchange_id=1,
+            quoted_volume_id="FXC",
+            first_coin_id="ETH",
+            second_coin_id="FXC",
+            volume_usd=226940.90505653218,
+            quoted_volume=8321,
+            original_name="ETH_FXC"
+        ),
+        models.ExchangeMarket(
+            exchange_id=1,
+            quoted_volume_id="LTO",
+            first_coin_id="ETH",
+            second_coin_id="LTO",
+            volume_usd=363897.1948748794,
+            quoted_volume=7359,
+            original_name="ETH_LTO"
+        ),
+        models.ExchangeMarket(
+            exchange_id=1,
+            quoted_volume_id="WHEN",
+            first_coin_id="ETH",
+            second_coin_id="WHEN",
+            volume_usd=135172.218328253,
+            quoted_volume=1256,
+            original_name="ETH_WHEN"
+        ),
+        models.ExchangeMarket(
             quoted_volume=123456,
             first_coin_id='BTC',
             second_coin_id='ETH',
             exchange_id=1,
+            volume_usd=823.213,
             quoted_volume_id='ETH',
-            original_name='ETHBTC'
+            original_name='ETH_BTC'
         )
     ])
 
@@ -393,7 +444,27 @@ def insert_markets(session):
         models.Market(
             first_coin_id='BTC',
             second_coin_id='ETH'
-        )
+        ),
+        models.Market(
+            first_coin_id="ETH",
+            second_coin_id="FTM",
+        ),
+        models.Market(
+            first_coin_id="ETH",
+            second_coin_id="LTO",
+        ),
+        models.Market(
+            first_coin_id="ETH",
+            second_coin_id="FSN",
+        ),
+        models.Market(
+            first_coin_id="ETH",
+            second_coin_id="FXC",
+        ),
+        models.Market(
+            first_coin_id="ETH",
+            second_coin_id="WHEN",
+        ),
     ])
 
 def insert_instable_connection_events(session):
