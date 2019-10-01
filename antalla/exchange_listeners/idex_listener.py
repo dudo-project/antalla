@@ -1,11 +1,14 @@
+from typing import List
 import json
 import logging
 from datetime import datetime
 import time
 
 from dateutil.parser import parse as parse_date
+from sqlalchemy.sql.expression import tuple_
 import websockets
 
+from .. import db
 from .. import settings
 from .. import models
 from .. import actions
@@ -14,12 +17,38 @@ from ..websocket_listener import WebsocketListener
 
 import aiohttp
 
+
+MAX_MARKETS = 100
+
+
 @ExchangeListener.register("idex")
 class IdexListener(WebsocketListener):
-    def __init__(self, exchange, on_event, markets=settings.IDEX_MARKETS, ws_url=settings.IDEX_WS_URL):
+    def __init__(self,
+                 exchange,
+                 on_event,
+                 session=db.session,
+                 markets=settings.IDEX_MARKETS,
+                 ws_url=settings.IDEX_WS_URL,
+                 max_markets=MAX_MARKETS):
+        self.max_markets = max_markets
+        self.session = session
         super().__init__(exchange, on_event, markets, ws_url)
         self._all_symbols = []
         self._parse_all_symbols()
+
+    def _get_existing_markets(self, markets: List[str]) -> List[str]:
+        def get_market_pk(market):
+            pair = sorted(market.split("_"))
+            return (pair[0], pair[1], self.exchange.id)
+        market_pks = [get_market_pk(market) for market in markets]
+        results = self.session.query(models.ExchangeMarket) \
+                      .filter(tuple_(models.ExchangeMarket.first_coin_id,
+                                     models.ExchangeMarket.second_coin_id,
+                                     models.ExchangeMarket.exchange_id).in_(market_pks)) \
+                      .order_by(models.ExchangeMarket.volume_usd.desc()) \
+                      .limit(self.max_markets) \
+                      .all()
+        return [result.original_name for result in results]
 
     def _parse_all_symbols(self):
         for market in self.markets:

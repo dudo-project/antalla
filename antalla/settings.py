@@ -63,7 +63,3 @@ HITBTC_API = "https://api.hitbtc.com/api/2"
 HITBTC_API_MARKETS = "public/ticker"
 HITBTC_API_SYMBOLS = "public/symbol"
 HITBTC_API_KEY = "hBjmU7CawOCRg248JLloOerbOKg8I8k3"
-
-OKEX_MARKETS = MARKETS
-OKEX_WS_URL ="wss://real.okex.com:10442/ws/v3"
-OKEX_API = "https://www.okex.com/api/"

@@ -7,6 +7,8 @@ import unittest
 from unittest.mock import MagicMock
 
 from tests.fixtures import dummy_db
+from tests.support import TransactionalTestCase
+
 from antalla import models
 from antalla import actions
 from antalla import db
@@ -14,17 +16,13 @@ from antalla.exchange_listeners.coinbase_listener import CoinbaseListener
 
 FIXTURES_PATH = path.join(path.dirname(path.dirname(__file__)), "fixtures")
 
-class CoinbaseListenerTest(unittest.TestCase):
+class CoinbaseListenerTest(TransactionalTestCase):
     def setUp(self):
-            self.dummy_exchange = models.Exchange(id=3, name="coinbase")
-            self.on_event_mock = MagicMock()
-            self.session = db.Session()
-            self.coinbase_listener = CoinbaseListener(self.dummy_exchange, self.on_event_mock)
-            self.coinbase_listener.session = self.session
-            self.session.commit = lambda: None
-            
-    def tearDown(self):
-        self.session.rollback()
+        super().setUp()
+        self.dummy_exchange = models.Exchange(id=3, name="coinbase")
+        self.on_event_mock = MagicMock()
+        self.coinbase_listener = CoinbaseListener(self.dummy_exchange, self.on_event_mock)
+        self.coinbase_listener.session = self.session
 
     def _insert_data(self):
         dummy_db.insert_coins(self.session)

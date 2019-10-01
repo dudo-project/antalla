@@ -7,6 +7,9 @@ import unittest
 from unittest.mock import MagicMock
 
 
+from tests.fixtures import dummy_db
+from tests.support import TransactionalTestCase
+
 from antalla import models
 from antalla import actions
 from antalla.exchange_listeners.idex_listener import IdexListener
@@ -15,11 +18,32 @@ from antalla.exchange_listeners.idex_listener import IdexListener
 FIXTURES_PATH = path.join(path.dirname(path.dirname(__file__)), "fixtures")
 
 
-class IdexListenerTest(unittest.TestCase):
+class IdexListenerTest(TransactionalTestCase):
     def setUp(self):
+        super().setUp()
         self.dummy_exchange = models.Exchange(id=1337, name="dummy")
         self.on_event_mock = MagicMock()
         self.idex_listener = IdexListener(self.dummy_exchange, self.on_event_mock)
+
+    def test_get_existing_markets(self):
+        dummy_db.insert_coins(self.session)
+        dummy_db.insert_exchanges(self.session)
+        dummy_db.insert_markets(self.session)
+        dummy_db.insert_exchange_markets(self.session)
+        self.session.flush()
+        markets = [em.original_name for em in self.session.query(models.ExchangeMarket).all()]
+
+        dummy_idex_exchange = models.Exchange(id=1, name="idex")
+        idex_listener = IdexListener(
+            dummy_idex_exchange,
+            self.on_event_mock,
+            session=self.session,
+            markets=markets,
+            max_markets=3,
+        )
+        self.assertEqual(len(idex_listener.markets), 3)
+        expected_markets = ["ETH_FTM", "ETH_LTO", "ETH_FSN"]
+        self.assertEqual(idex_listener.markets, expected_markets)
 
     def test_parse_market_orders(self):
         payload = self.raw_fixture("idex/idex-order.json")
