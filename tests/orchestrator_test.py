@@ -16,8 +16,8 @@ def create_mock_action():
 
 @ExchangeListener.register("dummy")
 class DummyListener(ExchangeListener):
-    def __init__(self, exchange, on_event):
-        super().__init__(exchange, on_event, markets=["ETH_BTC"])
+    def __init__(self, exchange, on_event, event_type=None):
+        super().__init__(exchange, on_event, markets=["ETH_BTC"], event_type=event_type)
         self.mock_action = create_mock_action()
         self.mock_stop = MagicMock()
 
