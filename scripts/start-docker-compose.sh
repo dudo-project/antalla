@@ -3,7 +3,12 @@
 mkdir -p tmp
 COLOR_FILE="tmp/current-color.txt"
 
-current_color=$(cat $COLOR_FILE || "blue")
+if [ -f $COLOR_FILE ]; then
+  current_color=$(cat $COLOR_FILE)
+else
+  current_color="blue"
+fi
+
 if [ $current_color = "blue" ]; then
   color="green"
 else
@@ -18,5 +23,7 @@ COMPOSE_HTTP_TIMEOUT=600 \
   --scale idex=2
 
 echo "$color" > $COLOR_FILE
+
+sleep 10
 
 COMPOSE_HTTP_TIMEOUT=600 docker-compose -p "antalla-$current_color" down
