@@ -101,7 +101,7 @@ class Visualiser:
                     continue
                 market_trades = self._normalise_trade_size(market_trades, symbol)
                 all_trades.extend(market_trades)
-            x = np.sort(all_trades)
+            x = np.sort([trade["size"] for trade in all_trades])
             y = np.arange(len(x))/float(len(x))
             line, = ax.plot(x,y, label=exchange)
             line.set_label(exchange)
@@ -144,7 +144,6 @@ class Visualiser:
                     continue
                 market_trades = self._normalise_trade_size(market_trades, symbol)
                 all_trades.extend(market_trades)
-            print(all_trades[0])
             df = pd.DataFrame(all_trades)
             df.index = df["timestamp"]
             df_bins = df.resample('1T').sum()
