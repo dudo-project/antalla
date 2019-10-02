@@ -76,7 +76,7 @@ class IdexListener(WebsocketListener):
         subscription_data = dict(topics=self.markets, events=self._get_events())
         await self._send_message(websocket, "subscribeToMarkets",
                                  subscription_data, sid=handshake_res["sid"])
-        for event in settings.IDEX_EVENTS:
+        for event in self._get_events():
             for market in self.markets:
                 data_collected = self._get_event_data_collected(event)
                 self._log_event(market, "connect", data_collected)
