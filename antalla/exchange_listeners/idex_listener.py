@@ -158,8 +158,10 @@ class IdexListener(WebsocketListener):
             timestamp=datetime.fromtimestamp(raw_trade["timestamp"]),
             trade_type=raw_trade["type"],
             exchange_id=self.exchange.id,
-            buy_sym_id=buy_sym,
-            sell_sym_id=sell_sym,
+            # idex market pairs are not following the normal convention, i.e. ETH/BTC does not mean price is expressed in BTC (but ETH)
+            # hence, this is modified below by switching the pairs
+            buy_sym_id=sell_sym,
+            sell_sym_id=buy_sym,
             maker=raw_trade["maker"],
             taker=raw_trade["taker"],
             exchange_order_id=raw_trade["orderHash"],

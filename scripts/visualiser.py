@@ -10,6 +10,7 @@ from matplotlib.ticker import PercentFormatter
 from matplotlib.ticker import ScalarFormatter
 import matplotlib.ticker as ticker
 from collections import defaultdict
+from scipy.stats.stats import pearsonr 
 
 from datetime import datetime
 from antalla.db import session
@@ -22,8 +23,8 @@ class Visualiser:
     def _get_all_trades(self, exchange, buy_sym_id, sell_sym_id):
         return session.execute(
             """
-            select timestamp, buy_sym_id, sell_sym_id, price, size, timestamp from trades inner join exchanges ex on trades.exchange_id=ex.id \
-                where buy_sym_id= :buy_sym_id and sell_sym_id= :sell_sym_id and ex.name = :exchange
+            select timestamp, buy_sym_id, sell_sym_id, price, size from trades inner join exchanges ex on trades.exchange_id=ex.id \
+                where buy_sym_id= :buy_sym_id and sell_sym_id= :sell_sym_id and ex.name = :exchange 
             """, {"exchange": exchange, "buy_sym_id": buy_sym_id, "sell_sym_id": sell_sym_id}
         )
 
@@ -98,7 +99,6 @@ class Visualiser:
                     continue
                 market_trades = self._normalise_trade_size(market_trades, symbol)
                 all_trades.extend(market_trades)
-            #ax = sns.kdeplot(all_trades, cumulative=True, label=exchange)        
             x = np.sort(all_trades)
             y = np.arange(len(x))/float(len(x))
             line, = ax.plot(x,y, label=exchange)
@@ -111,7 +111,68 @@ class Visualiser:
         ax.set_ylabel("Percentage of trades")
         plt.show()
 
+<<<<<<< Updated upstream
 visualiser = Visualiser()
 #visualiser.plot_single_trade_size_cdf("binance", "ETH", "BTC")
 exchanges = ["binance", "hitbtc", "coinbase"]
 visualiser.plot_trade_size_cdf(exchanges, "BTC")
+=======
+    def plot_trade_size_hist(self, exchanges, symbol):
+        exchange_markets = defaultdict(list)
+        for exchange in exchanges:
+            result_proxy = self._get_all_associated_markets(exchange, symbol)
+            result = list(result_proxy)
+            if len(result) == 0:
+                continue
+            for row in result:
+                buy_sym_id = row["buy_sym_id"]
+                if row["buy_sym_id"] == row["first_coin_id"]:
+                    sell_sym_id = row["second_coin_id"]
+                else:
+                    sell_sym_id = row["first_coin_id"]
+                exchange_markets[exchange].append(dict(
+                    buy_sym_id=buy_sym_id,
+                    sell_sym_id=sell_sym_id    
+                ))
+        jet= plt.get_cmap('jet')
+        colors = iter(jet(np.linspace(0,1,10)))
+        plt.figure(1)
+        plt.title("Trade Sizes Histogram (" + symbol + ")")
+        n = 311
+        for exchange in exchanges:
+            all_trades = []
+            for market in exchange_markets[exchange]:
+                market_trades_proxy = self._get_all_trades(exchange, market["buy_sym_id"], market["sell_sym_id"])
+                market_trades = list(market_trades_proxy)
+                if len(market_trades) == 0:
+                    continue
+                market_trades = self._normalise_trade_size(market_trades, symbol)
+                all_trades.extend(market_trades)
+            df = pd.DataFrame(all_trades)
+            df.index = df["timestamp"]
+            df_bins = df.resample('1T').sum()
+            plt.subplot(n)
+            #plt.bar(df_bins.index, df_bins["size"], width=0.001, label=exchange, color=next(colors))
+            plt.plot(df_bins.index, df_bins["size"], label=exchange, color=next(colors))
+            plt.ylabel("Total trade size (" + symbol + ")")
+            n += 1
+            print(df_bins["size"].head())
+            plt.legend()
+        plt.xlabel("Timestamp")
+        plt.pause(0.05)
+        plt.clf()
+        #plt.show()
+
+visualiser = Visualiser()
+#visualiser.plot_single_trade_size_cdf("binance", "ETH", "BTC")
+#exchanges = ["binance", "coinbase", "hitbtc"]
+#visualiser.plot_trade_size_cdf(exchanges, "BTC")
+exchanges = ["coinbase", "binance"]
+
+while True:
+    try:
+        visualiser.plot_trade_size_hist(exchanges, "ETH")        
+    except KeyboardInterrupt:
+        #logging.warning("KeybaordInterrupt - plotting order book for '{}'".format(args["market"]))
+        break
+>>>>>>> Stashed changes

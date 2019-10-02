@@ -185,7 +185,7 @@ def plot_volume_bar_chart(buy_sym_id, sell_sym_id, exchange, plot_id):
     axs[1].xaxis.set_major_formatter(formatter)
     axs[1].grid()
     axs[1].legend((ps[0], pb[0]), ("Sell price", "Buy price"))
-    axs[1].set_ylabel("Avg. price ("+buy_sym_id.upper()+")")    
+    axs[1].set_ylabel("Avg. price ("+sell_sym_id.upper()+")")    
     plt.xticks(rotation="vertical")
     plt.figure(plot_id)
 
@@ -210,5 +210,6 @@ Examples:
 
 """
 
-#plt.show()
+plot_volume_bar_chart("USD", "BTC", "coinbase", 0)
+plt.show()
 

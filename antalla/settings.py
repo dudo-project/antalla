@@ -43,8 +43,8 @@ if ENV == "test":
     DB_URL = os.environ.get("DB_URL", "postgresql+psycopg2://antalla:antalla@localhost/antalla-test?client_encoding=utf8")
 else:
     DB_URL = os.environ.get("DB_URL", "postgresql+psycopg2://antalla:antalla@localhost/antalla?client_encoding=utf8")
+    #DB_URL = os.environ.get("DB_URL", "postgresql+psycopg2://antalla:j30uowinnXyoemT@quantum.doc.ic.ac.uk:5432/antalla?client_encoding=utf8")
 
-#DB_URL = os.environ.get("DB_URL", "postgresql+psycopg2://antalla:antalla@satoshi.doc.ic.ac.uk/antalla?client_encoding=utf8")
 PACKAGE = "antalla"
 
 COINBASE_WS_URL = "wss://ws-feed.pro.coinbase.com"
