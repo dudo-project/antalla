@@ -63,11 +63,13 @@ class Visualiser:
     def _normalise_trade_size(self, market_trades, symbol):
         norm_trades = []
         for trade in market_trades:
+            norm_trade = dict(trade)
             if trade["buy_sym_id"] == symbol:
-                norm_trades.append(trade["size"])
+                trade_size = trade["size"]
             else:
-                norm_size = trade["size"] * trade["price"]
-                norm_trades.append(norm_size) 
+                trade_size = trade["size"] * trade["price"]
+            norm_trade["size"] = trade_size
+            norm_trades.append(norm_trade)
         return norm_trades
 
     def plot_trade_size_cdf(self, exchanges, symbol):
@@ -111,12 +113,6 @@ class Visualiser:
         ax.set_ylabel("Percentage of trades")
         plt.show()
 
-<<<<<<< Updated upstream
-visualiser = Visualiser()
-#visualiser.plot_single_trade_size_cdf("binance", "ETH", "BTC")
-exchanges = ["binance", "hitbtc", "coinbase"]
-visualiser.plot_trade_size_cdf(exchanges, "BTC")
-=======
     def plot_trade_size_hist(self, exchanges, symbol):
         exchange_markets = defaultdict(list)
         for exchange in exchanges:
@@ -148,6 +144,7 @@ visualiser.plot_trade_size_cdf(exchanges, "BTC")
                     continue
                 market_trades = self._normalise_trade_size(market_trades, symbol)
                 all_trades.extend(market_trades)
+            print(all_trades[0])
             df = pd.DataFrame(all_trades)
             df.index = df["timestamp"]
             df_bins = df.resample('1T').sum()
@@ -165,9 +162,9 @@ visualiser.plot_trade_size_cdf(exchanges, "BTC")
 
 visualiser = Visualiser()
 #visualiser.plot_single_trade_size_cdf("binance", "ETH", "BTC")
-#exchanges = ["binance", "coinbase", "hitbtc"]
-#visualiser.plot_trade_size_cdf(exchanges, "BTC")
-exchanges = ["coinbase", "binance"]
+exchanges = ["binance", "coinbase", "hitbtc"]
+# visualiser.plot_trade_size_cdf(exchanges, "ETH")
+# exchanges = ["coinbase", "binance"]
 
 while True:
     try:
@@ -175,4 +172,3 @@ while True:
     except KeyboardInterrupt:
         #logging.warning("KeybaordInterrupt - plotting order book for '{}'".format(args["market"]))
         break
->>>>>>> Stashed changes
