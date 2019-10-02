@@ -43,7 +43,7 @@ class BinanceListener(WebsocketListener):
 
     def _get_ws_url(self):
         self._ws_url = settings.BINANCE_COMBINED_STREAM
-        for stream in settings.BINANCE_STREAMS:
+        for stream in self._get_events():
             for pair in self.markets:
                 self._ws_url = self._ws_url + ''.join(pair.lower().split("_")) + "@" + stream + "/"
         logging.debug("websocket connecting to: %s", self._ws_url)
