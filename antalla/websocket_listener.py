@@ -1,4 +1,3 @@
-
 import websockets
 import json
 import logging
@@ -6,11 +5,11 @@ import asyncio
 import sqlalchemy
 
 from .exchange_listener import ExchangeListener
-from .db import session
+from . import db
 
 class WebsocketListener(ExchangeListener):
-    def __init__(self, exchange, on_event, markets, ws_url, event_type=None):
-        super().__init__(exchange, on_event, markets, event_type=event_type)
+    def __init__(self, exchange, on_event, markets, ws_url, session=db.session, event_type=None):
+        super().__init__(exchange, on_event, markets, session=session, event_type=event_type)
         self._running = False
         self._ws_url = ws_url
 
@@ -20,8 +19,8 @@ class WebsocketListener(ExchangeListener):
             try:
                 await self._listen()
             except sqlalchemy.exc.DBAPIError as e:
-                session.rollback()
-                logging.error("db error in %s: %s", e)
+                self.session.rollback()
+                logging.error("db error in db: %s", e)
                 self._log_disconnection()
             except Exception as e:
                 logging.error("error in %s: %s", self.exchange, e)

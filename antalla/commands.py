@@ -69,7 +69,7 @@ def init_data(args):
         entities = json.loads(entities)
 
         for entity in entities:
-            if Model.query.filter_by(**{column: entity[column]}).first():
+            if db.session.query(Model).filter_by(**{column: entity[column]}).first():
                 continue
             model = Model(**entity)
             db.session.add(model)
@@ -101,7 +101,7 @@ async def start_crawler():
     n = 0
     update_actions = []
     crawler = market_crawler.MarketCrawler()
-    coins = models.Coin.query.all()
+    coins = db.session.query(models.Coin).all()
     for coin in coins:
         coin.price_usd = await crawler.get_price(coin.symbol)
         coin.last_price_updated = datetime.now()
@@ -119,7 +119,7 @@ def norm_volume(args):
     else:
         exchanges = ExchangeListener.registered()
     for e in exchanges:
-        exchange = models.Exchange.query.filter_by(name=e).all()
+        exchange = db.session.query(models.Exchange).filter_by(name=e).all()
         if exchange != None:
             id = exchange[0].id
             set_usd_vol(id)
@@ -128,7 +128,7 @@ def norm_volume(args):
             logging.warning("exchange '%s' not found in db - check '--exchange' flag is set with correct argument", e)
 
 def set_usd_vol(exchange_id):
-    exchange_markets = models.ExchangeMarket.query.filter_by(exchange_id=exchange_id).all()
+    exchange_markets = db.session.query(models.ExchangeMarket).filter_by(exchange_id=exchange_id).all()
     for exm in exchange_markets:
         coin_price = get_usd_price(exm.quoted_volume_id)
         if exm.quoted_volume is None:
@@ -143,7 +143,7 @@ def set_usd_vol(exchange_id):
     db.session.commit()
 
 def get_usd_price(symbol):
-    coin = models.Coin.query.get(symbol.upper())
+    coin = db.session.query(models.Coin).get(symbol.upper())
     if coin is None:
         logging.debug("no USD price for symbol '%s' in db", symbol)
         return 0

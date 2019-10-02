@@ -12,6 +12,7 @@ import aiohttp
 import asyncio 
 
 from .. import settings
+from .. import db
 from .. import models
 from .. import actions
 from ..exchange_listener import ExchangeListener
@@ -27,8 +28,9 @@ class BinanceListener(WebsocketListener):
                  on_event,
                  markets=settings.BINANCE_MARKETS,
                  ws_url=None,
+                 session=db.session,
                  event_type=None):
-        super().__init__(exchange, on_event, markets, ws_url, event_type=event_type)
+        super().__init__(exchange, on_event, markets, ws_url, session=session, event_type=event_type)
         self.running = False
         self._get_ws_url()
         self._api_url = settings.BINANCE_API

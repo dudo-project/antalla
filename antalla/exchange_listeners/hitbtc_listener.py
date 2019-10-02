@@ -9,6 +9,7 @@ import websockets
 import aiohttp
 import asyncio
 
+from .. import db
 from .. import settings
 from .. import models
 from .. import actions
@@ -24,8 +25,9 @@ class HitBTCListener(WebsocketListener):
                  on_event,
                  markets=settings.HITBTC_MARKETS,
                  ws_url=settings.HITBTC_WS_URL,
+                 session=db.session,
                  event_type=None):
-        super().__init__(exchange, on_event, markets, ws_url, event_type=event_type)
+        super().__init__(exchange, on_event, markets, ws_url, session=session, event_type=event_type)
         self._all_symbols = []
 
     def _get_uri(self, endpoint):

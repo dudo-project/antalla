@@ -7,21 +7,19 @@ from datetime import datetime
 from .base_factory import BaseFactory
 from . import models
 from . import actions
-from .db import session 
+from . import db
 
-DEFAULT_COMMIT_INTERVAL = 1
 
 class ExchangeListener(BaseFactory):
-    def __init__(self, exchange, on_event, markets, event_type=None):
+    def __init__(self, exchange, on_event, markets, session=db.session, event_type=None):
         self._connected = False
         self.exchange = exchange
         self.event_type = event_type
         self.on_event = on_event
-        self.markets = self._get_existing_markets(markets)
-        self.event_log = []
-        self.commits = 0
+        self.session = session
         self._session_id = uuid.uuid4()
         self._all_symbols = None
+        self.markets = self._get_existing_markets(markets)
 
     def _get_existing_markets(self, markets):
         existing_markets = []
@@ -33,7 +31,7 @@ class ExchangeListener(BaseFactory):
 
     def _find_market(self, market):
         pair = sorted(market.split("_"))
-        return models.ExchangeMarket.query.get((pair[0], pair[1], self.exchange.id))
+        return self.session.query(models.ExchangeMarket).get((pair[0], pair[1], self.exchange.id))
 
     async def listen(self):
         raise NotImplementedError()
@@ -43,14 +41,14 @@ class ExchangeListener(BaseFactory):
 
     async def get_markets(self):
         markets_uri = self._get_markets_uri()
-        async with aiohttp.ClientSession() as session:
-            markets = await self._fetch(session, markets_uri)
+        async with aiohttp.ClientSession() as http_session:
+            markets = await self._fetch(http_session, markets_uri)
             logging.debug("markets retrieved from %s: %s", self.exchange.name, markets)
             actions = self._parse_markets(markets)
             self.on_event(actions)
 
-    async def _fetch(self, session, url):
-        async with session.get(url) as response:
+    async def _fetch(self, http_session, url):
+        async with http_session.get(url) as response:
             logging.debug("GET request: %s, status: %s", url, response.status)
             return await response.json()
     
@@ -106,14 +104,9 @@ class ExchangeListener(BaseFactory):
             data_collected=data_collected
         )
         action = actions.InsertAction([event])
-        action.execute(session)
-        if len(self.event_log) >= DEFAULT_COMMIT_INTERVAL:
-            session.commit()
-            self.commits += 1
-            logging.info("event log commit[{}] - {} - {} event(s) committed to 'events' table".format(self.commits, self.exchange.name, len(self.event_log)))
-            self.event_log.clear()
-        else:
-            self.event_log.append(action)
+        action.execute(self.session)
+        self.session.commit()
+        logging.info("event log - {0} - commited to 'events' table".format(self.exchange.name))
 
     def _compute_events(self, event_type, events):
         if event_type is None:

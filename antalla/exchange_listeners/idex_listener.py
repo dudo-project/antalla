@@ -32,8 +32,7 @@ class IdexListener(WebsocketListener):
                  event_type=None,
                  max_markets=MAX_MARKETS):
         self.max_markets = max_markets
-        self.session = session
-        super().__init__(exchange, on_event, markets, ws_url, event_type)
+        super().__init__(exchange, on_event, markets, ws_url, session=session, event_type=event_type)
         self._all_symbols = []
         self._parse_all_symbols()
 
