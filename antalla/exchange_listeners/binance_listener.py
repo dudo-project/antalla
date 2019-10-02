@@ -71,11 +71,17 @@ class BinanceListener(WebsocketListener):
         actions = []
         async with aiohttp.ClientSession() as session:
             self._all_symbols = await self.fetch_all_symbols(session)
-            for pair in self.markets:
-                uri = settings.BINANCE_API + "/api/v1/depth?symbol=" + ''.join(pair.upper().split("_")) + "&limit=" + str(DEPTH_SNAPSHOT_LIMIT)
-                snapshot = await self._fetch(session, uri)
-                logging.debug("GET orderbook snapshot for '%s': %s", pair, snapshot)
-                actions.extend(self._parse_snapshot(snapshot, pair))
+            events = self._get_events()
+            if "depth" in events:
+                requests = 0
+                for pair in self.markets:
+                    if requests % 10 == 0:
+                        await asyncio.sleep(4)
+                    uri = settings.BINANCE_API + "/api/v1/depth?symbol=" + ''.join(pair.upper().split("_")) + "&limit=" + str(DEPTH_SNAPSHOT_LIMIT)
+                    snapshot = await self._fetch(session, uri)
+                    logging.debug("GET orderbook snapshot for '%s': %s", pair, snapshot)
+                    actions.extend(self._parse_snapshot(snapshot, pair))
+                    requests += 1
         return actions
 
     def _parse_snapshot(self, snapshot, pair):

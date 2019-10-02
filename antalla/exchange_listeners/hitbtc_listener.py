@@ -192,9 +192,6 @@ class HitBTCListener(WebsocketListener):
         params = {"symbol": market.upper(), "limit": TRADES_LIMIT}
         return await self._send_suscribe_message("subscribeTrades", params, websocket)
 
-    def _parse_snapshotTrades(self, snapshot):
-        return self._parse_raw_trades(snapshot)
-
     def _parse_updateTrades(self, trades):
         return self._parse_raw_trades(trades)
 
