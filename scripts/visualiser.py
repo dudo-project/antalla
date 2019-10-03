@@ -23,9 +23,9 @@ class Visualiser:
     def _get_all_trades(self, exchange, buy_sym_id, sell_sym_id):
         return session.execute(
             """
-            select timestamp, buy_sym_id, sell_sym_id, price, size from trades inner join exchanges ex on trades.exchange_id=ex.id \
+            select timestamp, buy_sym_id, sell_sym_id, price, size from trades join exchanges ex on trades.exchange_id=ex.id \
                 where buy_sym_id= :buy_sym_id and sell_sym_id= :sell_sym_id and ex.name = :exchange 
-            """, {"exchange": exchange, "buy_sym_id": buy_sym_id, "sell_sym_id": sell_sym_id}
+            """, {"exchange": exchange.lower(), "buy_sym_id": buy_sym_id.upper(), "sell_sym_id": sell_sym_id.upper()}
         )
 
     def plot_single_trade_size_cdf(self, exchange, buy_sym_id, sell_sym_id):
@@ -152,22 +152,26 @@ class Visualiser:
             plt.plot(df_bins.index, df_bins["size"], label=exchange, color=next(colors))
             plt.ylabel("Total trade size (" + symbol + ")")
             n += 1
-            print(df_bins["size"].head())
+            #print(df_bins["size"].head())
             plt.legend()
         plt.xlabel("Timestamp")
-        plt.pause(0.05)
-        plt.clf()
+        #plt.pause(0.05)
+        #plt.clf()
         #plt.show()
+        plt.savefig("trade_vol_hist.png")
 
 visualiser = Visualiser()
 #visualiser.plot_single_trade_size_cdf("binance", "ETH", "BTC")
-exchanges = ["binance", "coinbase", "hitbtc"]
-# visualiser.plot_trade_size_cdf(exchanges, "ETH")
+exchanges = ["binance", "coinbase", "idex"]
+#visualiser.plot_trade_size_cdf(exchanges, "ETH")
 # exchanges = ["coinbase", "binance"]
+visualiser.plot_trade_size_hist(exchanges, "ETH") 
 
-while True:
-    try:
-        visualiser.plot_trade_size_hist(exchanges, "ETH")        
-    except KeyboardInterrupt:
-        #logging.warning("KeybaordInterrupt - plotting order book for '{}'".format(args["market"]))
-        break
+# while True:
+#     try:
+#         visualiser.plot_trade_size_hist(exchanges, "ETH")        
+#     except KeyboardInterrupt:
+#         #logging.warning("KeybaordInterrupt - plotting order book for '{}'".format(args["market"]))
+#         break
+
+
