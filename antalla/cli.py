@@ -35,7 +35,7 @@ init_data.add_argument("--exchange", "-e", nargs="*", choices=ExchangeListener.r
 
 snapshots_parser = subparsers.add_parser("snapshot")
 snapshots_parser.add_argument("--exchange", nargs="*", choices=ExchangeListener.registered())
-snapshots_parser.add_argument("--range", type=float, help="sets price range for orders to be included in snapshot, expressed in a 2 decimal percentage value")
+snapshots_parser.add_argument("--depth", type=float, help="sets order book depth for orders to be included in snapshot, expressed in percentage relative to the mid price")
 snapshots_parser.add_argument("--quartile", action='store_true', help="includes orders ranging from upper quartile bids to lower quartile asks")
 
 plot_order_book_parser = subparsers.add_parser("plot-order-book")

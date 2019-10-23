@@ -6,14 +6,21 @@
 
 Fetches data from various exchanges and stores the orders and trades in an SQL database.
 
-The name comes from the Greek ανταλλαγή (antallagí) which meaning "exchange".
+The name comes from the Greek ανταλλαγή (antallagí), meaning "exchange". 
+
+`antalla` is part of the `dudo` project, which aims to foster research and open-source software in the space of cryptocurrency exchange design, auditability and market manipulation. Being the first piece of software that is part of the project, the aim of antalla is to facilitate cryptocurrency exchange market data analysis, ranging from obtaining and storing the data to conducting analyses of locally hosted real-time order books. 
+
+Even though the majority of cryptocurency exchanges provide lots of free market data through APIs, it can be a tedious task normalising and managing this data. Even more so, existing API wrappers often stop after the normalisation of data and tend to be limited in the number of exchanges they include. In fact, obtaining historical market data can be very difficult unless one is willing to move to paid services.
+
+antalla allows for easy addition of exchanges listeners, while also offering features for data analysis, such as generating snapshots of the state of a limit order book with any depth for a given market (or markets) at specified time intervals. Of course, standard visualisation capabilities are also included, e.g. real-time limit order book plots for any depth. 
 
 ## Features
 - [x] Integration with major centralised exchanges (CEX) REST API and Web Socket streams
 - [x] Locally reconstructable and real-time order books
 - [x] Executed trade and aggregated order book data for large CEXs
 - [x] Regular order book snapshots
-- [ ] Simple DB migrations using Python alembic
+- [x] Visualistions (e.g. order books, trades)
+- [ ] DB migrations using Python alembic
 - [ ] Extensive unit and integration tests
 
 ## Installation
@@ -85,17 +92,27 @@ Exchange listeners have been implemented for the following centralised exchanges
 
 CEX exchange listeners:
 - [x] Binance
-- [x] Coinbase
-- [ ] OKEX
+- [x] Coinbase Pro
 - [x] HitBTC
+- [ ] Bitfinex
+- [ ] Gemini
+- [ ] itBit
+- [ ] bitFlyer
+- [ ] Kraken
+- [ ] Poloniex
+- [ ] Bitrex
+- [ ] Bitstamp
+- [ ] OKex
+- [ ] CoinBene
+- [ ] Bitmex
 - [ ] Huobi Global
 
 DEX exchange listeners:
 - [x] IDEX
-- [ ] EtherDelta
-- [ ] token.store
-- [ ] Paradex
-- [ ] Radar Relay
+- [ ] EthDelta
+- [ ] DDEX
+- [ ] Kyber Network
+- [ ] Oasis Dex
 
 For each exchange the API key and secret can be set via environment variables in the format `<exchange>_API_KEY` and `<exchange>_API_SECRET`, respectively.
 
@@ -120,7 +137,7 @@ antalla snapshot
 
 a snapshot of each order book state will be computed and stored in the order_book_snapshots table in the db. The interval between the snapshots is set to the default value of 1 second. By setting the `--exchange` flag snapshots only for a set of specified exchanges will be generated.
 
-Note: snapshots are only generated for periods where there has been aggregated order book data collected and no connection loss has occurred. Hence, for each period between a connection and disconnection for an exchange listener, snapshots will be generated according to the set snapshot interval.
+Note: snapshots are only generated for periods during which there has been aggregated order book data collected and no connection loss has occurred. Hence, for each period between a connection and disconnect for an exchange listener snapshots will be generated according to the set snapshot interval.
 
 Each snapshot contains relevant metrics for the current state of the order book at the time taken. These metrics include:
 * bid-ask spread
@@ -136,9 +153,16 @@ Each snapshot contains relevant metrics for the current state of the order book 
 * ask price (stddev)
 * price and size of highest bid
 * price and size of lowest ask 
-* bid price (upper quartile)
-* ask price (lower quartile)
 
+The order book depth per snapshot is configurable by setting the flag: `--depth <percentage>`. The order book depth is specified as a percentage relative to the mid price of the order book.
+
+Alternatively, one may use the flag `--quartile`, whereby snapshots are computed for the upper quartile of bids and the lower quartile of asks. 
+
+Note: by default, a snapshot will be generated for the quartile range of the order book.
+
+### Connection Handling
+
+Currently, there is no web or command line interface for providing an overview of the state of connections to different exchanges. This will very likely be added in antalla 1.0. Nontheless, all connections and disconnections are logged in the `events` table in the db. In case of a disconnect, the event is logged and antalla tries to reconnect to the service. Features which make use of data (e.g. snapshots) are only applied to data within time periods between a connection and a diosconnect (or latest data in case no disconnect has occured). This is important when analysing computed statistics, as values may be skewed if they are based on data within early periods of a new connection widow if previous values have been based on an earlier window.     
 
 ### Visualisations
 

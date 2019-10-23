@@ -156,7 +156,7 @@ def snapshot(args):
     else:
         exchanges = ExchangeListener.registered()
     stop_time = datetime.now()
-    obs_generator = OBSnapshotGenerator(exchanges, stop_time, args["range"]) 
+    obs_generator = OBSnapshotGenerator(exchanges, stop_time, args["depth"]) 
     try:
         obs_generator.run()
     except KeyboardInterrupt:
