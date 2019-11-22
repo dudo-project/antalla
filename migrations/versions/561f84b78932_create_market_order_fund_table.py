@@ -22,6 +22,14 @@ def upgrade():
         sa.Column("id", sa.Integer, primary_key=True),
         sa.Column("timestamp", sa.DateTime, nullable=False),
         sa.Column("funds", sa.Float, nullable=False),
+        sa.Column("exchange_id", sa.Integer, sa.ForeignKey("exchanges.id"), nullable=False),
+        sa.Column("exchange_order_id", sa.String, nullable=False),
+        sa.ForeignKeyConstraint(
+            ["exchange_id", "exchange_order_id"],
+            ["orders.exchange_id", "orders.exchange_order_id"],
+        ),
+        sa.Index("market_order_funds-exchange-id-exchange-order-id-idx",
+            "exchange_id", "exchange_order_id"),
     )
 
 

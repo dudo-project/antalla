@@ -28,6 +28,12 @@ def upgrade():
         sa.Column("first_coin_id", sa.String, sa.ForeignKey("coins.symbol"), nullable=False, index=True),
         sa.Column("second_coin_id", sa.String, sa.ForeignKey("coins.symbol"), nullable=False, index=True),
         sa.Column("exchange_id", sa.Integer, sa.ForeignKey("exchanges.id"), nullable=False, index=True),
+        sa.PrimaryKeyConstraint("first_coin_id", "second_coin_id", "exchange_id"),
+        sa.ForeignKeyConstraint(
+            ["first_coin_id", "second_coin_id"],
+            ["markets.first_coin_id", "markets.second_coin_id"],
+        ),
+        sa.Index("exchange-market-fk-idx", "first_coin_id", "second_coin_id"),
     )
 
 

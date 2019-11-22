@@ -28,6 +28,8 @@ def upgrade():
         sa.Column("order_type", sa.String, nullable=False),
         sa.Column("price", sa.Float, nullable=False, index=True),
         sa.Column("size", sa.Float, nullable=False),
+        sa.Index("latest_orders_index",
+            "order_type", "price", "last_update_id", "exchange_id", unique=True),
     )
 
 
