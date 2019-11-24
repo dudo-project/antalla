@@ -1,4 +1,5 @@
 import signal
+import os
 from os import path
 import json
 import pkg_resources
@@ -187,4 +188,6 @@ def plot_order_book(args):
 
 
 def migrations(_args):
+    migrations_path = pkg_resources.resource_filename("antalla", "migrations")
+    os.chdir(migrations_path)
     alembic_main(sys.argv[2:], prog="antalla migrations")

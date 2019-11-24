@@ -24,6 +24,7 @@ setup(
             "fixtures/coins.json",
             "fixtures/exchanges.json",
             "fixtures/coinmarketcap-mappings.json",
+            "migrations/alembic.ini",
         ]
     }
 )
