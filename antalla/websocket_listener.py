@@ -27,6 +27,7 @@ class WebsocketListener(ExchangeListener):
                 self._log_disconnection()
 
     async def _listen(self):
+        logging.debug("websocket connecting to: %s", self._ws_url)
         async with websockets.connect(self._ws_url) as websocket: 
             await self._setup_connection(websocket)
             self._connected = True
