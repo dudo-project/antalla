@@ -1,4 +1,5 @@
 import signal
+import os
 from os import path
 import json
 import pkg_resources
@@ -6,6 +7,9 @@ import asyncio
 import logging
 from datetime import datetime
 import re
+import sys
+
+from alembic.config import main as alembic_main
 
 from .ob_analyser import OrderBookAnalyser
 from . import db, models, settings
@@ -13,6 +17,7 @@ from .exchange_listener import ExchangeListener
 from .orchestrator import Orchestrator
 from . import market_crawler
 from .ob_snapshot_generator import OBSnapshotGenerator
+
 
 
 
@@ -180,3 +185,9 @@ def plot_order_book(args):
         except KeyboardInterrupt:
             logging.warning("KeybaordInterrupt - plotting order book for '{}'".format(args["market"]))
             oba.running = False
+
+
+def migrations(_args):
+    migrations_path = pkg_resources.resource_filename("antalla", "migrations")
+    os.chdir(migrations_path)
+    alembic_main(sys.argv[2:], prog="antalla migrations")

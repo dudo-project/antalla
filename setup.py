@@ -12,6 +12,7 @@ setup(
         "beautifulsoup4==4.7.1",
         "numpy==1.16.3",
         "seaborn==0.9.0",
+        "alembic==1.2.0",
     ],
     extras_require={
         "plots": ["pandas==0.24.2"],
@@ -23,6 +24,7 @@ setup(
             "fixtures/coins.json",
             "fixtures/exchanges.json",
             "fixtures/coinmarketcap-mappings.json",
+            "migrations/alembic.ini",
         ]
     }
 )

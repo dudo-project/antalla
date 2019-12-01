@@ -12,6 +12,7 @@ parser = argparse.ArgumentParser(prog="antalla")
 parser.add_argument("--debug", help="Enables debug mode",
                     default=False, action="store_true")
 subparsers = parser.add_subparsers(dest="command")
+migrations_parser = subparsers.add_parser("migrations")
 init_db_parser = subparsers.add_parser("init-db")
 
 run_parser = subparsers.add_parser("run")
@@ -43,7 +44,8 @@ plot_order_book_parser.add_argument("--exchange", choices=ExchangeListener.regis
 plot_order_book_parser.add_argument("--market", choices=settings.MARKETS)
 
 def run():
-    args = vars(parser.parse_args())
+    args, unkown_args = parser.parse_known_args()
+    args = vars(args)
 
     log_level = logging.DEBUG if args["debug"] else logging.INFO
     logging.basicConfig(level=log_level, format=LOG_FORMAT)
@@ -51,8 +53,7 @@ def run():
     if not args["command"]:
         parser.error("no command provided")
     command = args["command"].replace("-", "_")
+    if command != "migrations" and unkown_args:
+        parser.error("unknown arguments: {0}".format(unkown_args))
     func = getattr(commands, command)
     func(args)
-
-
-    
