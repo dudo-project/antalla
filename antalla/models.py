@@ -73,6 +73,12 @@ class Exchange(Base):
     def __repr__(self):
         return f"Exchange(name='{self.name}')"
 
+    def to_dict(self, include_markets=False):
+        result = dict(id=self.id, name=self.name)
+        if include_markets:
+            result["markets"] = [market.to_dict() for market in self.markets]
+        return result
+
 
 class Order(Base):
     __tablename__ = "orders"
@@ -210,6 +216,12 @@ class Market(Base):
     def __repr__(self):
         return f"Market(buy_sym_id='{self.first_coin_id}', sell_sym_id='{self.second_coin_id}')"
 
+    def to_dict(self):
+        return dict(
+            first_coin=self.first_coin_id,
+            second_coin=self.second_coin_id,
+        )
+
 
 class ExchangeMarket(Base):
     __tablename__ = "exchange_markets"
@@ -242,6 +254,18 @@ class ExchangeMarket(Base):
 
     def __hash__(self):
         return hash((self.first_coin_id, self.second_coin_id, self.exchange_id))
+
+    def to_dict(self):
+        return dict(
+            volume_usd=self.volume_usd,
+            quoted_volume=self.quoted_volume,
+            quoted_vol_timestamp=self.quoted_vol_timestamp.isoformat(),
+            vol_usd_timestamp=self.vol_usd_timestamp.isoformat(),
+            quoted_volume_id=self.quoted_volume_id,
+            original_name=self.original_name,
+            first_coin=self.first_coin_id,
+            second_coin=self.second_coin_id,
+        )
 
 
 class OrderBookSnapshot(Base):

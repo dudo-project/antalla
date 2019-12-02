@@ -38,9 +38,13 @@ snapshots_parser.add_argument("--exchange", nargs="*", choices=ExchangeListener.
 snapshots_parser.add_argument("--depth", type=float, help="sets order book depth for orders to be included in snapshot, expressed in percentage relative to the mid price")
 snapshots_parser.add_argument("--quartile", action='store_true', help="includes orders ranging from upper quartile bids to lower quartile asks")
 
-plot_order_book_parser = subparsers.add_parser("plot-order-book")
+plot_order_book_parser = subparsers.add_parser("plot-order-book", help="plot the order book")
 plot_order_book_parser.add_argument("--exchange", choices=ExchangeListener.registered())
 plot_order_book_parser.add_argument("--market", choices=settings.MARKETS)
+
+ws_server_parser = subparsers.add_parser("ws-server", help="start antalla websocket server")
+ws_server_parser.add_argument("--port", type=int, default=8765, help="port to run the server on")
+ws_server_parser.add_argument("--host", default="0.0.0.0", help="host for the server")
 
 def run():
     args, unkown_args = parser.parse_known_args()
