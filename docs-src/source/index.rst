@@ -271,13 +271,14 @@ Julieta Ulanovsky licensed under Open Font License. Icon by Vilahop
    :maxdepth: 2
    :caption: Usage
 
-   index.rst
+   index
 
 .. toctree::
    :caption: Development
    :maxdepth: 2
 
-   development/getting-started.rst
+   development/getting-started
+   development/integrating-exchanges
 
 
 Indices and tables

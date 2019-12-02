@@ -25,5 +25,5 @@ github: html
 	@touch ../docs/.nojekyll
 	@echo $(DOMAIN) > ../docs/CNAME
 
-start:
+start: github
 	@forego start
