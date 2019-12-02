@@ -57,7 +57,7 @@ See the [SQLAlchemy documentation][1] about `psycopg2` for more details. about t
 Once the URL is set, the database can be initialized with the following command:
 
 ```
-antalla init-db
+antalla migrations upgrade head
 ```
 
 ### Fetching initial market data

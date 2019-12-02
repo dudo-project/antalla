@@ -13,7 +13,6 @@ parser.add_argument("--debug", help="Enables debug mode",
                     default=False, action="store_true")
 subparsers = parser.add_subparsers(dest="command")
 migrations_parser = subparsers.add_parser("migrations")
-init_db_parser = subparsers.add_parser("init-db")
 
 run_parser = subparsers.add_parser("run")
 run_parser.add_argument("--exchange", nargs="*", choices=ExchangeListener.registered())

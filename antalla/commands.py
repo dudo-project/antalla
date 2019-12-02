@@ -20,11 +20,6 @@ from .ob_snapshot_generator import OBSnapshotGenerator
 
 
 
-
-def init_db(args):
-    db.Base.metadata.create_all(db.engine)
-
-
 def run(args):
     if args["exchange"]:
         exchanges = args["exchange"]

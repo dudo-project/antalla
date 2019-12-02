@@ -24,7 +24,7 @@ jobs:
       # Download and cache dependencies
       - restore_cache:
           keys:
-            - v1-dependencies-{{ checksum "requirements.txt" }}
+            - v1-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "setup.py" }}
             # fallback to using the latest cache if no exact match is found
             - v1-dependencies-
 
@@ -38,20 +38,20 @@ jobs:
       - save_cache:
           paths:
             - ./venv
-          key: v1-dependencies-{{ checksum "requirements.txt" }}
+          key: v1-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "setup.py" }}
  
       - run:
           name: setup project
           command: |
             . venv/bin/activate
-            python setup.py develop
+            pip install -r requirements.txt
 
       - run:
           name: initialize database
           command: |
             . venv/bin/activate
-            antalla init-db        
-    
+            antalla migrations upgrade head
+
       - run:
           name: run tests
           command: |
