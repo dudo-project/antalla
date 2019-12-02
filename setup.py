@@ -19,6 +19,7 @@ setup(
         "dev": [
             "Sphinx==2.2.1",
             "sphinx-rtd-theme==0.4.3",
+            "nose",
         ]
     },
     zip_safe=False,
