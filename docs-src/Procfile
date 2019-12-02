@@ -1,0 +1,2 @@
+build: nodemon --watch source --exec make github -e rst,py,html,json
+livereload: livereload build/html -w 100

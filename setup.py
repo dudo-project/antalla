@@ -16,6 +16,10 @@ setup(
     ],
     extras_require={
         "plots": ["pandas==0.24.2"],
+        "dev": [
+            "Sphinx==2.2.1",
+            "sphinx-rtd-theme==0.4.3",
+        ]
     },
     zip_safe=False,
     scripts=["./bin/antalla"],
