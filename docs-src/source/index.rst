@@ -279,6 +279,7 @@ Julieta Ulanovsky licensed under Open Font License. Icon by Vilahop
 
    development/getting-started
    development/integrating-exchanges
+   development/how-to-contribute
 
 
 Indices and tables
