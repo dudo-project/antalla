@@ -110,7 +110,7 @@ class HitBTCListener(WebsocketListener):
             return []
 
     def _parse_snapshotOrderbook(self, snapshot):
-        logging.info("snapshot ob: %s", snapshot)
+        logging.debug("snapshot ob: %s", snapshot)
         return self._handle_raw_orders(snapshot)
 
     def _handle_raw_orders(self, raw_orders):
