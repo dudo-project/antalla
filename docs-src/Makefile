@@ -21,7 +21,9 @@ help:
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
 github: html
-	@rm -rf ../docs
-	@cp -a build/html/ ../docs
+	@cp -Ta build/html/ ../docs
 	@touch ../docs/.nojekyll
 	@echo $(DOMAIN) > ../docs/CNAME
+
+start:
+	@forego start
