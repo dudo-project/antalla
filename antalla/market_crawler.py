@@ -51,7 +51,11 @@ class MarketCrawler:
         tbody = soup.find("table", {"id": "currencies-all"}).tbody
         for row in tbody.find_all("tr"):
             symbol = row.find("td", {"class": "col-symbol"}).text
-            price = float(row.find("a", {"class": "price"})["data-usd"])
+            price = row.find("a", {"class": "price"})["data-usd"]
+            if price == "?":
+                price = 0.0
+            else:
+                price = float(price)
             self._prices[symbol] = price
 
     async def _fetch(self, session, url):
