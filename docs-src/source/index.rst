@@ -277,7 +277,7 @@ Julieta Ulanovsky licensed under Open Font License. Icon by Vilahop
    :caption: Development
    :maxdepth: 2
 
-   development.rst
+   development/getting-started.rst
 
 
 Indices and tables
