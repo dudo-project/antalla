@@ -269,7 +269,13 @@ Julieta Ulanovsky licensed under Open Font License. Icon by Vilahop
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Usage
+
+   index.rst
+
+.. toctree::
+   :caption: Development
+   :maxdepth: 2
 
    development.rst
 
