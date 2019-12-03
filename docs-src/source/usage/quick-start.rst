@@ -2,7 +2,8 @@
 Quick Start
 ===========
 
-This section outlines how to configure and deploy *antalla*. 
+This section outlines how to configure and deploy *antalla*. Make sure
+you follow all the steps in :ref:`requirements` before proceeding.
 
 Initializing the database
 -------------------------

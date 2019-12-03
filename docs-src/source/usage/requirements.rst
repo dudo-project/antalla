@@ -1,5 +1,21 @@
+.. _requirements:
+
 Requirements
 ============
+
+Database
+--------
+
+This project currently only supports PostgreSQL as a backend.
+Before installing Python packages, you will need to have the development
+libraries of PostgreSQL. For Ubuntu, run the following command
+
+.. code-block:: shell
+
+   sudo apt install libpq-dev
+
+*antalla*
+---------
 
 The project requires Python 3.6 or above. In order to get started clone the project from Github 
 and install all dependencies:
@@ -18,8 +34,7 @@ available commands. Each subargument is further explained running:
    anatalla <subarg> --help
 
 
-An SQL database must be available to store the data. For this purpose, the 
-recommended database to use is PostgreSQL. The database URL can be set
+The database URL can be set
 through the ``DB_URL`` environment variable. For example
 
 ::
