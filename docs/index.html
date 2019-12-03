@@ -33,9 +33,10 @@
   
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/style.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Development" href="development.html" /> 
+    <link rel="next" title="Requirements" href="usage/requirements.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -49,9 +50,12 @@
           
 
           
-            <a href="#" class="icon icon-home"> antalla
+            <a href="#">
           
 
+          
+            
+            <img src="_static/logo_2.svg" class="logo" alt="Logo"/>
           
           </a>
 
@@ -79,9 +83,19 @@
               
             
             
-              <p class="caption"><span class="caption-text">Contents:</span></p>
+              <p class="caption"><span class="caption-text">Usage</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/requirements.html">Requirements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/quick-start.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/acknowledgements.html">Acknowledgements</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Development</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="development.html">Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="development/getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="development/integrating-exchanges.html">Integrating Exchanges</a></li>
+<li class="toctree-l1"><a class="reference internal" href="development/how-to-contribute.html">How to Contribute</a></li>
 </ul>
 
             
@@ -148,13 +162,14 @@
             
   <div class="section" id="antalla">
 <h1>antalla<a class="headerlink" href="#antalla" title="Permalink to this headline">¶</a></h1>
-<img alt="_images/logo_2.svg" src="_images/logo_2.svg" /><p><em>antalla</em> fetches data from various exchanges and stores the orders and trades in
-an SQL database.</p>
-<p>The name comes from the Greek ανταλλαγή (antallagí), meaning “exchange”.</p>
-<p><code class="docutils literal notranslate"><span class="pre">antalla</span></code> is part of the <code class="docutils literal notranslate"><span class="pre">dudo</span></code> project, which aims to foster
+<div class="section" id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p><em>antalla</em> is an open-source cryptocurrency exchange market data aggregation tool.
+The name comes from the Greek ανταλλαγή (antallagí), meaning “exchange”.
+<em>antalla</em> is part of the <em>dudo</em> project, which aims to foster
 research and open-source software in the space of cryptocurrency
 exchange design, auditability and market manipulation. Being the first
-piece of software that is part of the project, the aim of antalla is to
+piece of software that is part of the project, the purpose of <em>antalla</em> is to
 facilitate cryptocurrency exchange market data analysis, ranging from
 obtaining and storing the data to conducting analyses of locally hosted
 real-time order books.</p>
@@ -164,214 +179,56 @@ managing this data. Even more so, existing API wrappers often stop after
 the normalisation of data and tend to be limited in the number of
 exchanges they include. In fact, obtaining historical market data can be
 very difficult unless one is willing to move to paid services.</p>
-<p>antalla allows for easy addition of exchanges listeners, while also
+<p><em>antalla</em> allows for easy addition of exchanges listeners, while also
 offering features for data analysis, such as generating snapshots of the
 state of a limit order book with any depth for a given market (or
 markets) at specified time intervals. Of course, standard visualisation
 capabilities are also included, e.g. real-time limit order book plots
-for any depth.</p>
-<div class="section" id="features">
-<h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li><p>☒ Integration with major centralised exchanges (CEX) REST API and Web
-Socket streams</p></li>
-<li><p>☒ Locally reconstructable and real-time order books</p></li>
-<li><p>☒ Executed trade and aggregated order book data for large CEXs</p></li>
-<li><p>☒ Regular order book snapshots</p></li>
-<li><p>☒ Visualistions (e.g. order books, trades)</p></li>
-<li><p>☐ Extensive unit and integration tests</p></li>
-</ul>
-</div>
-<div class="section" id="installation">
-<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
-<p>The project requires Python 3.6 or above.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">samwerner</span><span class="o">/</span><span class="n">antalla</span><span class="o">.</span><span class="n">git</span>
-<span class="n">cd</span> <span class="n">antalla</span>
-<span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">e</span> <span class="o">.</span>
-</pre></div>
-</div>
-<p>You should then be able to use the CLI, see <code class="docutils literal notranslate"><span class="pre">antalla</span> <span class="pre">-h</span></code> for the
-available commands. Tests can be run with</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">test</span>
-</pre></div>
-</div>
-</div>
-<div class="section" id="running-antalla">
-<h2>Running antalla<a class="headerlink" href="#running-antalla" title="Permalink to this headline">¶</a></h2>
-<p>An SQL database must be available to store the data. We recommend using
-a PostgreSQL database for this purpose. The database URL can be set
-through the <code class="docutils literal notranslate"><span class="pre">DB_URL</span></code> environment variable. For example</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">export</span> <span class="n">DB_URL</span><span class="o">=</span><span class="s2">&quot;postgresql+psycopg2://antalla:antalla-password@127.0.0.1/antalla?sslmode=disable&quot;</span>
-</pre></div>
-</div>
-<p>See the <a class="reference external" href="https://docs.sqlalchemy.org/en/latest/dialects/postgresql.html#module-sqlalchemy.dialects.postgresql.psycopg2">SQLAlchemy
-documentation</a>
-about <code class="docutils literal notranslate"><span class="pre">psycopg2</span></code> for more details. about the URL scheme.</p>
-<div class="section" id="initializing-the-database">
-<h3>Initializing the database<a class="headerlink" href="#initializing-the-database" title="Permalink to this headline">¶</a></h3>
-<p>Once the URL is set, the database can be initialized with the following
-command:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">antalla</span> <span class="n">init</span><span class="o">-</span><span class="n">db</span>
-</pre></div>
-</div>
-</div>
-<div class="section" id="fetching-initial-market-data">
-<h3>Fetching initial market data<a class="headerlink" href="#fetching-initial-market-data" title="Permalink to this headline">¶</a></h3>
-<p>At any point in time, one can fetch the latest coin prices in USD, the
-markets offered by each exchange, as well as the respective 24h traded
-volume. The traded volume can also be normalised to USD in order to
-allow for more informative comparisons.</p>
-<p>All of the aforementioned can be fetched by running the command:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">antalla</span> <span class="n">init</span><span class="o">-</span><span class="n">data</span>
-</pre></div>
-</div>
-<p>Each time <code class="docutils literal notranslate"><span class="pre">init-data</span></code> is run, the price and volume information is
-updated in the db. This is equivalent to running the individual
-commands:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">antalla</span> <span class="n">markets</span>
-<span class="n">antalla</span> <span class="n">fetch</span><span class="o">-</span><span class="n">prices</span>
-<span class="n">antalla</span> <span class="n">norm</span><span class="o">-</span><span class="n">volume</span>
-</pre></div>
-</div>
-<p>Each subargument is further explained running:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">anatalla</span> <span class="o">&lt;</span><span class="n">subarg</span><span class="o">&gt;</span> <span class="o">--</span><span class="n">help</span>
-</pre></div>
-</div>
-</div>
-<div class="section" id="exchange-listeners">
-<h3>Exchange listeners<a class="headerlink" href="#exchange-listeners" title="Permalink to this headline">¶</a></h3>
-<p>Exchange listeners have been implemented for the following centralised
-exchanges (CEXs) and decentralised exchanges (DEXs).</p>
-<p>CEX exchange listeners:</p>
-<ul class="simple">
-<li><p>☒ Binance</p></li>
-<li><p>☒ Coinbase Pro</p></li>
-<li><p>☒ HitBTC</p></li>
-<li><p>☐ Bitfinex</p></li>
-<li><p>☐ Gemini</p></li>
-<li><p>☐ itBit</p></li>
-<li><p>☐ bitFlyer</p></li>
-<li><p>☐ Kraken</p></li>
-<li><p>☐ Poloniex</p></li>
-<li><p>☐ Bitrex</p></li>
-<li><p>☐ Bitstamp</p></li>
-<li><p>☐ OKex</p></li>
-<li><p>☐ CoinBene</p></li>
-<li><p>☐ Bitmex</p></li>
-<li><p>☐ Huobi Global</p></li>
-</ul>
-<p>DEX exchange listeners:</p>
-<ul class="simple">
-<li><p>☒ IDEX</p></li>
-<li><p>☐ EthDelta</p></li>
-<li><p>☐ DDEX</p></li>
-<li><p>☐ Kyber Network</p></li>
-<li><p>☐ Oasis Dex</p></li>
-</ul>
-<p>For each exchange the API key and secret can be set via environment
-variables in the format <code class="docutils literal notranslate"><span class="pre">&lt;exchange&gt;_API_KEY</span></code> and
-<code class="docutils literal notranslate"><span class="pre">&lt;exchange&gt;_API_SECRET</span></code>, respectively.</p>
-</div>
-<div class="section" id="running-antalla-1">
-<span id="id1"></span><h3>Running antalla<a class="headerlink" href="#running-antalla-1" title="Permalink to this headline">¶</a></h3>
-<p>Once the DB is initialized, antalla can be ran with the following
-command</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">antalla</span> <span class="n">run</span>
-</pre></div>
-</div>
-<p>The list of markets to listen for can be customized through the
-<code class="docutils literal notranslate"><span class="pre">MARKET</span></code> environment variable, which should be formatted as follow
-<code class="docutils literal notranslate"><span class="pre">ETH_AURA,ETH_IDXM</span></code>.</p>
-</div>
-<div class="section" id="orderbook-snapshot-analysis">
-<h3>Orderbook Snapshot Analysis<a class="headerlink" href="#orderbook-snapshot-analysis" title="Permalink to this headline">¶</a></h3>
-<p>By setting the subparser argument</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">antalla</span> <span class="n">snapshot</span>
-</pre></div>
-</div>
-<p>a snapshot of each order book state will be computed and stored in the
-order_book_snapshots table in the db. The interval between the snapshots
-is set to the default value of 1 second. By setting the <code class="docutils literal notranslate"><span class="pre">--exchange</span></code>
-flag snapshots only for a set of specified exchanges will be generated.</p>
-<p>Note: snapshots are only generated for periods during which there has
-been aggregated order book data collected and no connection loss has
-occurred. Hence, for each period between a connection and disconnect for
-an exchange listener snapshots will be generated according to the set
-snapshot interval.</p>
-<p>Each snapshot contains relevant metrics for the current state of the
-order book at the time taken. These metrics include:</p>
-<ul class="simple">
-<li><p>bid-ask spread</p></li>
-<li><p>bids count</p></li>
-<li><p>asks count</p></li>
-<li><p>bids volume</p></li>
-<li><p>asks volume</p></li>
-<li><p>bid price (mean)</p></li>
-<li><p>ask price (mean)</p></li>
-<li><p>bid price (median)</p></li>
-<li><p>ask price (median)</p></li>
-<li><p>bid price (stddev)</p></li>
-<li><p>ask price (stddev)</p></li>
-<li><p>price and size of highest bid</p></li>
-<li><p>price and size of lowest ask</p></li>
-</ul>
-<p>The order book depth per snapshot is configurable by setting the flag:
-<code class="docutils literal notranslate"><span class="pre">--depth</span> <span class="pre">&lt;percentage&gt;</span></code>. The order book depth is specified as a
-percentage relative to the mid price of the order book.</p>
-<p>Alternatively, one may use the flag <code class="docutils literal notranslate"><span class="pre">--quartile</span></code>, whereby snapshots
-are computed for the upper quartile of bids and the lower quartile of
-asks.</p>
-<p>Note: by default, a snapshot will be generated for the quartile range of
-the order book.</p>
-</div>
-<div class="section" id="connection-handling">
-<h3>Connection Handling<a class="headerlink" href="#connection-handling" title="Permalink to this headline">¶</a></h3>
-<p>Currently, there is no web or command line interface for providing an
-overview of the state of connections to different exchanges. This will
-very likely be added in antalla 1.0. Nontheless, all connections and
-disconnections are logged in the <code class="docutils literal notranslate"><span class="pre">events</span></code> table in the db. In case of
-a disconnect, the event is logged and antalla tries to reconnect to the
-service. Features which make use of data (e.g. snapshots) are only
-applied to data within time periods between a connection and a
-diosconnect (or latest data in case no disconnect has occured). This is
-important when analysing computed statistics, as values may be skewed if
-they are based on data within early periods of a new connection widow if
-previous values have been based on an earlier window.</p>
-</div>
-<div class="section" id="visualisations">
-<h3>Visualisations<a class="headerlink" href="#visualisations" title="Permalink to this headline">¶</a></h3>
-<p>antalla comes with several built-in functionality for generating
-different plots.</p>
-<div class="section" id="order-book-plots">
-<h4>Order Book Plots<a class="headerlink" href="#order-book-plots" title="Permalink to this headline">¶</a></h4>
-<p>For generating real-time order book plots, use the command:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">antalla</span> <span class="n">plot</span><span class="o">-</span><span class="n">order</span><span class="o">-</span><span class="n">book</span> <span class="o">--</span><span class="n">exchange</span> <span class="o">&lt;</span><span class="n">exchange</span><span class="o">&gt;</span> <span class="o">--</span><span class="n">market</span> <span class="o">&lt;</span><span class="n">market_pair</span><span class="o">&gt;</span>
-</pre></div>
-</div>
-<p>Note: the <code class="docutils literal notranslate"><span class="pre">--exchange</span></code> and <code class="docutils literal notranslate"><span class="pre">--market</span></code> flags are required. Hence,
-visualising one market’s order book requires one single process.</p>
-<p>The plots are generated, plotting all buy and sell orders that lie in a
-range of +-1% of the order book mid price. Alternatively one can
-configure the <code class="docutils literal notranslate"><span class="pre">OrderBookAnalyser</span></code> defined in <code class="docutils literal notranslate"><span class="pre">ob_analyser.py</span></code> to use
-a method (<code class="docutils literal notranslate"><span class="pre">_get_ob_quartiles</span></code>) plotting all bids which lie in the
-upper quartile of the total bids and all asks which lie within the lower
-quartile of the total asks.</p>
-<div class="section" id="logo-credits">
-<h5>Logo Credits<a class="headerlink" href="#logo-credits" title="Permalink to this headline">¶</a></h5>
-<p>The antalla logo was generated using
-<a class="reference external" href="https://www.launchaco.com">launchaco</a>: Montserrat-ExtraLight, by
-Julieta Ulanovsky licensed under Open Font License. Icon by Vilahop</p>
+for any depth. By removing a substantial part of the engineering overhead,
+<em>antalla</em> seeks to stimulate new and innovative projects focused on cryptocurrency
+order book analysis.</p>
+<a class="reference internal image-reference" href="_images/antalla.svg"><div align="center" class="align-center"><img alt="_images/antalla.svg" src="_images/antalla.svg" /></div>
+</a>
 <div class="toctree-wrapper compound">
-<p class="caption"><span class="caption-text">Contents:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="development.html">Development</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="development.html#database-migrations">Database migrations</a></li>
+<p class="caption"><span class="caption-text">Usage</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/requirements.html">Requirements</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="usage/requirements.html#database">Database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage/requirements.html#antalla"><em>antalla</em></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="usage/quick-start.html">Quick Start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="usage/quick-start.html#initializing-the-database">Initializing the database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage/quick-start.html#exchange-listeners">Exchange Listeners</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage/quick-start.html#running-antalla">Running <em>antalla</em></a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage/quick-start.html#orderbook-snapshot-analysis">Orderbook Snapshot Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage/quick-start.html#connection-handling">Connection Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage/quick-start.html#visualisations">Visualisations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="usage/features.html">Features</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="usage/features.html#fetching-market-data">Fetching Market Data</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="usage/acknowledgements.html">Acknowledgements</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="usage/acknowledgements.html#logo-credits">Logo Credits</a></li>
 </ul>
 </li>
 </ul>
 </div>
-</div>
-</div>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="development/getting-started.html">Getting Started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="development/getting-started.html#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="development/getting-started.html#setting-up-the-databases">Setting up the databases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="development/getting-started.html#testing">Testing</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="development/integrating-exchanges.html">Integrating Exchanges</a></li>
+<li class="toctree-l1"><a class="reference internal" href="development/how-to-contribute.html">How to Contribute</a></li>
+</ul>
 </div>
 </div>
 </div>
@@ -392,7 +249,7 @@ Julieta Ulanovsky licensed under Open Font License. Icon by Vilahop</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="development.html" class="btn btn-neutral float-right" title="Development" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="usage/requirements.html" class="btn btn-neutral float-right" title="Requirements" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
     </div>

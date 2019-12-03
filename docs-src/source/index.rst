@@ -44,6 +44,8 @@ order book analysis.
    :maxdepth: 2
    :caption: Usage
 
+   Overview <self>
+
    usage/requirements
    usage/quick-start
    usage/features

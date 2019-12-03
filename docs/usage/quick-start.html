@@ -1,0 +1,379 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Quick Start &mdash; antalla  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/style.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Features" href="features.html" />
+    <link rel="prev" title="Requirements" href="requirements.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html">
+          
+
+          
+            
+            <img src="../_static/logo_2.svg" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Usage</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="requirements.html">Requirements</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Quick Start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#initializing-the-database">Initializing the database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#exchange-listeners">Exchange Listeners</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#running-antalla">Running <em>antalla</em></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#orderbook-snapshot-analysis">Orderbook Snapshot Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#connection-handling">Connection Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#visualisations">Visualisations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#order-book-plots">Order Book Plots</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="features.html">Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="acknowledgements.html">Acknowledgements</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../development/getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/integrating-exchanges.html">Integrating Exchanges</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development/how-to-contribute.html">How to Contribute</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">antalla</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>Quick Start</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/usage/quick-start.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="quick-start">
+<h1>Quick Start<a class="headerlink" href="#quick-start" title="Permalink to this headline">¶</a></h1>
+<p>This section outlines how to configure and deploy <em>antalla</em>. Make sure
+you follow all the steps in <a class="reference internal" href="requirements.html#requirements"><span class="std std-ref">Requirements</span></a> before proceeding.</p>
+<div class="section" id="initializing-the-database">
+<h2>Initializing the database<a class="headerlink" href="#initializing-the-database" title="Permalink to this headline">¶</a></h2>
+<p>Once the <code class="docutils literal notranslate"><span class="pre">DB_URL</span></code> is set, the database can be initialized with the following
+command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">antalla</span> <span class="n">init</span><span class="o">-</span><span class="n">data</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="exchange-listeners">
+<h2>Exchange Listeners<a class="headerlink" href="#exchange-listeners" title="Permalink to this headline">¶</a></h2>
+<p>Exchange listeners have been implemented for the following centralised
+exchanges (CEXs) and decentralised exchanges (DEXs).</p>
+<p>CEX exchange listeners:</p>
+<ul class="simple">
+<li><p>☒ Binance</p></li>
+<li><p>☒ Coinbase Pro</p></li>
+<li><p>☒ HitBTC</p></li>
+<li><p>☐ Bitfinex</p></li>
+<li><p>☐ Gemini</p></li>
+<li><p>☐ itBit</p></li>
+<li><p>☐ bitFlyer</p></li>
+<li><p>☐ Kraken</p></li>
+<li><p>☐ Poloniex</p></li>
+<li><p>☐ Bitrex</p></li>
+<li><p>☐ Bitstamp</p></li>
+<li><p>☐ Bitmex</p></li>
+<li><p>☐ Huobi Global</p></li>
+</ul>
+<p>DEX exchange listeners:</p>
+<ul class="simple">
+<li><p>☒ IDEX</p></li>
+<li><p>☐ EthDelta</p></li>
+<li><p>☐ DDEX</p></li>
+<li><p>☐ Kyber Network</p></li>
+<li><p>☐ Oasis Dex</p></li>
+</ul>
+<p>For each exchange the API key and secret can be set via environment
+variables in the format <code class="docutils literal notranslate"><span class="pre">&lt;EXCHANGE&gt;_API_KEY</span></code> and
+<code class="docutils literal notranslate"><span class="pre">&lt;EXCHANGE&gt;_API_SECRET</span></code>, respectively.</p>
+</div>
+<div class="section" id="running-antalla">
+<span id="running-antalla-1"></span><h2>Running <em>antalla</em><a class="headerlink" href="#running-antalla" title="Permalink to this headline">¶</a></h2>
+<p>Once the DB is initialized, antalla can be run with the following
+command</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">antalla</span> <span class="n">run</span>
+</pre></div>
+</div>
+<p>This will configure antalla to obtain data from the default exchanges and markets, which
+are specified and can be altered in <code class="docutils literal notranslate"><span class="pre">settings.py</span></code>. To specify exchanges and markets via
+the command line, one can simply run the command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">antalla</span> <span class="n">run</span> <span class="o">--</span><span class="n">exchange</span> <span class="o">&lt;</span><span class="n">exchange</span><span class="o">&gt;</span> <span class="o">--</span><span class="n">markets</span><span class="o">-</span><span class="n">files</span> <span class="o">&lt;</span><span class="n">markets</span><span class="o">-</span><span class="n">files</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>Examples for <code class="docutils literal notranslate"><span class="pre">markets-files</span></code> can be found in the <code class="docutils literal notranslate"><span class="pre">\data</span></code> directory.</p>
+<p>The list of markets to listen for can be customized through the
+<code class="docutils literal notranslate"><span class="pre">MARKET</span></code> environment variable, which should be formatted as follow
+<code class="docutils literal notranslate"><span class="pre">ETH_AURA,ETH_IDXM</span></code>.</p>
+</div>
+<div class="section" id="orderbook-snapshot-analysis">
+<h2>Orderbook Snapshot Analysis<a class="headerlink" href="#orderbook-snapshot-analysis" title="Permalink to this headline">¶</a></h2>
+<p>By setting the subparser argument</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">antalla</span> <span class="n">snapshot</span>
+</pre></div>
+</div>
+<p>a snapshot of each order book state will be computed and stored in the
+<code class="docutils literal notranslate"><span class="pre">order_book_snapshots</span></code> table in the db. The interval between the snapshots
+is set to the default value of 1 second. By setting the <code class="docutils literal notranslate"><span class="pre">--exchange</span></code>
+flag snapshots only for a set of specified exchanges will be generated.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Snapshots are only generated for periods during which there has
+been aggregated order book data collected and no connection loss has
+occurred. Hence, for each period between a connection and disconnect for
+an exchange listener snapshots will be generated according to the set
+snapshot interval.</p>
+</div>
+<p>Each snapshot contains relevant metrics for the current state of the
+order book at the time taken. The current metrics include:</p>
+<ul class="simple">
+<li><p>bid-ask spread</p></li>
+<li><p>bids count</p></li>
+<li><p>asks count</p></li>
+<li><p>bids volume</p></li>
+<li><p>asks volume</p></li>
+<li><p>bid price (mean)</p></li>
+<li><p>ask price (mean)</p></li>
+<li><p>bid price (median)</p></li>
+<li><p>ask price (median)</p></li>
+<li><p>bid price (stddev)</p></li>
+<li><p>ask price (stddev)</p></li>
+<li><p>price and size of highest bid</p></li>
+<li><p>price and size of lowest ask</p></li>
+</ul>
+<p>The order book depth per snapshot is configurable by setting the flag:
+<code class="docutils literal notranslate"><span class="pre">--depth</span> <span class="pre">&lt;percentage&gt;</span></code>. The order book depth is specified as a
+percentage relative to the mid price of the order book.</p>
+<p>Alternatively, one may use the flag <code class="docutils literal notranslate"><span class="pre">--quartile</span></code>, whereby snapshots
+are computed for the upper quartile of bids and the lower quartile of
+asks.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>By default, a snapshot will be generated for the quartile range of
+the order book.</p>
+</div>
+</div>
+<div class="section" id="connection-handling">
+<h2>Connection Handling<a class="headerlink" href="#connection-handling" title="Permalink to this headline">¶</a></h2>
+<p>Currently, there is no web or command line interface for providing an
+overview of the state of connections to different exchanges. This will
+very likely be added in antalla 1.0. Nontheless, all connections and
+disconnections are logged in the <code class="docutils literal notranslate"><span class="pre">events</span></code> table in the db. In case of
+a disconnect, the event is logged and antalla tries to reconnect to the
+service. Features which make use of data (e.g. snapshots) are only
+applied to data within time periods between a connection and a
+diosconnect (or latest data in case no disconnect has occured). This is
+important when analysing computed statistics, as values may be skewed if
+they are based on data within early periods of a new connection widow if
+previous values have been based on an earlier window.</p>
+</div>
+<div class="section" id="visualisations">
+<h2>Visualisations<a class="headerlink" href="#visualisations" title="Permalink to this headline">¶</a></h2>
+<p><em>antalla</em> comes with basic built-in functionality for generating
+different order book plots. However, one should note that the
+predominant purpose of the tool lies on data aggregation.</p>
+<div class="section" id="order-book-plots">
+<h3>Order Book Plots<a class="headerlink" href="#order-book-plots" title="Permalink to this headline">¶</a></h3>
+<p>For generating real-time order book plots, use the command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">antalla</span> <span class="n">plot</span><span class="o">-</span><span class="n">order</span><span class="o">-</span><span class="n">book</span> <span class="o">--</span><span class="n">exchange</span> <span class="o">&lt;</span><span class="n">exchange</span><span class="o">&gt;</span> <span class="o">--</span><span class="n">market</span> <span class="o">&lt;</span><span class="n">market_pair</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>Here, <code class="docutils literal notranslate"><span class="pre">&lt;market_pair&gt;</span></code> has the format, e.g. <code class="docutils literal notranslate"><span class="pre">ETH_BTC</span></code>. For a list of which markets and exchanges
+are valid arguments check with:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">antalla</span> <span class="n">plot</span><span class="o">-</span><span class="n">order</span><span class="o">-</span><span class="n">book</span> <span class="o">-</span><span class="n">exchange</span> <span class="n">exchange</span>
+</pre></div>
+</div>
+<img alt="../_images/sample_ob.png" src="../_images/sample_ob.png" />
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">--exchange</span></code> and <code class="docutils literal notranslate"><span class="pre">--market</span></code> flags are required. Hence,
+visualising one market’s order book requires one single process.</p>
+</div>
+<p>The plots are generated, plotting all buy and sell orders that lie in a
+range of +-1% of the order book mid price. Alternatively one can
+configure the <code class="docutils literal notranslate"><span class="pre">OrderBookAnalyser</span></code> defined in <code class="docutils literal notranslate"><span class="pre">ob_analyser.py</span></code> to use
+a method (<code class="docutils literal notranslate"><span class="pre">_get_ob_quartiles</span></code>) plotting all bids which lie in the
+upper quartile of the total bids and all asks which lie within the lower
+quartile of the total asks.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="features.html" class="btn btn-neutral float-right" title="Features" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="requirements.html" class="btn btn-neutral float-left" title="Requirements" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Sam Werner, Daniel Perez
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
