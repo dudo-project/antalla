@@ -133,6 +133,5 @@ dmypy.json
 .vscode/
 .noseids
 
-*.png
 tmp/
 /docs-src/build
