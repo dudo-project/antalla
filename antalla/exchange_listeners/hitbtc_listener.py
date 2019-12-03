@@ -59,8 +59,14 @@ class HitBTCListener(WebsocketListener):
     def _parse_market_to_symbols(self, market, all_symbols):
         for m in all_symbols:
             if m["id"] == market.upper():
-                return (m["baseCurrency"], m["quoteCurrency"])
-        return None
+                base, quote = m["baseCurrency"], m["quoteCurrency"]
+                # edge case with USDTUSD pair
+                if base == "USD" and market.startswith("USDT") and quote != "TUSD":
+                    base = "USDT"
+                if quote == "USD" and market.endswith("USDT"):
+                    quote = "USDT"
+                return base, quote
+        return None, None
 
     def _parse_markets(self, markets):
         add_markets = []

@@ -9,6 +9,7 @@ from datetime import datetime
 import re
 import sys
 
+import websockets
 from alembic.config import main as alembic_main
 
 from .ob_analyser import OrderBookAnalyser
@@ -17,6 +18,7 @@ from .exchange_listener import ExchangeListener
 from .orchestrator import Orchestrator
 from . import market_crawler
 from .ob_snapshot_generator import OBSnapshotGenerator
+from .web.websocket_handler import handle_connection
 
 
 
@@ -184,6 +186,13 @@ def plot_order_book(args):
         except KeyboardInterrupt:
             logging.warning("KeybaordInterrupt - plotting order book for '{}'".format(args["market"]))
             oba.running = False
+
+
+def ws_server(args):
+    start_server = websockets.serve(handle_connection, args["host"], args["port"])
+    logging.info("websocket server starting to listen at %s:%s", args["host"], args["port"])
+    asyncio.get_event_loop().run_until_complete(start_server)
+    asyncio.get_event_loop().run_forever()
 
 
 def migrations(_args):
