@@ -1,7 +1,5 @@
 <template>
   <b-container>
-    <h1>Market Depth Chart</h1>
-
     <div class="selection">
       <b-form-row>
         <b-col offset="2" cols="4">
@@ -31,9 +29,7 @@
         <b-alert v-if="depthData.size === 0"
           variant="warning" show>Not enough data to show, try another market
         </b-alert>
-        <div class="graph" v-else>
-          <p>Some nice plot</p>
-        </div>
+        <div id="depth-chart" v-else></div>
       </b-row>
     </div>
     <div class="text-center" v-else>
@@ -45,6 +41,12 @@
 
 <script>
 import WsHandler from '../ws-handler'
+import Plotly from 'plotly.js-basic-dist'
+
+const colors = {
+  bids: '#5c6d70',
+  asks: '#e88873'
+}
 
 export default {
   name: 'DepthChart',
@@ -57,6 +59,7 @@ export default {
       running: false,
       depthData: null,
       subscription: null,
+      graphDrawn: false,
     }
   },
 
@@ -81,7 +84,52 @@ export default {
     onMarketChange() {
       this.subscribe()
     },
+    makeSinglePlotData(orderType) {
+      const key = orderType === 'bids' ? 'buy' : 'sell'
+      const x = this.depthData[`${key}_price`]
+      const y = this.depthData[`${key}_quantity`]
+      const symbol = this.depthData[`${key}_sym`]
+      const color = colors[orderType]
+      const capitalizedOrderType = orderType[0].toUpperCase() + orderType.slice(1)
+      return {
+        x: x,
+        y: y,
+        name: `${capitalizedOrderType} (${symbol})`,
+        fill: 'tozeroy',
+        fillcolor: color,
+        hoveron: 'fills+points',
+        hoverinfo: 'name+x+y',
+        hovermode: 'closest',
+        line: {
+          color: color
+        }
+      }
+    },
+    drawGraph() {
+      if (this.depthData.size === 0) {
+        return
+      }
+      const funcName = this.graphDrawn ? 'react' : 'plot'
+      const layout = {
+        title: 'Depth chart',
+        xaxis: {
+          autorange: true,
+          title: `Price Level (${this.depthData.sell_sym})`
+        },
+        yaxis: {
+          autorange: true,
+          title: 'Quantity'
+        }
+      }
+      const data = [this.makeSinglePlotData('bids'), this.makeSinglePlotData('asks')]
+      Plotly[funcName]('depth-chart', data, layout)
+      this.graphDrawn = true
+    },
     subscribe() {
+      if (this.graphDrawn) {
+        Plotly.purge('depth-chart')
+        this.graphDrawn = false
+      }
       this.depthData = null
       this.subscription = null
       const exchange = this.findExchange(this.selectedExchange)
@@ -113,8 +161,8 @@ export default {
       for (const exchange of this.exchanges) {
         exchange.markets.sort((a, b) => a.name > b.name)
       }
-      this.selectedExchange = this.exchanges[0].id
-      this.selectedMarket = this.exchanges[0].markets[0].name
+      this.selectedExchange = exchanges.find(v => v.name === 'binance').id
+      this.selectedMarket = 'ETH/BTC'
     },
     setDepthData(depthData) {
       if (this.subscription &&
@@ -122,6 +170,7 @@ export default {
           this.subscription.buy_sym === depthData.buy_sym &&
           this.subscription.sell_sym === depthData.sell_sym) {
         this.depthData = depthData
+        this.$nextTick(() => this.drawGraph())
       }
     }
   },
@@ -140,10 +189,14 @@ export default {
     })
   }
 }
+
 </script>
 
 <style scoped>
 .selection {
   margin: 2em 0;
+}
+#depth-chart {
+  width: 90%;
 }
 </style>

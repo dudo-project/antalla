@@ -6147,6 +6147,11 @@ pkg-dir@^4.1.0:
   dependencies:
     find-up "^4.0.0"
 
+plotly.js-basic-dist@^1.51.2:
+  version "1.51.2"
+  resolved "https://registry.yarnpkg.com/plotly.js-basic-dist/-/plotly.js-basic-dist-1.51.2.tgz#08f166c76523835ba98468b55cfba21546d11ade"
+  integrity sha512-iMLqJ7OpOEzY5q2RSJhjgTAlqMvwDcTier52cXyRkifcGfHltc4H3VHS4IeHrjI/DFOgboNG33ZJSJOQj9abtQ==
+
 popper.js@^1.16.0:
   version "1.16.0"
   resolved "https://registry.yarnpkg.com/popper.js/-/popper.js-1.16.0.tgz#2e1816bcbbaa518ea6c2e15a466f4cb9c6e2fbb3"

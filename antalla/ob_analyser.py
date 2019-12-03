@@ -67,8 +67,6 @@ class OrderBookAnalyser:
             buy_quantity=buy_qty,
             sell_price=sell_price,
             sell_quantity=sell_qty,
-            stacked_bids=stacked_bids,
-            stacked_asks=stacked_asks,
         )
 
     def visualise_ob(self):
