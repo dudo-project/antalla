@@ -88,13 +88,12 @@ export default {
       const key = orderType === 'bids' ? 'buy' : 'sell'
       const x = this.depthData[`${key}_price`]
       const y = this.depthData[`${key}_quantity`]
-      const symbol = this.depthData[`${key}_sym`]
       const color = colors[orderType]
       const capitalizedOrderType = orderType[0].toUpperCase() + orderType.slice(1)
       return {
         x: x,
         y: y,
-        name: `${capitalizedOrderType} (${symbol})`,
+        name: `${capitalizedOrderType}`,
         fill: 'tozeroy',
         fillcolor: color,
         hoveron: 'fills+points',
@@ -118,7 +117,7 @@ export default {
         },
         yaxis: {
           autorange: true,
-          title: 'Quantity'
+          title: `Quantity (${this.depthData.buy_sym})`
         }
       }
       const data = [this.makeSinglePlotData('bids'), this.makeSinglePlotData('asks')]
