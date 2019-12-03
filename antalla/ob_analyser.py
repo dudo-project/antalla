@@ -1,16 +1,11 @@
-import time
-import numpy as np
-import seaborn as sns
-import matplotlib
-import re
 import logging
+import re
+
+import seaborn as sns
 import matplotlib.pyplot as plt
-from matplotlib.dates import DateFormatter 
-from matplotlib.ticker import PercentFormatter
-import matplotlib.style as style
 
 from antalla.db import session
-from antalla import models
+
 
 sns.set_style("darkgrid")
 
@@ -38,44 +33,60 @@ class OrderBookAnalyser:
             original_market = re.split("[_-]", (original_market_result[0]["original_name"]))
             if len(original_market) > 1:
                 return original_market
-            elif buy_sym_id+sell_sym_id == original_market:
+            elif buy_sym_id+sell_sym_id == original_market[0]:
                 return buy_sym_id, sell_sym_id
             else:
                 return sell_sym_id, buy_sym_id
 
-    def visualise_ob(self):
-        ob_bids = dict()
-        ob_asks = dict()
+    def generate_depth_data(self):
+        orders = dict(bid={}, ask={})
         result_proxy_ob = self._get_ob_mid_price()
         order_history = self._parse_ob(result_proxy_ob)
         for order in order_history:
-            if order["type"] == "bid":
-                if order["size"] == 0:
-                    ob_bids.pop(order["price"], None)
-                else:
-                    ob_bids[order["price"]] = order["size"]
-            elif order["type"] == "ask":
-                if order["size"] == 0:
-                    ob_asks.pop(order["price"], None)
-                else:
-                    ob_asks[order["price"]] = order["size"]
+            values = orders[order["type"]]
+            if order["size"] == 0:
+                values.pop(order["price"], None)
+            else:
+                values[order["price"]] = order["size"]
 
-        logging.info("order book size: {} - asks: {} - bids: {}".format(len(order_history), sum(ob_asks.values()), sum(ob_bids.values())))
-        stacked_bids = self._get_stacked_orders(ob_bids, reversed(sorted(ob_bids)))
+        stacked_bids = self._get_stacked_orders(orders["bid"], reversed(sorted(orders["bid"])))
+        if not stacked_bids:
+            return dict(size=0, exchange=self.exchange, buy_sym=self.buy_sym_id, sell_sym=self.sell_sym_id)
         buy_price, buy_qty = zip(*sorted(stacked_bids.items()))
-        stacked_asks = self._get_stacked_orders(ob_asks, sorted(ob_asks))
+        stacked_asks = self._get_stacked_orders(orders["ask"], sorted(orders["ask"]))
         sell_price, sell_qty = zip(*sorted(stacked_asks.items()))
+        return dict(
+            size=len(order_history),
+            exchange=self.exchange,
+            buy_sym=self.buy_sym_id,
+            sell_sym=self.sell_sym_id,
+            asks_sum=sum(orders["ask"]),
+            bids_sum=sum(orders["bid"]),
+            mean_bid_quantity=order_history[0]["mid_price"],
+            buy_price=buy_price,
+            buy_quantity=buy_qty,
+            sell_price=sell_price,
+            sell_quantity=sell_qty,
+            stacked_bids=stacked_bids,
+            stacked_asks=stacked_asks,
+        )
 
+    def visualise_ob(self):
+        ob_data = self.generate_depth_data()
+        logging.info("order book size: %s - asks: %s - bids: %s",
+                     ob_data["size"],
+                     ob_data["asks_sum"],
+                     ob_data["bids_sum"])
         plt.title(self.exchange.capitalize() + " Order Book: " + self.buy_sym_id + "-" + self.sell_sym_id)
-        plt.plot(buy_price, buy_qty, label="Bids")
-        plt.plot(sell_price, sell_qty, label="Asks")
+        plt.plot(ob_data["buy_price"], ob_data["buy_quantity"], label="Bids")
+        plt.plot(ob_data["sell_price"], ob_data["sell_quantity"], label="Asks")
         plt.xlabel("Price Level (" + self.sell_sym_id + ")")
         plt.ylabel("Quantity")
-        plt.fill_between(buy_price, buy_qty, alpha=0.3)
-        plt.fill_between(sell_price, sell_qty, alpha=0.3)
+        plt.fill_between(ob_data["buy_price"], ob_data["buy_quantity"], alpha=0.3)
+        plt.fill_between(ob_data["sell_price"], ob_data["sell_quantity"], alpha=0.3)
         # plots the mid price
-        mid_price = order_history[0]["mid_price"]
-        mean_bid_qty = np.mean(buy_qty)
+        # mid_price = ob_data["mean_bid_quantity"]
+        # mean_bid_qty = np.mean(ob_data["buy_quantity"])
         #plt.plot((mid_price, mid_price), (0, 0.5*(mean_bid_qty)))
         #plt.text(mid_price, (mean_bid_qty + (0.075*mean_bid_qty)), "mid price: "+str(mid_price), fontsize=16)
         plt.pause(0.05)
@@ -186,7 +197,7 @@ class OrderBookAnalyser:
         """
         )
         return session.execute(query, {"buy_sym_id": self.buy_sym_id.upper(), "sell_sym_id": self.sell_sym_id.upper(), "exchange": self.exchange.lower()})
-    
+
     def _parse_ob(self, raw_ob):
         ob = []
         for order in list(raw_ob):

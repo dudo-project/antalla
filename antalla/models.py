@@ -262,10 +262,21 @@ class ExchangeMarket(Base):
             quoted_vol_timestamp=self.quoted_vol_timestamp.isoformat(),
             vol_usd_timestamp=self.vol_usd_timestamp.isoformat(),
             quoted_volume_id=self.quoted_volume_id,
+            name=self.name,
             original_name=self.original_name,
             first_coin=self.first_coin_id,
             second_coin=self.second_coin_id,
         )
+
+    @property
+    def name(self):
+        original_name = self.original_name.replace("-", "").replace("_", "")
+        first_coin, second_coin = self.first_coin_id, self.second_coin_id
+        if first_coin + second_coin != original_name:
+            first_coin, second_coin = second_coin, first_coin
+        if first_coin + second_coin != original_name:
+            raise ValueError("invalid coin names")
+        return "{0}/{1}".format(first_coin, second_coin)
 
 
 class OrderBookSnapshot(Base):
