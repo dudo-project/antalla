@@ -13,7 +13,7 @@
 
         <!-- Right aligned nav items -->
         <b-navbar-nav class="ml-auto">
-          <b-nav-item href="#">Documentation</b-nav-item>
+          <b-nav-item href="https://antalla.dudo.tech">Documentation</b-nav-item>
           <b-nav-item href="https://github.com/samwerner/antalla">GitHub</b-nav-item>
         </b-navbar-nav>
       </b-collapse>
