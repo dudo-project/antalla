@@ -2,7 +2,7 @@
 
 <img src="images/logo_2.svg" width="400">
 
-[![CircleCI](https://circleci.com/gh/samwerner/antalla.svg?style=svg&circle-token=117f2cd4908b4eddd036d9b612e347420690efa9)](https://circleci.com/gh/samwerner/antalla)
+[![CircleCI](https://circleci.com/gh/dudo-project/antalla.svg?style=svg)](https://circleci.com/gh/dudo-project/antalla)
 
 
 *antalla* is an open-source cryptocurrency exchange market data aggregation tool.
