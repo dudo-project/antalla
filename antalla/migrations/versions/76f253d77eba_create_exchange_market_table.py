@@ -35,6 +35,7 @@ def upgrade():
             ["markets.first_coin_id", "markets.second_coin_id"],
         ),
         sa.Index("exchange-market-fk-idx", "first_coin_id", "second_coin_id"),
+        sa.Index("exchange-market-fk-full-idx", "first_coin_id", "second_coin_id", "exchange_id"),
         sa.Index("exchange-market-agg_orders_count_idx", "agg_orders_count"),
     )
 

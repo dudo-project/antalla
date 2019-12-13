@@ -122,7 +122,7 @@ export default {
       }
       const data = [this.makeSinglePlotData('bids'), this.makeSinglePlotData('asks')]
       if (this.graphDrawn) {
-        Plotly.update('depth-chart', data, {})
+        Plotly.react('depth-chart', data, layout)
       } else {
         Plotly.plot('depth-chart', data, layout)
       }
