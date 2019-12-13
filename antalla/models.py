@@ -256,17 +256,19 @@ class ExchangeMarket(Base):
         return hash((self.first_coin_id, self.second_coin_id, self.exchange_id))
 
     def to_dict(self):
-        return dict(
-            volume_usd=self.volume_usd,
+        market = dict(
             quoted_volume=self.quoted_volume,
             quoted_vol_timestamp=self.quoted_vol_timestamp.isoformat(),
-            vol_usd_timestamp=self.vol_usd_timestamp.isoformat(),
             quoted_volume_id=self.quoted_volume_id,
             name=self.name,
             original_name=self.original_name,
             first_coin=self.first_coin_id,
             second_coin=self.second_coin_id,
         )
+        if self.volume_usd and self.vol_usd_timestamp:
+            market["volume_usd"] = self.volume_usd
+            market["vol_usd_timestamp"] = self.vol_usd_timestamp.isoformat()
+        return market
 
     @property
     def name(self):
