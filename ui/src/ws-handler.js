@@ -1,6 +1,8 @@
+import config from './config'
+
 export default class WsHandler {
   constructor() {
-    this.socket = new WebSocket('ws://localhost:8765')
+    this.socket = new WebSocket(config.wsURL)
   }
 
   send(action, data) {
