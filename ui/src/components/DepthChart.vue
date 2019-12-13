@@ -108,7 +108,7 @@ export default {
       if (this.depthData.size === 0) {
         return
       }
-      const funcName = this.graphDrawn ? 'react' : 'plot'
+      // const funcName = this.graphDrawn ? 'update' : 'plot'
       const layout = {
         title: 'Depth chart',
         xaxis: {
@@ -121,7 +121,11 @@ export default {
         }
       }
       const data = [this.makeSinglePlotData('bids'), this.makeSinglePlotData('asks')]
-      Plotly[funcName]('depth-chart', data, layout)
+      if (this.graphDrawn) {
+        Plotly.react('depth-chart', data, layout)
+      } else {
+        Plotly.plot('depth-chart', data, layout)
+      }
       this.graphDrawn = true
     },
     subscribe() {
@@ -160,8 +164,9 @@ export default {
       for (const exchange of this.exchanges) {
         exchange.markets.sort((a, b) => a.name > b.name)
       }
-      this.selectedExchange = exchanges.find(v => v.name === 'binance').id
-      this.selectedMarket = 'ETH/BTC'
+      const exchange = exchanges.find(v => v.name === 'binance')
+      this.selectedExchange = exchange.id
+      this.selectedMarket = exchange.markets[0].name
     },
     setDepthData(depthData) {
       if (this.subscription &&
