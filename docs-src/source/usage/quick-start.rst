@@ -9,10 +9,11 @@ Initializing the database
 -------------------------
 
 Once the ``DB_URL`` is set, the database can be initialized with the following
-command:
+commands:
 
 ::
 
+   antalla migrations upgrade head
    antalla init-data
 
 
