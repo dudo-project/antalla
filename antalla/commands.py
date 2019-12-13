@@ -89,10 +89,11 @@ def init_data(args):
 async def _init_data(args):
     logging.info("fetching markets from exchanges")
     await _markets(args)
-    logging.info("fetching latest price in USD for each coin")
-    await _fetch_prices(args)
-    logging.info("normalising traded volume in USD for all exchanges")    
-    norm_volume(args)
+    if args["fetch_prices"]:
+        logging.info("fetching latest price in USD for each coin")
+        await _fetch_prices(args)
+        logging.info("normalising traded volume in USD for all exchanges")
+        norm_volume(args)
     
 def fetch_prices(args):
     try:

@@ -32,6 +32,8 @@ norm_volume.add_argument("--exchange", "-e", nargs="*", choices=ExchangeListener
 
 init_data = subparsers.add_parser("init-data", help="fetches exchange markets, traded volume and prices in USD")
 init_data.add_argument("--exchange", "-e", nargs="*", choices=ExchangeListener.registered()) 
+init_data.add_argument("--fetch-prices", default=False, action="store_true",
+                       help="Fetch prices for all curencies")
 
 snapshots_parser = subparsers.add_parser("snapshot")
 snapshots_parser.add_argument("--exchange", nargs="*", choices=ExchangeListener.registered())
