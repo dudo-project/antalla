@@ -23,6 +23,7 @@ def upgrade():
         sa.Column("quoted_volume", sa.Float, nullable=False),
         sa.Column("quoted_vol_timestamp", sa.DateTime),
         sa.Column("vol_usd_timestamp", sa.DateTime),
+        sa.Column("agg_orders_count", sa.Integer, server_default="0", nullable=False),
         sa.Column("quoted_volume_id", sa.String, sa.ForeignKey("coins.symbol"), nullable=False),
         sa.Column("original_name", sa.String, nullable=False),
         sa.Column("first_coin_id", sa.String, sa.ForeignKey("coins.symbol"), nullable=False, index=True),
@@ -34,6 +35,7 @@ def upgrade():
             ["markets.first_coin_id", "markets.second_coin_id"],
         ),
         sa.Index("exchange-market-fk-idx", "first_coin_id", "second_coin_id"),
+        sa.Index("exchange-market-agg_orders_count_idx", "agg_orders_count"),
     )
 
 

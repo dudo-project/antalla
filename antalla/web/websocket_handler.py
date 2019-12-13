@@ -12,7 +12,7 @@ from ..ob_analyser import OrderBookAnalyser
 
 
 def get_exchanges():
-    exchanges = db.session.query(models.Exchange).options(joinedload("markets")).all()
+    exchanges = db.session.query(models.Exchange).options(joinedload("markets_with_data")).all()
     return [exchange.to_dict(include_markets=True) for exchange in exchanges]
 
 

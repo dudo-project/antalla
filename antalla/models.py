@@ -69,6 +69,8 @@ class Exchange(Base):
     name = Column(String)
     id = Column(Integer, primary_key=True)
     markets = relationship("ExchangeMarket", back_populates="exchange")
+    markets_with_data = relationship("ExchangeMarket",
+        primaryjoin="and_(Exchange.id == ExchangeMarket.exchange_id, ExchangeMarket.agg_orders_count > 0)")
 
     def __repr__(self):
         return f"Exchange(name='{self.name}')"
@@ -76,7 +78,7 @@ class Exchange(Base):
     def to_dict(self, include_markets=False):
         result = dict(id=self.id, name=self.name)
         if include_markets:
-            result["markets"] = [market.to_dict() for market in self.markets]
+            result["markets"] = [market.to_dict() for market in self.markets_with_data]
         return result
 
 
@@ -165,15 +167,18 @@ class Trade(Base):
 class AggOrder(Base):
     __tablename__ = "aggregate_orders"
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.hash_id = self.pk_hash()
+        self.first_coin_id, self.second_coin_id = self.buy_sym_id, self.sell_sym_id
+        if self.first_coin_id > self.second_coin_id:
+            self.first_coin_id, self.second_coin_id = self.second_coin_id, self.first_coin_id
+
     def pk_hash(self):
         pk = f"{self.last_update_id}{self.exchange_id}{self.order_type}{self.price}".encode("utf-8")
         hash_obj = hashlib.sha256(pk)
         return hash_obj.hexdigest()
     
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.hash_id = self.pk_hash()
-
     hash_id = Column(String, primary_key=True)
     last_update_id = Column(Integer)
     timestamp = Column(DateTime, index=True, nullable=False)
@@ -181,8 +186,13 @@ class AggOrder(Base):
     buy_sym = relationship("Coin", foreign_keys=[buy_sym_id])
     sell_sym_id = Column(String, ForeignKey("coins.symbol"), nullable=False, index=True)
     sell_sym = relationship("Coin", foreign_keys=[sell_sym_id])
+
+    first_coin_id = Column(String, ForeignKey("coins.symbol"), nullable=False, index=True)
+    second_coin_id = Column(String, ForeignKey("coins.symbol"), nullable=False, index=True)
+
     exchange_id = Column(Integer, ForeignKey("exchanges.id"), nullable=False, index=True)
     exchange = relationship("Exchange")
+    # exchange_market = relationship("ExchangeMarket", foreign_keys=[first_coin_id, second_coin_id, exchange_id])
     order_type = Column(String, nullable=False)
     price = Column(Float, nullable=False, index=True)
     size = Column(Float, nullable=False)
@@ -190,6 +200,9 @@ class AggOrder(Base):
     __table_args__ = (
         Index("latest_orders_index",
             "order_type", "price", "last_update_id", "exchange_id", unique=True),
+        Index("market_orders_index", "first_coin_id", "second_coin_id", "exchange_id"),
+        ForeignKeyConstraint(["first_coin_id", "second_coin_id", "exchange_id"],
+                             ["exchange_markets.first_coin_id", "exchange_markets.second_coin_id", "exchange_markets.exchange_id"])
     )
 
     @classmethod
@@ -205,7 +218,6 @@ class Market(Base):
     first_coin = relationship("Coin", foreign_keys=[first_coin_id])
     second_coin_id = Column(String, ForeignKey("coins.symbol"), nullable=False, index=True, primary_key=True)
     second_coin = relationship("Coin", foreign_keys=[second_coin_id])
-    exchange_markets = relationship("ExchangeMarket", back_populates="market")
 
     def __eq__(self, other):
         return (self.first_coin_id, self.second_coin_id) == (other.first_coin_id, other.second_coin_id)
@@ -232,8 +244,12 @@ class ExchangeMarket(Base):
     quoted_volume_id = Column(String, ForeignKey("coins.symbol"), nullable=False)
     original_name = Column(String, nullable=False)
 
+    agg_orders_count = Column(Integer, nullable=False, server_default="0")
+
     first_coin_id = Column(String, ForeignKey("coins.symbol"), nullable=False, index=True)
     second_coin_id = Column(String, ForeignKey("coins.symbol"), nullable=False, index=True)
+
+    orders = relationship("AggOrder")
 
     exchange_id = Column(Integer, ForeignKey("exchanges.id"), nullable=False, index=True)
     exchange = relationship("Exchange", foreign_keys=[exchange_id])
@@ -279,6 +295,9 @@ class ExchangeMarket(Base):
         if first_coin + second_coin != original_name:
             raise ValueError("invalid coin names")
         return "{0}/{1}".format(first_coin, second_coin)
+
+    def __repr__(self):
+        return "ExchangeMarket(name='{0}', exchange_id={1})".format(self.name, self.exchange_id)
 
 
 class OrderBookSnapshot(Base):

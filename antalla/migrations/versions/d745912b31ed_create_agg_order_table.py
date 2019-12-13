@@ -24,13 +24,35 @@ def upgrade():
         sa.Column("timestamp", sa.DateTime, index=True, nullable=False),
         sa.Column("buy_sym_id", sa.String, sa.ForeignKey("coins.symbol"), nullable=False, index=True),
         sa.Column("sell_sym_id", sa.String, sa.ForeignKey("coins.symbol"), nullable=False, index=True),
+        sa.Column("first_coin_id", sa.String, sa.ForeignKey("coins.symbol"), nullable=False, index=True),
+        sa.Column("second_coin_id", sa.String, sa.ForeignKey("coins.symbol"), nullable=False, index=True),
         sa.Column("exchange_id", sa.Integer, sa.ForeignKey("exchanges.id"), nullable=False, index=True),
         sa.Column("order_type", sa.String, nullable=False),
         sa.Column("price", sa.Float, nullable=False, index=True),
         sa.Column("size", sa.Float, nullable=False),
         sa.Index("latest_orders_index",
             "order_type", "price", "last_update_id", "exchange_id", unique=True),
+        sa.Index("market_orders_index", "first_coin_id", "second_coin_id", "exchange_id"),
     )
+    op.execute("""
+    CREATE OR REPLACE FUNCTION update_agg_orders_count()
+    RETURNS TRIGGER AS $$
+    BEGIN
+        UPDATE exchange_markets e
+        SET agg_orders_count = agg_orders_count + 1
+        WHERE e.first_coin_id = NEW.first_coin_id AND
+            e.second_coin_id = NEW.second_coin_id AND
+            e.exchange_id = NEW.exchange_id;
+        RETURN NEW;
+    END;
+    $$ language plpgsql;
+    """)
+    op.execute("""
+    CREATE TRIGGER update_exchange_markets_agg_orders_count
+    AFTER INSERT ON aggregate_orders
+    FOR EACH ROW
+    EXECUTE PROCEDURE update_agg_orders_count();
+    """)
 
 
 def downgrade():
