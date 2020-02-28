@@ -1,5 +1,6 @@
 import os
 
+# Config settings: Update API keys (if required by exchange)
 
 MARKETS = [
     "BTC_USD",
@@ -19,7 +20,7 @@ IDEX_EVENTS = {
     "trade": ["market_trades"],
     "depth": ["market_orders", "market_cancels"],
 }
-IDEX_API_KEY = "17paIsICur8sA0OBqG6dH5G1rmrHNMwt4oNk4iX9"
+IDEX_API_KEY = ""
 IDEX_WS_URL = "wss://datastream.idex.market"
 IDEX_API = "https://api.idex.market"
 IDEX_API_MARKETS = "return24Volume"
@@ -29,8 +30,8 @@ BINANCE_MARKETS = MARKETS
 BINANCE_STREAMS = ["depth", "trade"]
 BINANCE_SINGLE_STREAM = "wss://stream.binance.com:9443/ws/"
 BINANCE_COMBINED_STREAM = "wss://stream.binance.com:9443/stream?streams="
-BINANCE_API_KEY = "IddI1NMcPNMMm7vNeavClaP86k3zpGbOuEGLoUoL1euLohzRxFjK5y0nI7jQ1swZ"
-BINANCE_SECRET_KEY = "G4XdKRYm9A7Wtq2zoNTV6WJbRf3NN3s4156zRQKvCVGyyQFsPkZMlIbXljkCS2h6"
+BINANCE_API_KEY = ""
+BINANCE_SECRET_KEY = ""
 BINANCE_API = "https://api.binance.com"
 BINANCE_PUBLIC_API = "api/v1"
 BINANCE_PRIVATE_API = "api/v3"
@@ -43,7 +44,6 @@ if ENV == "test":
     DB_URL = os.environ.get("DB_URL", "postgresql+psycopg2://antalla:antalla@localhost/antalla-test?client_encoding=utf8")
 else:
     DB_URL = os.environ.get("DB_URL", "postgresql+psycopg2://antalla:antalla@localhost/antalla?client_encoding=utf8")
-    #DB_URL = os.environ.get("DB_URL", "postgresql+psycopg2://antalla:j30uowinnXyoemT@quantum.doc.ic.ac.uk/antalla?sslmode=disable")
 
 PACKAGE = "antalla"
 
@@ -69,4 +69,4 @@ HITBTC_WS_URL = "wss://api.hitbtc.com/api/2/ws"
 HITBTC_API = "https://api.hitbtc.com/api/2"
 HITBTC_API_MARKETS = "public/ticker"
 HITBTC_API_SYMBOLS = "public/symbol"
-HITBTC_API_KEY = "hBjmU7CawOCRg248JLloOerbOKg8I8k3"
+HITBTC_API_KEY = ""
