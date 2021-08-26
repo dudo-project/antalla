@@ -5,26 +5,48 @@ Revises: 76f253d77eba
 Create Date: 2019-09-22 01:33:59.794177
 
 """
+from antalla.settings import TABLE_PREFIX
 from alembic import op
 import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'ca6cd71568db'
-down_revision = '76f253d77eba'
+revision = "ca6cd71568db"
+down_revision = "76f253d77eba"
 branch_labels = None
 depends_on = None
 
 
 def upgrade():
     op.create_table(
-        "order_book_snapshots",
+        TABLE_PREFIX + "order_book_snapshots",
         sa.Column("timestamp", sa.DateTime, nullable=False, primary_key=True),
         sa.Column("snapshot_type", sa.String, nullable=False, primary_key=True),
         sa.Column("mid_price_range", sa.Float, nullable=False, primary_key=True),
-        sa.Column("buy_sym_id", sa.String, sa.ForeignKey("coins.symbol"), nullable=False, index=True, primary_key=True),
-        sa.Column("sell_sym_id", sa.String, sa.ForeignKey("coins.symbol"), nullable=False, index=True, primary_key=True),
-        sa.Column("exchange_id", sa.Integer, sa.ForeignKey("exchanges.id"), nullable=False, index=True, primary_key=True),
+        sa.Column(
+            "buy_sym_id",
+            sa.String,
+            sa.ForeignKey(TABLE_PREFIX + "coins.symbol"),
+            nullable=False,
+            index=True,
+            primary_key=True,
+        ),
+        sa.Column(
+            "sell_sym_id",
+            sa.String,
+            sa.ForeignKey(TABLE_PREFIX + "coins.symbol"),
+            nullable=False,
+            index=True,
+            primary_key=True,
+        ),
+        sa.Column(
+            "exchange_id",
+            sa.Integer,
+            sa.ForeignKey(TABLE_PREFIX + "exchanges.id"),
+            nullable=False,
+            index=True,
+            primary_key=True,
+        ),
         sa.Column("spread", sa.Float, nullable=False, index=True),
         sa.Column("bids_volume", sa.Float, nullable=False),
         sa.Column("asks_volume", sa.Float, nullable=False),
@@ -44,4 +66,4 @@ def upgrade():
 
 
 def downgrade():
-    op.drop_table("order_book_snapshots")
+    op.drop_table(TABLE_PREFIX + "order_book_snapshots")

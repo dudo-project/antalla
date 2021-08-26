@@ -41,16 +41,22 @@ BINANCE_API_INFO = "exchangeInfo"
 ENV = os.environ.get("ENV", "development")
 
 if ENV == "test":
-    DB_URL = os.environ.get("DB_URL", "postgresql+psycopg2://antalla:antalla@localhost/antalla-test?client_encoding=utf8")
+    DB_URL = os.environ.get(
+        "DB_URL",
+        "postgresql+psycopg2://antalla:antalla@localhost/antalla-test?client_encoding=utf8",
+    )
 else:
-    DB_URL = os.environ.get("DB_URL", "postgresql+psycopg2://antalla:antalla@localhost/antalla?client_encoding=utf8")
+    DB_URL = os.environ.get(
+        "DB_URL",
+        "postgresql+psycopg2://antalla:antalla@localhost/antalla?client_encoding=utf8",
+    )
 
 PACKAGE = "antalla"
 
 COINBASE_WS_URL = "wss://ws-feed.pro.coinbase.com"
 
 COINBASE_MARKETS = MARKETS
-#COINBASE_CHANNELS = ["full"]
+# COINBASE_CHANNELS = ["full"]
 COINBASE_CHANNELS = {
     "depth": ["level2"],
     "trade": ["full"],
@@ -60,7 +66,7 @@ COINBASE_API_KEY = os.environ.get("COINBASE_API_KEY")
 COINBASE_API_SECRET = os.environ.get("COINBASE_API_SECRET")
 COINBASE_API = "https://api.pro.coinbase.com"
 COINBASE_API_PRODUCTS = "products"
-COINBASE_API_TICKER =  "ticker"
+COINBASE_API_TICKER = "ticker"
 
 COINMARKETCAP_URL = "https://coinmarketcap.com/all/views/all/"
 
@@ -70,3 +76,8 @@ HITBTC_API = "https://api.hitbtc.com/api/2"
 HITBTC_API_MARKETS = "public/ticker"
 HITBTC_API_SYMBOLS = "public/symbol"
 HITBTC_API_KEY = ""
+
+if os.environ.get("ANTALLA_TABLE_PREFIX"):
+    TABLE_PREFIX = os.environ["ANTALLA_TABLE_PREFIX"] + "_"
+else:
+    TABLE_PREFIX = ""

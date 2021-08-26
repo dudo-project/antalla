@@ -3,7 +3,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib
 import matplotlib.pyplot as plt
-from matplotlib.dates import DateFormatter 
+from matplotlib.dates import DateFormatter
 from matplotlib.ticker import PercentFormatter
 import matplotlib.style as style
 import logging
@@ -14,17 +14,20 @@ from antalla import models
 
 sns.set_style("darkgrid")
 
+
 def query_orders(buy_sym_id, sell_sym_id):
-    query = (
-        "select exchanges.name, orders.exchange_order_id, orders.timestamp, orders.filled_at, orders.expiry,"+
-        " orders.cancelled_at, orders.buy_sym_id, orders.sell_sym_id, orders.user, orders.price from orders" +
-        " inner join exchanges on exchanges.id = orders.exchange_id where buy_sym_id = '"+buy_sym_id.upper() +"' and" +
-        " sell_sym_id = '" +sell_sym_id.upper()+"' order by timestamp asc"
-    )
+    query = f"""select e.name, o.exchange_order_id, o.timestamp, o.filled_at, o.expiry,
+                       o.cancelled_at, o.buy_sym_id, o.sell_sym_id, o.user, o.price
+                from {models.Order.__tablename__} o
+        inner join {models.Exchange.__tablename__} e on e.id = o.exchange_id
+        where buy_sym_id = '{buy_sym_id.upper()}' and
+        sell_sym_id = '{sell_sym_id.upper()}'
+        order by timestamp asc"""
     return session.execute(query)
 
+
 def parse_orders(raw_orders):
-    orders = [] 
+    orders = []
     for order in raw_orders:
         new_order = dict(
             exchange=order[0],
@@ -36,7 +39,7 @@ def parse_orders(raw_orders):
             buy_sym_id=order[6],
             sell_sym_id=order[7],
             user=order[8],
-            price=order[9]
+            price=order[9],
         )
         # check if order has been cancelled (for DEXs, e.g. IDEX: regardless whether it has been filled)
         if order[5] != None:
@@ -49,6 +52,7 @@ def parse_orders(raw_orders):
         orders.append(new_order)
     return orders
 
+
 def get_times(orders):
     fill_times = []
     cancel_times = []
@@ -58,7 +62,8 @@ def get_times(orders):
         elif order["filled_at"] is not None and order["cancelled_at"] is None:
             fill_times.append(order["order_time"])
     return dict(fill_times=fill_times, cancel_times=cancel_times)
-    
+
+
 def plot_order_time_densities(buy_sym_id, sell_sym_id, exchange):
     # get times until filled and cancelled
     raw_orders = query_orders(buy_sym_id, sell_sym_id)
@@ -71,17 +76,32 @@ def plot_order_time_densities(buy_sym_id, sell_sym_id, exchange):
     df["fill_times"] = pd.Series(times["fill_times"])
     fills = df["fill_times"].dt.total_seconds() / 60
 
-    style.use('seaborn')
+    style.use("seaborn")
     fig, (ax1, ax2) = plt.subplots(2)
     ax1.hist(cancels, bins=40, log=True)
     ax1.set_xlabel("Time (s)")
     ax1.set_ylabel("Number of orders cancelled")
-    ax1.set_title(exchange + ": Time until order is cancelled ("+buy_sym_id+"-"+sell_sym_id+")")
+    ax1.set_title(
+        exchange
+        + ": Time until order is cancelled ("
+        + buy_sym_id
+        + "-"
+        + sell_sym_id
+        + ")"
+    )
     ax2.hist(fills, bins=40, log=True)
     ax2.set_ylabel("Number of orders filled")
     ax2.set_xlabel("Time (s)")
-    ax2.set_title(exchange + ": Time until order is filled ("+buy_sym_id+"-"+sell_sym_id+")")
+    ax2.set_title(
+        exchange
+        + ": Time until order is filled ("
+        + buy_sym_id
+        + "-"
+        + sell_sym_id
+        + ")"
+    )
     plt.show()
+
 
 """
 Basic histogram for comparing the time until an order is cancelled vs the time until an order is filled
@@ -91,6 +111,3 @@ Examples:
     > plot_order_time_densities("ETH", "USDC","coinbase")
     > plot_order_time_densities("USDC", "ETH","idex")
 """
-
-
-
