@@ -189,7 +189,7 @@ class OBSnapshotGenerator:
 
     def _query_connection_events(self):
         query = f"""
-            select events.id, e.name, timestamp, connection_event, data_collected, buy_sym_id, sell_sym_id
+            select ev.id, e.name, timestamp, connection_event, data_collected, buy_sym_id, sell_sym_id
             from {models.Event.__tablename__} ev
             inner join {models.Exchange.__tablename__} e on ev.exchange_id = e.id
             where (data_collected = 'agg_order_book'
