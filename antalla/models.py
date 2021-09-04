@@ -14,6 +14,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql.sqltypes import BigInteger
 
 from antalla.settings import TABLE_PREFIX
 
@@ -303,7 +304,7 @@ class AggOrder(Base):
         return hash_obj.hexdigest()
 
     hash_id = Column(String, primary_key=True)
-    last_update_id = Column(Integer)
+    last_update_id = Column(BigInteger)
     timestamp = Column(DateTime, index=True, nullable=False)
     buy_sym_id = Column(String, ForeignKey(Coin.symbol), nullable=False, index=True)
     buy_sym = relationship("Coin", foreign_keys=[buy_sym_id])

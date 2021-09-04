@@ -28,7 +28,7 @@ class OrderBookAnalyser:
             session.execute(
                 f"""
         select original_name from {models.ExchangeMarket.__tablename__} em
-        inner join exchanges e on em.exchange_id = e.id
+        inner join {models.Exchange.__tablename__} e on em.exchange_id = e.id
         where e.name = :exchange and first_coin_id= :buy_sym_id and second_coin_id= :sell_sym_id
         """,
                 {

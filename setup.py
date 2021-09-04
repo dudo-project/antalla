@@ -5,7 +5,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "SQLAlchemy==1.3.2",
-        "websockets==7.0",
+        "websockets==9.1",
         "python-dateutil==2.8.0",
         "psycopg2==2.8.1",
         "aiohttp==3.5.4",

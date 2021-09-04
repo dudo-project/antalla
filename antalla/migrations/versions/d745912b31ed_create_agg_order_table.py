@@ -21,7 +21,7 @@ def upgrade():
     op.create_table(
         TABLE_PREFIX + "aggregate_orders",
         sa.Column("hash_id", sa.String, primary_key=True),
-        sa.Column("last_update_id", sa.Integer),
+        sa.Column("last_update_id", sa.BigInteger),
         sa.Column("timestamp", sa.DateTime, index=True, nullable=False),
         sa.Column(
             "buy_sym_id",
