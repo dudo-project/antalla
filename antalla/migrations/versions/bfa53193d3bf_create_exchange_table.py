@@ -5,24 +5,25 @@ Revises: b97a89b20fa2
 Create Date: 2019-09-22 01:17:06.735174
 
 """
+from antalla.settings import TABLE_PREFIX
 from alembic import op
 import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'bfa53193d3bf'
-down_revision = 'b97a89b20fa2'
+revision = "bfa53193d3bf"
+down_revision = "b97a89b20fa2"
 branch_labels = None
 depends_on = None
 
 
 def upgrade():
     op.create_table(
-        "exchanges",
+        TABLE_PREFIX + "exchanges",
         sa.Column("id", sa.Integer, primary_key=True),
         sa.Column("name", sa.String),
     )
 
 
 def downgrade():
-    op.drop_table("exchanges")
+    op.drop_table(TABLE_PREFIX + "exchanges")
