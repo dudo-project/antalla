@@ -57,7 +57,7 @@ init_data.add_argument(
     help="Fetch prices for all curencies",
 )
 
-snapshots_parser = subparsers.add_parser("snapshot")
+snapshots_parser = subparsers.add_parser("snapshot", help="Takes a snapshot of the order book")
 snapshots_parser.add_argument(
     "--exchange", nargs="*", choices=ExchangeListener.registered()
 )
