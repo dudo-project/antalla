@@ -10,7 +10,7 @@ setup(
         "psycopg2==2.8.1",
         "aiohttp==3.5.4",
         "beautifulsoup4==4.7.1",
-        "numpy==1.21.2",
+        "numpy==1.22.0",
         "seaborn==0.9.0",
         "alembic==1.2.0",
     ],
