@@ -8,7 +8,7 @@ setup(
         "websockets==9.1",
         "python-dateutil==2.8.0",
         "psycopg2==2.8.1",
-        "aiohttp==3.5.4",
+        "aiohttp==3.7.4",
         "beautifulsoup4==4.7.1",
         "numpy==1.21.2",
         "seaborn==0.9.0",
